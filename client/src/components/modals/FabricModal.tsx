@@ -123,6 +123,7 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
     },
     onError: (error) => {
       console.error("Fabric save error:", error);
+      console.error("Full error details:", JSON.stringify(error, null, 2));
       if (isUnauthorizedError(error)) {
         toast({
           title: "Não autorizado",
@@ -134,9 +135,14 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
         }, 500);
         return;
       }
+      // Show more detailed error message
+      let errorMessage = error.message || `Falha ao ${isCreating ? 'criar' : 'atualizar'} tecido`;
+      if (error.message && error.message.includes('Validation error')) {
+        errorMessage = "Erro de validação. Verifique os dados preenchidos.";
+      }
       toast({
         title: "Erro",
-        description: error.message || `Falha ao ${isCreating ? 'criar' : 'atualizar'} tecido`,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -156,10 +162,11 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
       return;
     }
 
+    // Clean and prepare data
     const submitData = {
-      name: formData.name,
-      type: formData.type,
-      composition: formData.composition,
+      name: formData.name.trim(),
+      type: formData.type.trim(),
+      composition: formData.composition || null,
       gramWeight: parseInt(formData.gramWeight),
       usableWidth: parseInt(formData.usableWidth),
       pricePerKg: formData.pricePerKg,
@@ -167,8 +174,11 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
       currentStock: formData.currentStock,
       yieldEstimate: calculatedValues.yieldEstimate.toString(),
       supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
-      imageUrl: formData.imageUrl,
+      imageUrl: formData.imageUrl && formData.imageUrl.trim() ? formData.imageUrl.trim().substring(0, 500) : null,
     };
+
+    // Debug log
+    console.log("Submitting fabric data:", submitData);
 
     saveFabricMutation.mutate(submitData);
   };
