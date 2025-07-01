@@ -1,39 +1,31 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, ArrowLeft, Shirt } from "lucide-react";
+import { ArrowRight, ArrowLeft, X } from "lucide-react";
+import { PricingProvider, usePricing } from "@/context/PricingContext";
+import Step1GarmentType from "@/components/pricing/Step1GarmentType";
+import Step2Sizes from "@/components/pricing/Step2Sizes";
+import Step3Fabric from "@/components/pricing/Step3Fabric";
+import Step4CreationCosts from "@/components/pricing/Step4CreationCosts";
+import Step5Supplies from "@/components/pricing/Step5Supplies";
+import Step6Labor from "@/components/pricing/Step6Labor";
+import Step7FixedCosts from "@/components/pricing/Step7FixedCosts";
+import Step8Summary from "@/components/pricing/Step8Summary";
 
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const GARMENT_TYPES = [
-  { id: 'shirt', name: 'Camiseta', icon: 'fas fa-tshirt' },
-  { id: 'top', name: 'Top', icon: 'fas fa-vest' },
-  { id: 'pants', name: 'Calça', icon: 'fas fa-male' },
-  { id: 'shorts', name: 'Shorts', icon: 'fas fa-male' },
-];
+function PricingModalContent({ onClose }: { onClose: () => void }) {
+  const { currentStep, setCurrentStep, resetForm, formData } = usePricing();
 
-export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
-    garmentType: '',
-    name: '',
-    reference: '',
-    notes: '',
-    imageUrl: '',
-  });
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < 8) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -44,152 +36,102 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     }
   };
 
-  const handleGarmentTypeSelect = (type: string) => {
-    handleInputChange('garmentType', type);
-  };
-
-  const resetForm = () => {
-    setCurrentStep(1);
-    setFormData({
-      garmentType: '',
-      name: '',
-      reference: '',
-      notes: '',
-      imageUrl: '',
-    });
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
   const steps = [
-    { number: 1, title: 'Tipo da Peça', active: currentStep === 1 },
-    { number: 2, title: 'Modelo', active: currentStep === 2 },
-    { number: 3, title: 'Tecido', active: currentStep === 3 },
-    { number: 4, title: 'Custos', active: currentStep === 4 },
+    { number: 1, title: 'Tipo da Peça', active: currentStep === 1, completed: currentStep > 1 },
+    { number: 2, title: 'Tamanhos', active: currentStep === 2, completed: currentStep > 2 },
+    { number: 3, title: 'Tecido', active: currentStep === 3, completed: currentStep > 3 },
+    { number: 4, title: 'Criação', active: currentStep === 4, completed: currentStep > 4 },
+    { number: 5, title: 'Insumos', active: currentStep === 5, completed: currentStep > 5 },
+    { number: 6, title: 'Mão de Obra', active: currentStep === 6, completed: currentStep > 6 },
+    { number: 7, title: 'Custos Fixos', active: currentStep === 7, completed: currentStep > 7 },
+    { number: 8, title: 'Resumo', active: currentStep === 8, completed: false },
   ];
 
+  const canGoNext = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.garmentType && formData.modelName && formData.reference;
+      case 2:
+        return formData.sizes.length > 0;
+      case 3:
+        return formData.fabricId && formData.fabricConsumption > 0;
+      default:
+        return true;
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return <Step1GarmentType />;
+      case 2:
+        return <Step2Sizes />;
+      case 3:
+        return <Step3Fabric />;
+      case 4:
+        return <Step4CreationCosts />;
+      case 5:
+        return <Step5Supplies />;
+      case 6:
+        return <Step6Labor />;
+      case 7:
+        return <Step7FixedCosts />;
+      case 8:
+        return <Step8Summary />;
+      default:
+        return <Step1GarmentType />;
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={true} onOpenChange={() => {}}>
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Calculadora de Precificação</DialogTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>Calculadora de Precificação</DialogTitle>
+              <DialogDescription>
+                {formData.modelName && `${formData.modelName} - Etapa ${currentStep} de 8`}
+              </DialogDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
           {steps.map((step, index) => (
-            <div key={step.number} className="flex items-center">
+            <div key={step.number} className="flex items-center min-w-0">
               <div className="flex items-center">
-                <div className={`step-indicator ${step.active ? 'step-indicator-active' : 'step-indicator-inactive'}`}>
-                  {step.number}
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                    ${step.active 
+                      ? 'bg-blue-600 text-white' 
+                      : step.completed 
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}
+                >
+                  {step.completed ? '✓' : step.number}
                 </div>
-                <span className={`ml-2 text-sm font-medium ${step.active ? 'text-gray-900' : 'text-gray-500'}`}>
+                <span className={`ml-2 text-xs font-medium whitespace-nowrap
+                  ${step.active ? 'text-blue-600' : step.completed ? 'text-green-600' : 'text-gray-500'}`}>
                   {step.title}
                 </span>
               </div>
               {index < steps.length - 1 && (
-                <div className="flex-1 h-px bg-gray-300 mx-4"></div>
+                <div className={`flex-1 h-px mx-2 min-w-8
+                  ${step.completed ? 'bg-green-300' : 'bg-gray-300'}`}></div>
               )}
             </div>
           ))}
         </div>
 
         {/* Step Content */}
-        <div className="bg-white">
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <div>
-                <Label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo da Peça
-                </Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {GARMENT_TYPES.map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => handleGarmentTypeSelect(type.id)}
-                      className={`price-step-card ${
-                        formData.garmentType === type.id 
-                          ? 'price-step-card-active' 
-                          : 'price-step-card-inactive'
-                      }`}
-                    >
-                      <Shirt className="mx-auto h-8 w-8 mb-2 text-current" />
-                      <div className="text-sm font-medium">{type.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="name">Nome do Modelo</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Ex: Camiseta Fitness Pro"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="reference">Referência</Label>
-                  <Input
-                    id="reference"
-                    value={formData.reference}
-                    onChange={(e) => handleInputChange('reference', e.target.value)}
-                    placeholder="Ex: CF-001"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  rows={3}
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder="Informações adicionais sobre o modelo..."
-                />
-              </div>
-
-              <div>
-                <Label className="block text-sm font-medium text-gray-700 mb-2">
-                  Imagem do Modelo
-                </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p className="text-sm text-gray-600">Clique para fazer upload ou arraste a imagem aqui</p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG até 5MB</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Etapa 2: Dados do Modelo</h3>
-              <p className="text-gray-500">Conteúdo da etapa 2 será implementado aqui.</p>
-            </div>
-          )}
-
-          {currentStep === 3 && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Etapa 3: Escolha do Tecido</h3>
-              <p className="text-gray-500">Conteúdo da etapa 3 será implementado aqui.</p>
-            </div>
-          )}
-
-          {currentStep === 4 && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Etapa 4: Custos e Simulação</h3>
-              <p className="text-gray-500">Conteúdo da etapa 4 será implementado aqui.</p>
-            </div>
-          )}
+        <div className="bg-white min-h-96">
+          {renderStepContent()}
         </div>
 
         {/* Action Buttons */}
@@ -204,18 +146,18 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 Anterior
               </Button>
             )}
-            {currentStep < 4 ? (
+            {currentStep < 8 ? (
               <Button 
                 type="button" 
                 onClick={handleNext}
-                disabled={currentStep === 1 && !formData.garmentType}
+                disabled={!canGoNext()}
                 className="bg-primary hover:bg-primary/90"
               >
                 Próximo
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="button" className="bg-primary hover:bg-primary/90">
+              <Button type="button" className="bg-green-600 hover:bg-green-700 text-white">
                 Finalizar Precificação
               </Button>
             )}
@@ -223,5 +165,15 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <PricingProvider>
+      <PricingModalContent onClose={onClose} />
+    </PricingProvider>
   );
 }
