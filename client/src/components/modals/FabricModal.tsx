@@ -50,15 +50,18 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
   // Função para calcular rendimento e preço por metro automaticamente
   const calculateValues = (gramWeight: number, usableWidth: number, pricePerKg: number) => {
     if (gramWeight > 0 && usableWidth > 0) {
-      // Rendimento = (largura útil em metros) / (gramatura em kg por m²)
-      // gramatura em g/m² / 1000 = kg/m²
-      const yieldEstimate = (usableWidth / 100) / (gramWeight / 1000); // m/kg
+      // Fórmula correta baseada no exemplo:
+      // 150g/m² e 165cm deve resultar em 4,04 m/kg
+      // Rendimento = (1000 / gramatura) / (largura em metros)
+      // Para 150g/m² e 165cm: (1000/150) / 1.65 = 6.67 / 1.65 = 4.04 m/kg
+      const widthInMeters = usableWidth / 100;
+      const yieldEstimate = (1000 / gramWeight) / widthInMeters;
       
       // Preço por metro = preço por kg / rendimento
       const pricePerMeter = pricePerKg > 0 ? pricePerKg / yieldEstimate : 0;
       
       setCalculatedValues({
-        yieldEstimate: parseFloat(yieldEstimate.toFixed(4)),
+        yieldEstimate: parseFloat(yieldEstimate.toFixed(2)),
         pricePerMeter: parseFloat(pricePerMeter.toFixed(3))
       });
     } else {
