@@ -96,7 +96,12 @@ export default function DynamicCostStep({
   };
 
   const addSuggestion = (suggestion: typeof suggestions[0]) => {
-    addItem(suggestion);
+    // Ajustar valores baseado no modo de precificação
+    const adjustedSuggestion = {
+      ...suggestion,
+      quantity: formData.pricingMode === 'single' ? 1 : suggestion.quantity
+    };
+    addItem(adjustedSuggestion);
   };
 
   const getTotalCost = () => {
@@ -122,19 +127,27 @@ export default function DynamicCostStep({
             Sugestões Rápidas
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => addSuggestion(suggestion)}
-                className="text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors"
-              >
-                <div className="font-medium text-sm">{suggestion.description}</div>
-                <div className="text-xs text-gray-500">
-                  R$ {suggestion.unitValue.toFixed(2)} × {suggestion.quantity}
-                  {suggestion.wastePercentage > 0 && ` (+${suggestion.wastePercentage}% desperdício)`}
-                </div>
-              </button>
-            ))}
+            {suggestions.map((suggestion, index) => {
+              const displayQuantity = formData.pricingMode === 'single' ? 1 : suggestion.quantity;
+              const displayTotal = suggestion.unitValue * displayQuantity * (1 + suggestion.wastePercentage / 100);
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => addSuggestion(suggestion)}
+                  className="text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors"
+                >
+                  <div className="font-medium text-sm">{suggestion.description}</div>
+                  <div className="text-xs text-gray-500">
+                    R$ {suggestion.unitValue.toFixed(2)} × {displayQuantity}
+                    {suggestion.wastePercentage > 0 && ` (+${suggestion.wastePercentage}% desperdício)`}
+                    <div className="font-medium text-green-600">
+                      Total: R$ {displayTotal.toFixed(2)}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
