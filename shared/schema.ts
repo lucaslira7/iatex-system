@@ -60,7 +60,7 @@ export const fabrics = pgTable("fabrics", {
   currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(), // em kg
   yieldEstimate: decimal("yield_estimate", { precision: 10, scale: 4 }), // rendimento calculado em m/kg
   supplierId: integer("supplier_id").references(() => suppliers.id),
-  imageUrl: varchar("image_url", { length: 500 }),
+  imageUrl: text("image_url"),
   status: varchar("status", { length: 50 }).default("available"), // available, low_stock
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),

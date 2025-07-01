@@ -158,7 +158,7 @@ export default function FabricManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {fabricsArray.map((fabric: Fabric) => (
-              <Card key={fabric.id} className="hover:shadow-lg transition-shadow overflow-hidden bg-white rounded-xl border border-gray-200">
+              <Card key={fabric.id} className="hover:shadow-lg transition-shadow overflow-hidden bg-white rounded-xl border border-gray-200 cursor-pointer" onClick={() => handleEditFabric(fabric)}>
                 {/* Fabric Image */}
                 <div className="h-40 bg-gradient-to-br from-green-100 to-green-200 relative rounded-t-xl overflow-hidden">
                   {fabric.imageUrl && fabric.imageUrl.length > 0 ? (
@@ -227,13 +227,7 @@ export default function FabricManagement() {
                     </span>
                   </div>
 
-                  <div className="flex space-x-2">
-                    <Button size="sm" variant="outline" className="text-xs flex-1" onClick={(e) => { e.stopPropagation(); handleEditFabric(fabric); }}>
-                      ✏️ Editar
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs flex-1" onClick={(e) => { e.stopPropagation(); /* Handle stock update */ }}>
-                      📊 Atualizar Estoque
-                    </Button>
+                  <div className="flex justify-center">
                     <Button size="sm" variant="outline" className="text-xs text-red-600" onClick={(e) => { e.stopPropagation(); handleDeleteFabric(fabric); }}>
                       🗑️ Excluir
                     </Button>
