@@ -132,6 +132,7 @@ The system provides an integrated solution for small to medium-sized clothing ma
 
 Changelog:
 - July 01, 2025. Initial setup
+- July 01, 2025. Fixed fabric image upload system - removed 500 character limit from code and database, images now display correctly in fabric cards
 
 ## User Preferences
 
