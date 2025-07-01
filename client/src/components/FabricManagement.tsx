@@ -158,9 +158,9 @@ export default function FabricManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {fabricsArray.map((fabric: Fabric) => (
-              <Card key={fabric.id} className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden" onClick={() => handleEditFabric(fabric)}>
+              <Card key={fabric.id} className="hover:shadow-lg transition-shadow overflow-hidden bg-white rounded-xl border border-gray-200">
                 {/* Fabric Image */}
-                <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 relative">
+                <div className="h-40 bg-gradient-to-br from-green-100 to-green-200 relative rounded-t-xl overflow-hidden">
                   {fabric.imageUrl ? (
                     <img 
                       src={fabric.imageUrl} 
@@ -168,61 +168,68 @@ export default function FabricManagement() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-                      <Scissors className="h-12 w-12 text-green-400" />
+                    <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 relative">
+                      <div 
+                        className="w-full h-full opacity-50"
+                        style={{
+                          backgroundImage: `radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.8) 1px, transparent 1px),
+                                           radial-gradient(circle at 70% 20%, rgba(34, 197, 94, 0.6) 1px, transparent 1px),
+                                           radial-gradient(circle at 30% 80%, rgba(34, 197, 94, 0.7) 1px, transparent 1px),
+                                           radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.5) 1px, transparent 1px)`,
+                          backgroundSize: '40px 40px, 60px 60px, 50px 50px, 70px 70px'
+                        }}
+                      />
                     </div>
                   )}
-                  <div className="absolute top-2 right-2">
-                    {getStatusBadge(fabric)}
-                  </div>
                 </div>
 
                 {/* Fabric Details */}
                 <CardContent className="p-4">
-                  <h3 className="font-bold text-gray-900 mb-1 text-lg">{fabric.name}</h3>
-                  <p className="text-sm text-blue-600 mb-2">{fabric.type}</p>
+                  <h3 className="font-bold text-gray-900 mb-2 text-xl">{fabric.name}</h3>
+                  
+                  <p className="text-sm text-gray-600 mb-2">{fabric.type}</p>
+                  
                   <p className="text-sm text-gray-600 mb-3">
-                    {fabric.composition || '100% Poliéster'}
+                    {fabric.composition || '91% Poliamida, 9% Elastano'}
                   </p>
-                  <p className="text-sm text-gray-600 mb-3">
+                  
+                  <p className="text-sm text-gray-600 mb-4">
                     {fabric.gramWeight}g/m² • {fabric.usableWidth}cm
                   </p>
                   
-                  <div className="space-y-1 mb-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Preço por kg:</span>
-                      <span className="font-semibold text-blue-600">R$ {parseFloat(fabric.pricePerKg?.toString() || '0').toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Preço por metro:</span>
-                      <span className="font-semibold">R$ {parseFloat(fabric.pricePerMeter?.toString() || '0').toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Rendimento:</span>
-                      <span className="font-semibold">{parseFloat(fabric.yieldEstimate?.toString() || '0').toFixed(2)} m/kg</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Fornecedor:</span>
-                      <span className="font-semibold">RETEC</span>
-                    </div>
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-700">
+                      Preço por kg: <span className="font-semibold text-blue-600">R$ {parseFloat(fabric.pricePerKg?.toString() || '0').toFixed(2)}</span>
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      Preço por metro: <span className="font-semibold text-blue-600">R$ {parseFloat(fabric.pricePerMeter?.toString() || '0').toFixed(3)}</span>
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      Rendimento: <span className="font-semibold">{parseFloat(fabric.yieldEstimate?.toString() || '0').toFixed(2)} m/kg</span>
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      Fornecedor: <span className="font-semibold">RETEC</span>
+                    </p>
                   </div>
 
-                  <div className="text-center mb-3">
+                  <div className="mb-4">
                     <span className={`text-sm font-medium px-3 py-1 rounded-full ${parseFloat(fabric.currentStock.toString()) < 20 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                       {parseFloat(fabric.currentStock.toString()) < 20 ? 'Baixo Estoque' : 'Disponível'}
                     </span>
-                    <p className="text-sm text-gray-600 mt-1">Estoque: {parseFloat(fabric.currentStock.toString()).toFixed(0)}kg</p>
+                    <span className="text-sm text-gray-600 ml-3">
+                      Estoque: {parseFloat(fabric.currentStock.toString()).toFixed(0)}kg
+                    </span>
                   </div>
 
-                  <div className="flex justify-center space-x-2">
-                    <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); handleEditFabric(fabric); }}>
-                      Editar
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="outline" className="text-xs flex-1" onClick={(e) => { e.stopPropagation(); handleEditFabric(fabric); }}>
+                      ✏️ Editar
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); /* Handle stock update */ }}>
-                      Atualizar Estoque
+                    <Button size="sm" variant="outline" className="text-xs flex-1" onClick={(e) => { e.stopPropagation(); /* Handle stock update */ }}>
+                      📊 Atualizar Estoque
                     </Button>
                     <Button size="sm" variant="outline" className="text-xs text-red-600" onClick={(e) => { e.stopPropagation(); handleDeleteFabric(fabric); }}>
-                      Excluir
+                      🗑️ Excluir
                     </Button>
                   </div>
                 </CardContent>
