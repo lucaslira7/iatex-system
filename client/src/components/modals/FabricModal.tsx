@@ -174,7 +174,7 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
       currentStock: formData.currentStock,
       yieldEstimate: calculatedValues.yieldEstimate.toString(),
       supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
-      imageUrl: formData.imageUrl && formData.imageUrl.trim() ? formData.imageUrl.trim().substring(0, 500) : null,
+      imageUrl: formData.imageUrl && formData.imageUrl.trim() ? formData.imageUrl.trim() : null,
     };
 
     // Debug log
