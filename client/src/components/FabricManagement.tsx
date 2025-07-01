@@ -161,11 +161,17 @@ export default function FabricManagement() {
               <Card key={fabric.id} className="hover:shadow-lg transition-shadow overflow-hidden bg-white rounded-xl border border-gray-200">
                 {/* Fabric Image */}
                 <div className="h-40 bg-gradient-to-br from-green-100 to-green-200 relative rounded-t-xl overflow-hidden">
-                  {fabric.imageUrl ? (
+                  {fabric.imageUrl && fabric.imageUrl.length > 0 ? (
                     <img 
                       src={fabric.imageUrl} 
                       alt={fabric.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.log('Image failed to load:', fabric.imageUrl);
+                      }}
+                      onLoad={(e) => {
+                        console.log('Image loaded successfully for:', fabric.name);
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 relative">
