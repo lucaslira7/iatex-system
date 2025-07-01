@@ -119,6 +119,7 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
       onClose();
     },
     onError: (error) => {
+      console.error("Fabric save error:", error);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Não autorizado",
@@ -132,7 +133,7 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
       }
       toast({
         title: "Erro",
-        description: `Falha ao ${isCreating ? 'criar' : 'atualizar'} tecido`,
+        description: error.message || `Falha ao ${isCreating ? 'criar' : 'atualizar'} tecido`,
         variant: "destructive",
       });
     },
