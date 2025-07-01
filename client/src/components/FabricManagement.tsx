@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Scissors, AlertTriangle, DollarSign, Plus } from "lucide-react";
+import { Scissors, Plus } from "lucide-react";
 import FabricModal from "./modals/FabricModal";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -17,7 +17,7 @@ export default function FabricManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: fabrics = [], isLoading } = useQuery({
+  const { data: fabrics = [], isLoading } = useQuery<Fabric[]>({
     queryKey: ["/api/fabrics"],
   });
 
@@ -73,9 +73,9 @@ export default function FabricManagement() {
   const getStatusBadge = (fabric: Fabric) => {
     const stock = parseFloat(fabric.currentStock.toString());
     if (stock < 20) {
-      return <Badge variant="destructive" className="fabric-status-badge fabric-status-low-stock">Baixo Estoque</Badge>;
+      return <Badge variant="destructive" className="text-xs">Baixo Estoque</Badge>;
     }
-    return <Badge variant="default" className="fabric-status-badge fabric-status-available bg-green-500">Disponível</Badge>;
+    return <Badge variant="default" className="bg-green-500 text-xs">Disponível</Badge>;
   };
 
   if (isLoading) {
@@ -94,9 +94,10 @@ export default function FabricManagement() {
     );
   }
 
-  const totalFabrics = fabrics.length;
-  const lowStockFabrics = fabrics.filter((f: Fabric) => parseFloat(f.currentStock.toString()) < 20).length;
-  const totalStockValue = fabrics.reduce((sum: number, fabric: Fabric) => {
+  const fabricsArray = fabrics as Fabric[];
+  const totalFabrics = fabricsArray.length;
+  const lowStockFabrics = fabricsArray.filter((f: Fabric) => parseFloat(f.currentStock.toString()) < 20).length;
+  const totalStockValue = fabricsArray.reduce((sum: number, fabric: Fabric) => {
     const stock = parseFloat(fabric.currentStock.toString());
     const pricePerKg = parseFloat(fabric.pricePerKg?.toString() || '0');
     return sum + (stock * pricePerKg);
@@ -111,75 +112,55 @@ export default function FabricManagement() {
             <h1 className="text-2xl font-bold text-gray-900">Tecidos</h1>
             <p className="text-sm text-gray-500 mt-1">Gerenciamento de estoque de tecidos</p>
           </div>
-          <Button onClick={handleNewFabric} className="bg-primary hover:bg-primary/90">
+          <Button onClick={handleNewFabric} className="bg-blue-600 hover:bg-blue-700 text-white">
             <Plus className="mr-2 h-4 w-4" />
             Novo Tecido
           </Button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="kpi-card">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="kpi-icon bg-blue-100 mr-4">
-                  <Scissors className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total de Tecidos</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalFabrics}</p>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-6 text-center">
+              <p className="text-sm font-medium text-green-700 mb-2">Total de Tecidos</p>
+              <p className="text-4xl font-bold text-green-800">{totalFabrics}</p>
             </CardContent>
           </Card>
 
-          <Card className="kpi-card">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="kpi-icon bg-red-100 mr-4">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Baixo Estoque</p>
-                  <p className="text-2xl font-bold text-red-600">{lowStockFabrics}</p>
-                </div>
-              </div>
+          <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+            <CardContent className="p-6 text-center">
+              <p className="text-sm font-medium text-yellow-700 mb-2">Baixo Estoque</p>
+              <p className="text-4xl font-bold text-yellow-800">{lowStockFabrics}</p>
             </CardContent>
           </Card>
 
-          <Card className="kpi-card">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="kpi-icon bg-green-100 mr-4">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Valor em Estoque</p>
-                  <p className="text-2xl font-bold text-gray-900">R$ {(totalStockValue / 1000).toFixed(1)}K</p>
-                </div>
-              </div>
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+            <CardContent className="p-6 text-center">
+              <p className="text-sm font-medium text-red-700 mb-2">Valor Total em Estoque</p>
+              <p className="text-2xl font-bold text-red-800">R$ {totalStockValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Fabric Cards Grid */}
-        {fabrics.length === 0 ? (
+        {fabricsArray.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="mx-auto max-w-sm">
               <Scissors className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum tecido cadastrado</h3>
               <p className="text-gray-500 mb-6">Comece cadastrando seu primeiro tecido para gerenciar o estoque.</p>
-              <Button onClick={handleNewFabric} className="bg-primary hover:bg-primary/90">
+              <Button onClick={handleNewFabric} className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Primeiro Tecido
               </Button>
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {fabrics.map((fabric: Fabric) => (
-              <Card key={fabric.id} className="fabric-card" onClick={() => handleEditFabric(fabric)}>
-                <div className="fabric-card-image">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fabricsArray.map((fabric: Fabric) => (
+              <Card key={fabric.id} className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden" onClick={() => handleEditFabric(fabric)}>
+                {/* Fabric Image */}
+                <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 relative">
                   {fabric.imageUrl ? (
                     <img 
                       src={fabric.imageUrl} 
@@ -187,30 +168,62 @@ export default function FabricManagement() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                      <Scissors className="h-12 w-12 text-blue-400" />
+                    <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                      <Scissors className="h-12 w-12 text-green-400" />
                     </div>
                   )}
                   <div className="absolute top-2 right-2">
                     {getStatusBadge(fabric)}
                   </div>
                 </div>
+
+                {/* Fabric Details */}
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-1">{fabric.name}</h3>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {fabric.type} • {fabric.gramWeight}g/m²
+                  <h3 className="font-bold text-gray-900 mb-1 text-lg">{fabric.name}</h3>
+                  <p className="text-sm text-blue-600 mb-2">{fabric.type}</p>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {fabric.composition || '100% Poliéster'}
                   </p>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-lg font-bold text-gray-900">
-                      R$ {parseFloat(fabric.pricePerKg?.toString() || '0').toFixed(2)}/kg
-                    </span>
-                    <span className={`text-sm ${parseFloat(fabric.currentStock.toString()) < 20 ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                      {parseFloat(fabric.currentStock.toString()).toFixed(1)}kg em estoque
-                    </span>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {fabric.gramWeight}g/m² • {fabric.usableWidth}cm
+                  </p>
+                  
+                  <div className="space-y-1 mb-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Preço por kg:</span>
+                      <span className="font-semibold text-blue-600">R$ {parseFloat(fabric.pricePerKg?.toString() || '0').toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Preço por metro:</span>
+                      <span className="font-semibold">R$ {parseFloat(fabric.pricePerMeter?.toString() || '0').toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Rendimento:</span>
+                      <span className="font-semibold">{parseFloat(fabric.yieldEstimate?.toString() || '0').toFixed(2)} m/kg</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Fornecedor:</span>
+                      <span className="font-semibold">RETEC</span>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <p>Preço/metro: R$ {parseFloat(fabric.pricePerMeter?.toString() || '0').toFixed(3)}</p>
-                    <p>Rendimento: {parseFloat(fabric.yieldEstimate?.toString() || '0').toFixed(2)} m/kg</p>
+
+                  <div className="text-center mb-3">
+                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${parseFloat(fabric.currentStock.toString()) < 20 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      {parseFloat(fabric.currentStock.toString()) < 20 ? 'Baixo Estoque' : 'Disponível'}
+                    </span>
+                    <p className="text-sm text-gray-600 mt-1">Estoque: {parseFloat(fabric.currentStock.toString()).toFixed(0)}kg</p>
+                  </div>
+
+                  <div className="flex justify-center space-x-2">
+                    <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); handleEditFabric(fabric); }}>
+                      Editar
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); /* Handle stock update */ }}>
+                      Atualizar Estoque
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs text-red-600" onClick={(e) => { e.stopPropagation(); handleDeleteFabric(fabric); }}>
+                      Excluir
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
