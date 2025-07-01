@@ -52,7 +52,7 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
       case 1:
         return formData.garmentType && formData.modelName && formData.reference;
       case 2:
-        return formData.fabricId && formData.fabricConsumption > 0;
+        return formData.fabricId;
       case 3:
         return formData.sizes.length > 0;
       default:

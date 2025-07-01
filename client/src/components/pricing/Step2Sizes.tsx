@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Minus, Users, Package, Scale } from 'lucide-react';
+import { Plus, Minus, Users, Package, Scale, Calculator } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 
@@ -72,6 +72,35 @@ export default function Step2Sizes() {
     }
     
     updateFormData('sizes', updatedSizes);
+    
+    // Calcular consumo automaticamente após atualizar tamanhos
+    calculateAndUpdateConsumption(updatedSizes);
+  };
+
+  const calculateAndUpdateConsumption = (sizes: typeof formData.sizes) => {
+    if (!selectedFabric || !selectedFabric.gramWeight || sizes.length === 0) {
+      updateFormData('fabricConsumption', 0);
+      return;
+    }
+
+    // Calcular peso médio ponderado
+    const totalQuantity = sizes.reduce((sum, size) => sum + size.quantity, 0);
+    const totalWeight = sizes.reduce((sum, size) => sum + (size.quantity * size.weight), 0);
+    
+    if (totalQuantity === 0) {
+      updateFormData('fabricConsumption', 0);
+      return;
+    }
+
+    const averageWeight = totalWeight / totalQuantity; // peso médio em gramas
+    const fabricGramWeight = selectedFabric.gramWeight; // g/m²
+    const usableWidth = (selectedFabric.usableWidth || 150) / 100; // converter cm para metros
+
+    // Cálculo: peso da peça (g) ÷ (gramatura do tecido (g/m²) × largura útil (m))
+    // Resultado em metros lineares necessários por peça
+    const consumptionPerPiece = averageWeight / (fabricGramWeight * usableWidth);
+    
+    updateFormData('fabricConsumption', Math.max(0, consumptionPerPiece));
   };
 
   const getSizeData = (size: string) => {
@@ -306,6 +335,53 @@ export default function Step2Sizes() {
             <div className="mt-3 pt-3 border-t border-green-200">
               <div className="text-sm text-green-700">
                 <strong>Distribuição:</strong> {formData.sizes.filter(s => s.quantity > 0).map(s => `${s.size}(${s.quantity}x${s.weight}g)`).join(', ')}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cálculo Automático de Consumo */}
+      {selectedFabric && formData.sizes.length > 0 && getTotalQuantity() > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <h4 className="font-medium text-blue-900 mb-3 flex items-center">
+              <Calculator className="h-4 w-4 mr-2" />
+              Consumo de Tecido Calculado Automaticamente
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+              <div>
+                <span className="text-blue-600 block">Peso Médio</span>
+                <div className="font-semibold text-lg text-blue-900">
+                  {getAverageWeight().toFixed(0)}g
+                </div>
+              </div>
+              <div>
+                <span className="text-blue-600 block">Gramatura</span>
+                <div className="font-semibold text-lg text-blue-900">
+                  {selectedFabric.gramWeight}g/m²
+                </div>
+              </div>
+              <div>
+                <span className="text-blue-600 block">Largura Útil</span>
+                <div className="font-semibold text-lg text-blue-900">
+                  {selectedFabric.usableWidth}cm
+                </div>
+              </div>
+              <div>
+                <span className="text-blue-600 block">Consumo Base</span>
+                <div className="font-bold text-xl text-green-700">
+                  {formData.fabricConsumption.toFixed(3)}m
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <div className="text-xs text-blue-700">
+                <strong>Fórmula:</strong> Peso médio ({getAverageWeight().toFixed(0)}g) ÷ (Gramatura × Largura útil) = {formData.fabricConsumption.toFixed(3)}m por peça
+              </div>
+              <div className="text-xs text-blue-700 mt-1">
+                <strong>Próxima etapa:</strong> Este consumo será usado para calcular o custo total do tecido com desperdício de {formData.wastePercentage}%
               </div>
             </div>
           </CardContent>
