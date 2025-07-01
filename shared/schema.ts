@@ -52,13 +52,13 @@ export const fabrics = pgTable("fabrics", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   type: varchar("type", { length: 100 }).notNull(), // Suplex, Dry Fit, Cotton, etc.
-  color: varchar("color", { length: 100 }).notNull(),
   composition: text("composition"),
   gramWeight: integer("gram_weight").notNull(), // gramatura em g/m²
   usableWidth: integer("usable_width").notNull(), // largura útil em cm
-  pricePerMeter: decimal("price_per_meter", { precision: 10, scale: 2 }).notNull(),
-  currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(), // em metros
-  yieldPercentage: integer("yield_percentage").default(85), // rendimento médio
+  pricePerKg: decimal("price_per_kg", { precision: 10, scale: 2 }).notNull(), // preço principal por kg
+  pricePerMeter: decimal("price_per_meter", { precision: 10, scale: 2 }), // calculado automaticamente
+  currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(), // em kg
+  yieldEstimate: decimal("yield_estimate", { precision: 10, scale: 4 }), // rendimento calculado em m/kg
   supplierId: integer("supplier_id").references(() => suppliers.id),
   imageUrl: varchar("image_url", { length: 500 }),
   status: varchar("status", { length: 50 }).default("available"), // available, low_stock

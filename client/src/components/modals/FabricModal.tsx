@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Scissors, Upload, Save, Trash2 } from "lucide-react";
+import { Scissors, Upload, Save, Trash2, Calculator } from "lucide-react";
 import type { Fabric, Supplier } from "@shared/schema";
 
 interface FabricModalProps {
@@ -24,15 +24,18 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
   const [formData, setFormData] = useState({
     name: '',
     type: '',
-    color: '',
     composition: '',
     gramWeight: '',
     usableWidth: '',
-    pricePerMeter: '',
+    pricePerKg: '',
     currentStock: '',
-    yieldPercentage: '85',
     supplierId: '',
     imageUrl: '',
+  });
+
+  const [calculatedValues, setCalculatedValues] = useState({
+    yieldEstimate: 0,
+    pricePerMeter: 0,
   });
 
   const { toast } = useToast();
@@ -44,18 +47,44 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
     enabled: isOpen,
   });
 
+  // Função para calcular rendimento e preço por metro automaticamente
+  const calculateValues = (gramWeight: number, usableWidth: number, pricePerKg: number) => {
+    if (gramWeight > 0 && usableWidth > 0) {
+      // Rendimento = (largura útil em metros) / (gramatura em kg por m²)
+      // gramatura em g/m² / 1000 = kg/m²
+      const yieldEstimate = (usableWidth / 100) / (gramWeight / 1000); // m/kg
+      
+      // Preço por metro = preço por kg / rendimento
+      const pricePerMeter = pricePerKg > 0 ? pricePerKg / yieldEstimate : 0;
+      
+      setCalculatedValues({
+        yieldEstimate: parseFloat(yieldEstimate.toFixed(4)),
+        pricePerMeter: parseFloat(pricePerMeter.toFixed(3))
+      });
+    } else {
+      setCalculatedValues({ yieldEstimate: 0, pricePerMeter: 0 });
+    }
+  };
+
+  // Recalcular quando gramatura, largura ou preço por kg mudarem
+  useEffect(() => {
+    const gramWeight = parseFloat(formData.gramWeight);
+    const usableWidth = parseFloat(formData.usableWidth);
+    const pricePerKg = parseFloat(formData.pricePerKg);
+    
+    calculateValues(gramWeight, usableWidth, pricePerKg);
+  }, [formData.gramWeight, formData.usableWidth, formData.pricePerKg]);
+
   useEffect(() => {
     if (fabric) {
       setFormData({
         name: fabric.name || '',
         type: fabric.type || '',
-        color: fabric.color || '',
         composition: fabric.composition || '',
         gramWeight: fabric.gramWeight?.toString() || '',
         usableWidth: fabric.usableWidth?.toString() || '',
-        pricePerMeter: fabric.pricePerMeter?.toString() || '',
+        pricePerKg: fabric.pricePerKg?.toString() || '',
         currentStock: fabric.currentStock?.toString() || '',
-        yieldPercentage: fabric.yieldPercentage?.toString() || '85',
         supplierId: fabric.supplierId?.toString() || '',
         imageUrl: fabric.imageUrl || '',
       });
@@ -63,13 +92,11 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
       setFormData({
         name: '',
         type: '',
-        color: '',
         composition: '',
         gramWeight: '',
         usableWidth: '',
-        pricePerMeter: '',
+        pricePerKg: '',
         currentStock: '',
-        yieldPercentage: '85',
         supplierId: '',
         imageUrl: '',
       });
@@ -115,8 +142,8 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
     e.preventDefault();
     
     // Validate required fields
-    if (!formData.name || !formData.type || !formData.color || !formData.gramWeight || 
-        !formData.usableWidth || !formData.pricePerMeter || !formData.currentStock) {
+    if (!formData.name || !formData.type || !formData.gramWeight || 
+        !formData.usableWidth || !formData.pricePerKg || !formData.currentStock) {
       toast({
         title: "Erro de validação",
         description: "Por favor, preencha todos os campos obrigatórios",
@@ -128,16 +155,15 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
     const submitData = {
       name: formData.name,
       type: formData.type,
-      color: formData.color,
       composition: formData.composition,
       gramWeight: parseInt(formData.gramWeight),
       usableWidth: parseInt(formData.usableWidth),
-      pricePerMeter: parseFloat(formData.pricePerMeter),
+      pricePerKg: parseFloat(formData.pricePerKg),
+      pricePerMeter: calculatedValues.pricePerMeter,
       currentStock: parseFloat(formData.currentStock),
-      yieldPercentage: parseInt(formData.yieldPercentage),
+      yieldEstimate: calculatedValues.yieldEstimate,
       supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
       imageUrl: formData.imageUrl,
-      status: parseFloat(formData.currentStock) < 20 ? 'low_stock' : 'available',
     };
 
     saveFabricMutation.mutate(submitData);
@@ -147,235 +173,226 @@ export default function FabricModal({ isOpen, onClose, fabric, isCreating, onDel
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const calculatePricePerKg = () => {
-    if (formData.pricePerMeter && formData.gramWeight && formData.usableWidth) {
-      const pricePerMeter = parseFloat(formData.pricePerMeter);
-      const gramWeight = parseInt(formData.gramWeight);
-      const usableWidth = parseInt(formData.usableWidth);
-      
-      // Price per kg = (price per meter * 10000) / (gram weight * usable width)
-      const pricePerKg = (pricePerMeter * 10000) / (gramWeight * usableWidth);
-      return pricePerKg.toFixed(2);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // For now, we'll just set a placeholder. In a real app, you'd upload to a service
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData(prev => ({ ...prev, imageUrl: event.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
-    return '0.00';
-  };
-
-  const calculateStockValue = () => {
-    if (formData.currentStock && formData.pricePerMeter) {
-      const stock = parseFloat(formData.currentStock);
-      const price = parseFloat(formData.pricePerMeter);
-      return (stock * price).toFixed(2);
-    }
-    return '0.00';
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Scissors className="h-5 w-5 text-blue-600" />
             {isCreating ? 'Novo Tecido' : 'Editar Tecido'}
           </DialogTitle>
+          <DialogDescription>
+            {isCreating ? 'Cadastre um novo tecido no sistema' : 'Edite as informações do tecido'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Image Section */}
-            <div>
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                {formData.imageUrl ? (
-                  <img 
-                    src={formData.imageUrl} 
-                    alt="Tecido"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                    <Scissors className="h-16 w-16 text-blue-400" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">URL da Imagem</Label>
-                <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => handleInputChange('imageUrl', e.target.value)}
-                  placeholder="https://exemplo.com/imagem.jpg"
-                />
-                <Button type="button" variant="outline" className="w-full">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Fazer Upload
-                </Button>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Nome */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Ex: Sport Dry"
+                className="w-full"
+              />
             </div>
 
-            {/* Form Section */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Nome *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="type">Tipo *</Label>
-                  <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Suplex">Suplex</SelectItem>
-                      <SelectItem value="Dry Fit">Dry Fit</SelectItem>
-                      <SelectItem value="Cotton">Cotton</SelectItem>
-                      <SelectItem value="Lycra">Lycra</SelectItem>
-                      <SelectItem value="Malha">Malha</SelectItem>
-                      <SelectItem value="Polyester">Polyester</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="color">Cor *</Label>
-                  <Input
-                    id="color"
-                    value={formData.color}
-                    onChange={(e) => handleInputChange('color', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="gramWeight">Gramatura (g/m²) *</Label>
-                  <Input
-                    id="gramWeight"
-                    type="number"
-                    value={formData.gramWeight}
-                    onChange={(e) => handleInputChange('gramWeight', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="usableWidth">Largura Útil (cm) *</Label>
-                  <Input
-                    id="usableWidth"
-                    type="number"
-                    value={formData.usableWidth}
-                    onChange={(e) => handleInputChange('usableWidth', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pricePerMeter">Preço por Metro (R$) *</Label>
-                  <Input
-                    id="pricePerMeter"
-                    type="number"
-                    step="0.01"
-                    value={formData.pricePerMeter}
-                    onChange={(e) => handleInputChange('pricePerMeter', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="supplierId">Fornecedor</Label>
-                <Select value={formData.supplierId} onValueChange={(value) => handleInputChange('supplierId', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o fornecedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((supplier: Supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="currentStock">Estoque Atual (metros) *</Label>
-                  <Input
-                    id="currentStock"
-                    type="number"
-                    step="0.01"
-                    value={formData.currentStock}
-                    onChange={(e) => handleInputChange('currentStock', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="yieldPercentage">Rendimento (%)</Label>
-                  <Input
-                    id="yieldPercentage"
-                    type="number"
-                    value={formData.yieldPercentage}
-                    onChange={(e) => handleInputChange('yieldPercentage', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="composition">Composição</Label>
-                <Textarea
-                  id="composition"
-                  rows={3}
-                  value={formData.composition}
-                  onChange={(e) => handleInputChange('composition', e.target.value)}
-                  placeholder="Ex: 92% Poliamida, 8% Elastano"
-                />
-              </div>
-
-              {/* Calculated Fields */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <h4 className="font-medium text-gray-900">Campos Calculados</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Preço por kg:</span>
-                    <span className="font-medium text-gray-900 ml-2">R$ {calculatePricePerKg()}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Valor em estoque:</span>
-                    <span className="font-medium text-gray-900 ml-2">R$ {calculateStockValue()}</span>
-                  </div>
-                </div>
-              </div>
+            {/* Tipo */}
+            <div className="space-y-2">
+              <Label htmlFor="type">Tipo *</Label>
+              <Input
+                id="type"
+                value={formData.type}
+                onChange={(e) => handleInputChange('type', e.target.value)}
+                placeholder="Ex: Poliamida"
+                className="w-full"
+              />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-6 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            {!isCreating && fabric && onDelete && (
-              <Button 
-                type="button" 
-                variant="destructive" 
-                onClick={() => onDelete(fabric)}
+          {/* Composição */}
+          <div className="space-y-2">
+            <Label htmlFor="composition">Composição</Label>
+            <Textarea
+              id="composition"
+              value={formData.composition}
+              onChange={(e) => handleInputChange('composition', e.target.value)}
+              placeholder="Ex: 91% Poliamida, 9% Elastano"
+              className="w-full"
+              rows={2}
+            />
+          </div>
+
+          {/* Fornecedor */}
+          <div className="space-y-2">
+            <Label htmlFor="supplier">Fornecedor</Label>
+            <Select value={formData.supplierId} onValueChange={(value) => handleInputChange('supplierId', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um fornecedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {(suppliers as Supplier[]).map((supplier: Supplier) => (
+                  <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Gramatura */}
+            <div className="space-y-2">
+              <Label htmlFor="gramWeight">Gramatura (g/m²) *</Label>
+              <Input
+                id="gramWeight"
+                type="number"
+                value={formData.gramWeight}
+                onChange={(e) => handleInputChange('gramWeight', e.target.value)}
+                placeholder="150"
+                className="w-full"
+              />
+            </div>
+
+            {/* Largura Útil */}
+            <div className="space-y-2">
+              <Label htmlFor="usableWidth">Largura útil (cm) *</Label>
+              <Input
+                id="usableWidth"
+                type="number"
+                value={formData.usableWidth}
+                onChange={(e) => handleInputChange('usableWidth', e.target.value)}
+                placeholder="165"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Preço por Kg */}
+            <div className="space-y-2">
+              <Label htmlFor="pricePerKg">Preço por kg *</Label>
+              <Input
+                id="pricePerKg"
+                type="number"
+                step="0.01"
+                value={formData.pricePerKg}
+                onChange={(e) => handleInputChange('pricePerKg', e.target.value)}
+                placeholder="70"
+                className="w-full"
+              />
+            </div>
+
+            {/* Estoque Atual */}
+            <div className="space-y-2">
+              <Label htmlFor="currentStock">Estoque atual (kg) *</Label>
+              <Input
+                id="currentStock"
+                type="number"
+                step="0.1"
+                value={formData.currentStock}
+                onChange={(e) => handleInputChange('currentStock', e.target.value)}
+                placeholder="100"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          {/* Upload de Imagem */}
+          <div className="space-y-2">
+            <Label htmlFor="image">Imagem</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <label
+                htmlFor="image"
+                className="cursor-pointer flex flex-col items-center justify-center space-y-2"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir
+                <Upload className="h-8 w-8 text-gray-400" />
+                <span className="text-sm text-gray-500">
+                  {formData.imageUrl ? 'Clique para alterar a imagem' : 'Escolher arquivo Nenhum arquivo escolhido'}
+                </span>
+              </label>
+              {formData.imageUrl && (
+                <div className="mt-2">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="h-20 w-20 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Valores Calculados */}
+          {(calculatedValues.yieldEstimate > 0 || calculatedValues.pricePerMeter > 0) && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Calculator className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Cálculos Automáticos</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Rendimento estimado (m/kg):</span>
+                  <div className="font-medium text-gray-900">{calculatedValues.yieldEstimate}</div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Preço por metro (calculado):</span>
+                  <div className="font-medium text-gray-900">R$ {calculatedValues.pricePerMeter.toFixed(3)}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-between pt-4">
+            <div>
+              {!isCreating && fabric && onDelete && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => onDelete(fabric)}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
               </Button>
-            )}
-            <Button 
-              type="submit" 
-              disabled={saveFabricMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {saveFabricMutation.isPending ? 'Salvando...' : 'Salvar'}
-            </Button>
+              <Button 
+                type="submit" 
+                disabled={saveFabricMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {saveFabricMutation.isPending ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

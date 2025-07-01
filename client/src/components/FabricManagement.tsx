@@ -96,9 +96,11 @@ export default function FabricManagement() {
 
   const totalFabrics = fabrics.length;
   const lowStockFabrics = fabrics.filter((f: Fabric) => parseFloat(f.currentStock.toString()) < 20).length;
-  const totalStockValue = fabrics.reduce((sum: number, fabric: Fabric) => 
-    sum + (parseFloat(fabric.currentStock.toString()) * parseFloat(fabric.pricePerMeter.toString())), 0
-  );
+  const totalStockValue = fabrics.reduce((sum: number, fabric: Fabric) => {
+    const stock = parseFloat(fabric.currentStock.toString());
+    const pricePerKg = parseFloat(fabric.pricePerKg?.toString() || '0');
+    return sum + (stock * pricePerKg);
+  }, 0);
 
   return (
     <>
@@ -200,15 +202,15 @@ export default function FabricManagement() {
                   </p>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-lg font-bold text-gray-900">
-                      R$ {parseFloat(fabric.pricePerMeter.toString()).toFixed(2)}/m
+                      R$ {parseFloat(fabric.pricePerKg?.toString() || '0').toFixed(2)}/kg
                     </span>
                     <span className={`text-sm ${parseFloat(fabric.currentStock.toString()) < 20 ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                      {parseFloat(fabric.currentStock.toString()).toFixed(0)}m em estoque
+                      {parseFloat(fabric.currentStock.toString()).toFixed(1)}kg em estoque
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    <p>Rendimento: {fabric.yieldPercentage}%</p>
-                    <p>Cor: {fabric.color}</p>
+                    <p>Preço/metro: R$ {parseFloat(fabric.pricePerMeter?.toString() || '0').toFixed(3)}</p>
+                    <p>Rendimento: {parseFloat(fabric.yieldEstimate?.toString() || '0').toFixed(2)} m/kg</p>
                   </div>
                 </CardContent>
               </Card>
