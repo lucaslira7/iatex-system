@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Download, Save, Calculator, TrendingUp } from 'lucide-react';
+import { Download, Save, Calculator, TrendingUp, Eye } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 
@@ -13,6 +13,7 @@ export default function Step8Summary() {
   const { formData, updateFormData } = usePricing();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   // Fetch fabric details
   const { data: fabrics = [] } = useQuery<Fabric[]>({
@@ -64,6 +65,10 @@ export default function Step8Summary() {
 
   const handleProfitMarginChange = (margin: number) => {
     updateFormData('profitMargin', Math.max(0, Math.min(100, margin)));
+  };
+
+  const handlePreviewPDF = () => {
+    setShowPDFPreview(true);
   };
 
   const handleExport = async () => {
@@ -238,12 +243,20 @@ export default function Step8Summary() {
       </Card>
 
       {/* Ações */}
-      <div className="flex justify-between space-x-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Button
+          variant="outline"
+          onClick={handlePreviewPDF}
+          className="w-full"
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          Visualizar PDF
+        </Button>
         <Button
           variant="outline"
           onClick={handleExport}
           disabled={isExporting}
-          className="flex-1"
+          className="w-full"
         >
           <Download className="h-4 w-4 mr-2" />
           {isExporting ? 'Exportando...' : 'Exportar PDF'}
@@ -251,10 +264,10 @@ export default function Step8Summary() {
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="flex-1 bg-primary hover:bg-primary/90"
+          className="w-full bg-primary hover:bg-primary/90"
         >
           <Save className="h-4 w-4 mr-2" />
-          {isSaving ? 'Salvando...' : 'Salvar Precificação'}
+          {isSaving ? 'Salvando...' : 'Finalizar Precificação'}
         </Button>
       </div>
     </div>

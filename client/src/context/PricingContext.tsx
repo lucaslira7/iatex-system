@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface PricingFormData {
+  // Etapa 0 - Modalidade de Precificação
+  pricingMode: 'single' | 'multiple'; // single = peça única, multiple = múltiplas peças
+  
   // Etapa 1 - Tipo da Peça
   garmentType: string;
   modelName: string;
@@ -78,6 +81,7 @@ interface PricingContextType {
 }
 
 const defaultFormData: PricingFormData = {
+  pricingMode: 'single',
   garmentType: '',
   modelName: '',
   reference: '',
@@ -100,7 +104,7 @@ const PricingContext = createContext<PricingContextType | undefined>(undefined);
 
 export function PricingProvider({ children }: { children: ReactNode }) {
   const [formData, setFormData] = useState<PricingFormData>(defaultFormData);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
 
   const updateFormData = (field: string, value: any) => {
     setFormData(prev => {

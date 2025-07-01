@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, X } from "lucide-react";
 import { PricingProvider, usePricing } from "@/context/PricingContext";
+import Step0PricingMode from "@/components/pricing/Step0PricingMode";
 import Step1GarmentType from "@/components/pricing/Step1GarmentType";
 import Step2Sizes from "@/components/pricing/Step2Sizes";
 import Step3Fabric from "@/components/pricing/Step3Fabric";
@@ -25,18 +26,19 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
   };
 
   const handleNext = () => {
-    if (currentStep < 8) {
+    if (currentStep < 9) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const steps = [
+    { number: 0, title: 'Modalidade', active: currentStep === 0, completed: currentStep > 0 },
     { number: 1, title: 'Tipo da Peça', active: currentStep === 1, completed: currentStep > 1 },
     { number: 2, title: 'Tecido', active: currentStep === 2, completed: currentStep > 2 },
     { number: 3, title: 'Tamanhos', active: currentStep === 3, completed: currentStep > 3 },
@@ -49,6 +51,8 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
 
   const canGoNext = () => {
     switch (currentStep) {
+      case 0:
+        return formData.pricingMode;
       case 1:
         return formData.garmentType && formData.modelName && formData.reference;
       case 2:
@@ -62,6 +66,8 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
 
   const renderStepContent = () => {
     switch (currentStep) {
+      case 0:
+        return <Step0PricingMode />;
       case 1:
         return <Step1GarmentType />;
       case 2:
@@ -79,7 +85,7 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
       case 8:
         return <Step8Summary />;
       default:
-        return <Step1GarmentType />;
+        return <Step0PricingMode />;
     }
   };
 
@@ -91,7 +97,7 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
             <div>
               <DialogTitle>Calculadora de Precificação</DialogTitle>
               <DialogDescription>
-                {formData.modelName && `${formData.modelName} - Etapa ${currentStep} de 8`}
+                {formData.modelName ? `${formData.modelName} - Etapa ${currentStep} de 8` : `Etapa ${currentStep} de 8`}
               </DialogDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={handleClose}>
@@ -104,20 +110,23 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
           {steps.map((step, index) => (
             <div key={step.number} className="flex items-center min-w-0">
-              <div className="flex items-center">
+              <div 
+                className="flex items-center cursor-pointer hover:opacity-80"
+                onClick={() => setCurrentStep(step.number)}
+              >
                 <div 
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors
                     ${step.active 
                       ? 'bg-blue-600 text-white' 
                       : step.completed 
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-600'
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                     }`}
                 >
                   {step.completed ? '✓' : step.number}
                 </div>
-                <span className={`ml-2 text-xs font-medium whitespace-nowrap
-                  ${step.active ? 'text-blue-600' : step.completed ? 'text-green-600' : 'text-gray-500'}`}>
+                <span className={`ml-2 text-xs font-medium whitespace-nowrap transition-colors
+                  ${step.active ? 'text-blue-600' : step.completed ? 'text-green-600 hover:text-green-700' : 'text-gray-500 hover:text-gray-700'}`}>
                   {step.title}
                 </span>
               </div>

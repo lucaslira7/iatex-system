@@ -3,8 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, X, Scale, Calculator } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Plus, X, Scale, Calculator, Info } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 
@@ -20,6 +21,19 @@ export default function Step2Sizes() {
   });
 
   const selectedFabric = fabrics.find(f => f.id === formData.fabricId);
+
+  const calculateFabricCost = (weight: number) => {
+    if (!selectedFabric || !weight) return 'R$ 0,00';
+    
+    const pricePerKg = parseFloat(selectedFabric.pricePerKg?.toString() || '0');
+    const wasteMultiplier = 1 + (formData.wastePercentage / 100);
+    const costPerPiece = (weight / 1000) * pricePerKg * wasteMultiplier;
+    
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(costPerPiece);
+  };
 
   const updateSizeWeight = (size: string, weight: number) => {
     const updatedSizes = [...formData.sizes];
@@ -51,215 +65,226 @@ export default function Step2Sizes() {
     return sizeData?.weight || 0;
   };
 
-  const addCustomSize = () => {
-    if (customSize.trim() && !formData.sizes.find(s => s.size === customSize.trim())) {
-      updateSizeWeight(customSize.trim(), 250); // Peso padrão
-      setCustomSize('');
-    }
-  };
-
   const removeSize = (size: string) => {
     const updatedSizes = formData.sizes.filter(s => s.size !== size);
     updateFormData('sizes', updatedSizes);
   };
 
-  const getConfiguredSizes = () => {
-    return formData.sizes.filter(s => s.weight > 0);
+  const addCustomSize = () => {
+    if (customSize.trim() && !formData.sizes.find(s => s.size === customSize.trim())) {
+      updateSizeWeight(customSize.trim(), 0);
+      setCustomSize('');
+    }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Tamanhos e Configurações</h3>
-        <p className="text-sm text-gray-500">
-          Configure o peso de cada tamanho que será produzido. As quantidades serão definidas em cada pedido específico.
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Configuração de Tamanhos
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Configure o peso de cada tamanho para calcular o consumo de tecido.
         </p>
       </div>
 
-      {/* Tecido Selecionado - Info */}
+      {/* Informações do Tecido Selecionado */}
       {selectedFabric && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <h4 className="font-medium text-blue-900 mb-2 flex items-center">
-              <Scale className="h-4 w-4 mr-2" />
+        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center text-blue-900 dark:text-blue-100">
+              <Scale className="w-5 h-5 mr-2" />
               Tecido Utilizado: {selectedFabric.name}
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className="text-blue-600">Tipo:</span>
-                <div className="font-medium">{selectedFabric.type}</div>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">Tipo:</span>
+                <div className="text-blue-900 dark:text-blue-100">{selectedFabric.type}</div>
               </div>
               <div>
-                <span className="text-blue-600">Gramatura:</span>
-                <div className="font-medium">{selectedFabric.gramWeight} g/m²</div>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">Gramatura:</span>
+                <div className="text-blue-900 dark:text-blue-100">
+                  {selectedFabric.gramWeight} g/m²
+                </div>
               </div>
               <div>
-                <span className="text-blue-600">Largura:</span>
-                <div className="font-medium">{selectedFabric.usableWidth} cm</div>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">Largura:</span>
+                <div className="text-blue-900 dark:text-blue-100">
+                  {selectedFabric.usableWidth} cm
+                </div>
               </div>
               <div>
-                <span className="text-blue-600">Desperdício:</span>
-                <div className="font-medium">{formData.wastePercentage}%</div>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">Preço/kg:</span>
+                <div className="text-blue-900 dark:text-blue-100">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(parseFloat(selectedFabric.pricePerKg?.toString() || '0'))}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Configuração de Tamanhos */}
-      <div className="space-y-4">
-        {/* Standard Sizes */}
-        {STANDARD_SIZES.map((size) => {
-          const weight = getSizeWeight(size);
-          const isConfigured = weight > 0;
-          
-          return (
-            <div key={size} className={`border rounded-lg p-4 ${isConfigured ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'}`}>
+      {/* Tamanhos Padrão */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Tamanhos Padrão
+        </h3>
+        <div className="grid gap-4">
+          {STANDARD_SIZES.map((size) => (
+            <Card key={size} className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 text-center">
-                    <span className="font-medium text-lg">{size}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-sm">Peso (g)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="2000"
-                      value={weight || ''}
-                      onChange={(e) => updateSizeWeight(size, parseInt(e.target.value) || 0)}
-                      placeholder="Ex: 250"
-                      className="w-24 h-8"
-                    />
-                    <span className="text-sm text-gray-500">g</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-sm">Margem (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      defaultValue={0}
-                      className="w-20 h-8"
-                    />
+                <div className="flex items-center space-x-4 flex-1">
+                  <Badge variant="outline" className="text-lg px-4 py-2 min-w-[50px] justify-center">
+                    {size}
+                  </Badge>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                    <div>
+                      <Label htmlFor={`weight-${size}`}>Peso (g)</Label>
+                      <Input
+                        id={`weight-${size}`}
+                        type="number"
+                        placeholder="Ex: 250"
+                        value={getSizeWeight(size) || ''}
+                        onChange={(e) => updateSizeWeight(size, parseInt(e.target.value) || 0)}
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Peso da peça pronta em gramas
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label>Custo do Tecido</Label>
+                      <div className="mt-1 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
+                        <span className="text-green-700 dark:text-green-300 font-medium text-lg">
+                          {calculateFabricCost(getSizeWeight(size))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                {isConfigured && (
+                
+                {getSizeWeight(size) > 0 && (
                   <Button
-                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => removeSize(size)}
-                    className="text-red-600 hover:text-red-800"
+                    className="ml-2 text-red-500 hover:text-red-700"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="w-4 h-4" />
                   </Button>
                 )}
               </div>
-              <div className="mt-2 text-xs text-gray-500">
-                Peso da peça pronta em gramas • Margem de lucro específica para este tamanho
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Custom Sizes já configurados */}
-        {formData.sizes
-          .filter(s => !STANDARD_SIZES.includes(s.size))
-          .map((sizeData) => (
-            <div key={sizeData.size} className="border border-green-200 bg-green-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 text-center">
-                    <span className="font-medium text-lg">{sizeData.size}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-sm">Peso (g)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="2000"
-                      value={sizeData.weight}
-                      onChange={(e) => updateSizeWeight(sizeData.size, parseInt(e.target.value) || 0)}
-                      className="w-24 h-8"
-                    />
-                    <span className="text-sm text-gray-500">g</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-sm">Margem (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      defaultValue={0}
-                      className="w-20 h-8"
-                    />
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeSize(sizeData.size)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="mt-2 text-xs text-gray-500">
-                Peso da peça pronta em gramas • Margem de lucro específica para este tamanho
-              </div>
-            </div>
+            </Card>
           ))}
-
-        {/* Adicionar novo tamanho */}
-        <div className="border border-dashed border-gray-300 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <Input
-              value={customSize}
-              onChange={(e) => setCustomSize(e.target.value)}
-              placeholder="Novo tamanho"
-              className="w-32 h-8"
-            />
-            <Button
-              type="button"
-              onClick={addCustomSize}
-              disabled={!customSize.trim()}
-              className="h-8"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Adicionar
-            </Button>
-          </div>
         </div>
       </div>
 
+      {/* Tamanhos Personalizados */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Tamanhos Personalizados
+        </h3>
+        
+        <div className="flex gap-2 mb-4">
+          <Input
+            placeholder="Nome do tamanho personalizado"
+            value={customSize}
+            onChange={(e) => setCustomSize(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addCustomSize()}
+          />
+          <Button onClick={addCustomSize} disabled={!customSize.trim()}>
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar
+          </Button>
+        </div>
+
+        {formData.sizes
+          .filter(s => !STANDARD_SIZES.includes(s.size))
+          .map((sizeData) => (
+            <Card key={sizeData.size} className="p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4 flex-1">
+                  <Badge variant="secondary" className="text-lg px-4 py-2 min-w-[50px] justify-center">
+                    {sizeData.size}
+                  </Badge>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                    <div>
+                      <Label htmlFor={`weight-${sizeData.size}`}>Peso (g)</Label>
+                      <Input
+                        id={`weight-${sizeData.size}`}
+                        type="number"
+                        placeholder="Ex: 250"
+                        value={sizeData.weight || ''}
+                        onChange={(e) => updateSizeWeight(sizeData.size, parseInt(e.target.value) || 0)}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Custo do Tecido</Label>
+                      <div className="mt-1 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
+                        <span className="text-green-700 dark:text-green-300 font-medium text-lg">
+                          {calculateFabricCost(sizeData.weight)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeSize(sizeData.size)}
+                  className="ml-2 text-red-500 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+      </div>
+
       {/* Dicas */}
-      <Card className="bg-amber-50 border-amber-200">
+      <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
         <CardContent className="p-4">
-          <h4 className="font-medium text-amber-900 mb-2">💡 Dicas:</h4>
-          <ul className="text-sm text-amber-800 space-y-1">
-            <li>• <strong>Peso:</strong> Peso da peça pronta em gramas (ex: 250g para uma camisa)</li>
-            <li>• <strong>Margem:</strong> Margem de lucro específica para cada tamanho</li>
-            <li>• <strong>Desperdício:</strong> {formData.wastePercentage}% de desperdício é considerado automaticamente</li>
-            <li>• <strong>Custo do tecido:</strong> Calculado baseado no peso e preço por kg</li>
-          </ul>
+          <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2 flex items-center">
+            <Info className="w-4 h-4 mr-2" />
+            💡 Dicas:
+          </h3>
+          <div className="text-amber-800 dark:text-amber-200 text-sm space-y-1">
+            <div>• <strong>Peso:</strong> Peso da peça pronta em gramas (ex: 250g para uma camisa)</div>
+            <div>• <strong>Desperdício:</strong> {formData.wastePercentage}% de desperdício é considerado automaticamente</div>
+            <div>• <strong>Custo do tecido:</strong> Calculado baseado no peso e preço por kg</div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Resumo dos tamanhos configurados */}
-      {getConfiguredSizes().length > 0 && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <h4 className="font-medium text-green-900 mb-3 flex items-center">
-              <Calculator className="h-4 w-4 mr-2" />
-              Tamanhos Configurados: {getConfiguredSizes().length}
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              {getConfiguredSizes().map((size) => (
-                <div key={size.size} className="text-center">
-                  <div className="font-medium text-green-900">{size.size}</div>
-                  <div className="text-green-700">{size.weight}g</div>
+      {/* Resumo dos Tamanhos Configurados */}
+      {formData.sizes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calculator className="w-5 h-5 mr-2" />
+              Resumo dos Tamanhos Configurados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {formData.sizes.map((size) => (
+                <div key={size.size} className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="font-medium text-lg">{size.size}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{size.weight}g</div>
+                  <div className="text-sm font-medium text-green-600 dark:text-green-400">
+                    {calculateFabricCost(size.weight)}
+                  </div>
                 </div>
               ))}
             </div>
