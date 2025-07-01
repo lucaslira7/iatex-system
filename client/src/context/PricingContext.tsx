@@ -8,15 +8,17 @@ export interface PricingFormData {
   description: string;
   imageUrl: string;
   
-  // Etapa 2 - Tamanhos
+  // Etapa 3 - Tamanhos (agora com peso)
   sizes: {
     size: string;
     quantity: number;
+    weight: number; // peso em gramas por peça deste tamanho
   }[];
   
   // Etapa 3 - Tecido
   fabricId: number | null;
   fabricConsumption: number;
+  wastePercentage: number;
   
   // Etapa 4 - Custos de Criação
   creationCosts: {
@@ -84,6 +86,7 @@ const defaultFormData: PricingFormData = {
   sizes: [],
   fabricId: null,
   fabricConsumption: 0,
+  wastePercentage: 10,
   creationCosts: [],
   supplies: [],
   labor: [],

@@ -116,27 +116,83 @@ export default function Step3Fabric() {
       )}
 
       {/* Consumo de Tecido */}
-      <div>
-        <Label htmlFor="consumption">Consumo de Tecido por Peça (metros) *</Label>
-        <div className="mt-1 relative">
-          <Input
-            id="consumption"
-            type="number"
-            step="0.01"
-            min="0"
-            value={formData.fabricConsumption || ''}
-            onChange={(e) => handleConsumptionChange(parseFloat(e.target.value) || 0)}
-            placeholder="Ex: 0.85"
-            className="pr-10"
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-            <span className="text-sm text-gray-500">m</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Label htmlFor="consumption">Consumo Base por Peça (metros) *</Label>
+          <div className="mt-1 relative">
+            <Input
+              id="consumption"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.fabricConsumption || ''}
+              onChange={(e) => handleConsumptionChange(parseFloat(e.target.value) || 0)}
+              placeholder="Ex: 0.85"
+              className="pr-10"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <span className="text-sm text-gray-500">m</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Consumo líquido sem desperdício
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="wastePercentage">Desperdício do Corte (%) *</Label>
+          <div className="mt-1 relative">
+            <Input
+              id="wastePercentage"
+              type="number"
+              step="1"
+              min="0"
+              max="50"
+              value={formData.wastePercentage || 10}
+              onChange={(e) => updateFormData('wastePercentage', parseFloat(e.target.value) || 10)}
+              placeholder="10"
+              className="pr-10"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <span className="text-sm text-gray-500">%</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Perda normal no processo de corte
+          </p>
+        </div>
+      </div>
+
+      {/* Cálculo do Consumo Total */}
+      {formData.fabricConsumption > 0 && formData.wastePercentage >= 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-3 flex items-center">
+            <Calculator className="h-4 w-4 mr-2" />
+            Consumo Total Calculado
+          </h4>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="text-center">
+              <span className="text-blue-600 block">Consumo Base</span>
+              <div className="font-semibold text-lg text-blue-900">
+                {formData.fabricConsumption.toFixed(2)}m
+              </div>
+            </div>
+            <div className="text-center">
+              <span className="text-blue-600 block">Desperdício</span>
+              <div className="font-semibold text-lg text-orange-600">
+                +{((formData.fabricConsumption * (formData.wastePercentage || 10)) / 100).toFixed(2)}m
+              </div>
+              <div className="text-xs text-gray-500">({formData.wastePercentage}%)</div>
+            </div>
+            <div className="text-center">
+              <span className="text-blue-600 block">Total por Peça</span>
+              <div className="font-bold text-xl text-green-700">
+                {(formData.fabricConsumption * (1 + (formData.wastePercentage || 10) / 100)).toFixed(2)}m
+              </div>
+            </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Informe quantos metros de tecido são necessários para confeccionar uma peça
-        </p>
-      </div>
+      )}
 
       {/* Sugestões de Consumo */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">

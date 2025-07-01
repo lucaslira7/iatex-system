@@ -38,8 +38,8 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
 
   const steps = [
     { number: 1, title: 'Tipo da Peça', active: currentStep === 1, completed: currentStep > 1 },
-    { number: 2, title: 'Tamanhos', active: currentStep === 2, completed: currentStep > 2 },
-    { number: 3, title: 'Tecido', active: currentStep === 3, completed: currentStep > 3 },
+    { number: 2, title: 'Tecido', active: currentStep === 2, completed: currentStep > 2 },
+    { number: 3, title: 'Tamanhos', active: currentStep === 3, completed: currentStep > 3 },
     { number: 4, title: 'Criação', active: currentStep === 4, completed: currentStep > 4 },
     { number: 5, title: 'Insumos', active: currentStep === 5, completed: currentStep > 5 },
     { number: 6, title: 'Mão de Obra', active: currentStep === 6, completed: currentStep > 6 },
@@ -52,9 +52,9 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
       case 1:
         return formData.garmentType && formData.modelName && formData.reference;
       case 2:
-        return formData.sizes.length > 0;
-      case 3:
         return formData.fabricId && formData.fabricConsumption > 0;
+      case 3:
+        return formData.sizes.length > 0;
       default:
         return true;
     }
@@ -65,9 +65,9 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
       case 1:
         return <Step1GarmentType />;
       case 2:
-        return <Step2Sizes />;
-      case 3:
         return <Step3Fabric />;
+      case 3:
+        return <Step2Sizes />;
       case 4:
         return <Step4CreationCosts />;
       case 5:
