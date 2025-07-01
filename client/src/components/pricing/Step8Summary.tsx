@@ -22,36 +22,41 @@ export default function Step8Summary() {
   const selectedFabric = fabrics.find(f => f.id === formData.fabricId);
 
   const calculateCosts = () => {
-    // Fabric cost
-    const totalQuantity = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
-    const fabricCost = selectedFabric && formData.fabricConsumption ? 
-      (formData.fabricConsumption * totalQuantity * parseFloat(selectedFabric.pricePerMeter?.toString() || '0')) : 0;
+    // Para o resumo, calculamos custo por peça (não total de produção)
+    const configuredSizes = formData.sizes.filter(s => s.weight > 0);
+    
+    // Custo médio do tecido por peça
+    let fabricCostPerPiece = 0;
+    if (selectedFabric && configuredSizes.length > 0) {
+      const averageWeight = configuredSizes.reduce((sum, size) => sum + size.weight, 0) / configuredSizes.length;
+      const pricePerKg = parseFloat(selectedFabric.pricePerKg?.toString() || '0');
+      const wasteMultiplier = 1 + (formData.wastePercentage / 100);
+      fabricCostPerPiece = (averageWeight / 1000) * pricePerKg * wasteMultiplier;
+    }
 
-    // Other costs
+    // Other costs (por peça)
     const creationCosts = formData.creationCosts.reduce((sum, item) => sum + item.total, 0);
     const suppliesCosts = formData.supplies.reduce((sum, item) => sum + item.total, 0);
     const laborCosts = formData.labor.reduce((sum, item) => sum + item.total, 0);
     const fixedCosts = formData.fixedCosts.reduce((sum, item) => sum + item.total, 0);
 
-    const totalCost = fabricCost + creationCosts + suppliesCosts + laborCosts + fixedCosts;
-    const costPerUnit = totalQuantity > 0 ? totalCost / totalQuantity : 0;
+    const totalCostPerPiece = fabricCostPerPiece + creationCosts + suppliesCosts + laborCosts + fixedCosts;
     
-    const profitAmount = totalCost * (formData.profitMargin / 100);
-    const finalPrice = totalCost + profitAmount;
-    const pricePerUnit = totalQuantity > 0 ? finalPrice / totalQuantity : 0;
+    const profitAmount = totalCostPerPiece * (formData.profitMargin / 100);
+    const finalPricePerPiece = totalCostPerPiece + profitAmount;
 
     return {
-      fabricCost,
+      fabricCost: fabricCostPerPiece,
       creationCosts,
       suppliesCosts,
       laborCosts,
       fixedCosts,
-      totalCost,
-      costPerUnit,
+      totalCost: totalCostPerPiece,
+      costPerUnit: totalCostPerPiece,
       profitAmount,
-      finalPrice,
-      pricePerUnit,
-      totalQuantity,
+      finalPrice: finalPricePerPiece,
+      pricePerUnit: finalPricePerPiece,
+      totalQuantity: configuredSizes.length
     };
   };
 

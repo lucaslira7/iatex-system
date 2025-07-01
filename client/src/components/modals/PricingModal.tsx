@@ -54,7 +54,7 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
       case 2:
         return formData.fabricId;
       case 3:
-        return formData.sizes.length > 0;
+        return formData.sizes.some(s => s.weight > 0);
       default:
         return true;
     }
