@@ -28,110 +28,127 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     window.location.href = "/api/logout";
   };
 
-  const sectionConfig = {
-    dashboard: { icon: Gauge, label: "Dashboard", badge: null },
-    fabrics: { icon: Scissors, label: "Tecidos", badge: 3 },
-    pricing: { icon: Calculator, label: "Precificação", badge: null },
-    models: { icon: Shirt, label: "Modelos", badge: null },
-    orders: { icon: ShoppingCart, label: "Pedidos", badge: 12 },
-    production: { icon: Factory, label: "Produção", badge: null },
-    employees: { icon: Users, label: "Funcionários", badge: null },
-    financial: { icon: TrendingUp, label: "Financeiro", badge: null },
-    inventory: { icon: Package, label: "Estoque", badge: null },
-  };
+  const mainMenuItems = [
+    { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null },
+    { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3 },
+    { id: 'pricing', icon: Calculator, label: 'Precificação', badge: null },
+    { id: 'models', icon: Shirt, label: 'Modelos', badge: null },
+    { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
+    { id: 'production', icon: Factory, label: 'Produção', badge: null },
+  ];
+
+  const managementItems = [
+    { id: 'employees', icon: Users, label: 'Funcionários', badge: null },
+    { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null },
+    { id: 'inventory', icon: Package, label: 'Estoque', badge: null },
+  ];
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar-background shadow-lg">
+    <div className="fixed inset-y-0 left-0 z-50 w-72 bg-slate-800 shadow-lg">
       <div className="flex h-full flex-col">
         {/* Logo Area */}
-        <div className="flex h-16 items-center justify-center border-b border-sidebar-border bg-sidebar-background">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded bg-sidebar-primary flex items-center justify-center">
-              <Brain className="h-5 w-5 text-sidebar-primary-foreground" />
+        <div className="flex h-20 items-center px-6 border-b border-slate-700">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
+              <Brain className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-sidebar-foreground">IA.TEX</span>
+            <span className="text-xl font-bold text-white">IA.TEX</span>
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 space-y-1 p-4">
-          <div className="space-y-1">
-            {Object.entries(sectionConfig).slice(0, 6).map(([key, config]) => {
-              const Icon = config.icon;
-              const isActive = activeSection === key;
-              
-              return (
-                <button
-                  key={key}
-                  onClick={() => onSectionChange(key as ActiveSection)}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive 
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                  }`}
-                >
-                  <Icon className="mr-3 h-4 w-4" />
-                  {config.label}
-                  {config.badge && (
-                    <Badge variant="destructive" className="ml-auto">
-                      {config.badge}
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-1">
+          {/* Main Menu Items */}
+          {mainMenuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSectionChange(item.id as ActiveSection)}
+                className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-blue-600 text-white shadow-lg' 
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{item.label}</span>
+                </div>
+                {item.badge && (
+                  <Badge 
+                    variant="destructive" 
+                    className="h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-bold"
+                  >
+                    {item.badge}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Section Divider */}
+          <div className="py-4">
+            <div className="border-t border-slate-700"></div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-4 px-4">
+              GESTÃO
+            </p>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-sidebar-border">
-            <div className="text-sidebar-foreground/60 text-xs font-semibold uppercase tracking-wide mb-2">
-              Gestão
-            </div>
-            {Object.entries(sectionConfig).slice(6).map(([key, config]) => {
-              const Icon = config.icon;
-              const isActive = activeSection === key;
-              
-              return (
-                <button
-                  key={key}
-                  onClick={() => onSectionChange(key as ActiveSection)}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive 
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                  }`}
-                >
-                  <Icon className="mr-3 h-4 w-4" />
-                  {config.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* Management Items */}
+          {managementItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSectionChange(item.id as ActiveSection)}
+                className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-blue-600 text-white shadow-lg' 
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{item.label}</span>
+                </div>
+                {item.badge && (
+                  <Badge 
+                    variant="secondary" 
+                    className="h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-bold"
+                  >
+                    {item.badge}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* User Profile */}
-        <div className="p-4 border-t border-sidebar-border">
+        {/* User Section */}
+        <div className="border-t border-slate-700 p-4">
           <div className="flex items-center space-x-3">
-            <img 
-              src={user?.profileImageUrl || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&w=40&h=40&fit=crop&crop=face"} 
-              alt="Profile" 
-              className="h-10 w-10 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-sidebar-foreground">
-                {user?.firstName || user?.email || "Usuário"}
-              </p>
-              <p className="text-xs text-sidebar-foreground/60">
-                {user?.role === 'admin' ? 'Administrador' : 'Usuário'}
-              </p>
+            <div className="h-10 w-10 rounded-full bg-slate-600 flex items-center justify-center">
+              <div className="h-6 w-6 rounded-full bg-slate-400"></div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
-            >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                {user?.email || 'Usuário'}
+              </p>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-slate-400 hover:text-white transition-colors"
+              >
+                Sair
+              </button>
+            </div>
+            <button className="text-slate-400 hover:text-white transition-colors">
               <Settings className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>

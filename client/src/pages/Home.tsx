@@ -35,7 +35,7 @@ export default function Home() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
       
-      <div className="flex-1 flex flex-col overflow-hidden ml-64">
+      <div className="flex-1 flex flex-col overflow-hidden ml-72">
         {renderContent()}
       </div>
     </div>
