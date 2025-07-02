@@ -24,13 +24,78 @@ export default function TemplateSummaryModal({
 
   if (!template) return null;
 
+  const handlePreviewPDF = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.width;
+      let yPos = 20;
+
+      // Header
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(0, 0, pageWidth, 25, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('RESUMO DE PRECIFICAÇÃO - TEMPLATE', pageWidth / 2, 15, { align: 'center' });
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(10);
+      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 35);
+      
+      yPos = 50;
+      
+      // Informações do produto
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Resumo Financeiro', 20, yPos);
+      
+      yPos += 15;
+      
+      const leftCol = 20;
+      const rightCol = 110;
+      
+      // Dados básicos
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${template.modelName}`, leftCol, yPos);
+      pdf.text(`Custo Total: ${formatPrice(template.totalCost)}`, rightCol, yPos);
+      yPos += 8;
+      
+      pdf.text(`${template.reference}`, leftCol, yPos);
+      pdf.text(`Preço Final: ${formatPrice(template.finalPrice)}`, rightCol, yPos);
+      yPos += 8;
+      
+      pdf.text(`${template.garmentType}`, leftCol, yPos);
+      pdf.text(`Margem de Lucro: ${parseFloat(template.profitMargin).toFixed(1)}%`, rightCol, yPos);
+      yPos += 8;
+      
+      pdf.text(`Peça Única`, leftCol, yPos);
+      const profit = parseFloat(template.finalPrice) - parseFloat(template.totalCost);
+      pdf.text(`Lucro: ${formatPrice(profit)}`, rightCol, yPos);
+      
+      // Gerar blob e abrir em nova aba
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+      
+      // Limpar URL após um tempo
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+    } catch (error) {
+      console.error('Erro ao visualizar PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Atalhos de teclado
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key.toLowerCase() === 'p') {
         event.preventDefault();
-        // Visualizar PDF (por enquanto apenas alerta)
-        alert('Função Visualizar PDF em desenvolvimento');
+        handlePreviewPDF();
       }
       
       if (event.ctrlKey && event.key.toLowerCase() === 's') {
@@ -105,13 +170,13 @@ export default function TemplateSummaryModal({
       
       yPos += 20;
       
-      // Dados do produto
+      // Dados do produto expandidos
       const productData = [
         ['Nome:', template.modelName],
         ['Referência:', template.reference],
         ['Tipo:', template.garmentType],
         ['Modalidade:', template.pricingMode === 'single' ? 'Peça Única' : 'Múltiplas Peças'],
-        ['Descrição:', template.description || 'Teste']
+        ['Descrição:', template.description || 'Modelo padrão']
       ];
       
       pdf.setFontSize(10);
@@ -119,16 +184,28 @@ export default function TemplateSummaryModal({
         pdf.setFont('helvetica', 'bold');
         pdf.text(label, leftCol, yPos);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(value, leftCol + 30, yPos);
+        pdf.text(value.toString().substring(0, 30), leftCol + 30, yPos);
         yPos += 8;
       });
-      
-      // Total de peças (calculado baseado nos tamanhos)
+
+      // Informações de produção
       yPos += 5;
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Total:', leftCol, yPos);
+      pdf.text('Custo Total:', leftCol, yPos);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('3 peças', leftCol + 30, yPos);
+      pdf.text(formatPrice(template.totalCost), leftCol + 30, yPos);
+      yPos += 8;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Preço Final:', leftCol, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(formatPrice(template.finalPrice), leftCol + 30, yPos);
+      yPos += 8;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Margem:', leftCol, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${parseFloat(template.profitMargin).toFixed(1)}%`, leftCol + 30, yPos);
       
       // Resetar yPos para a coluna direita
       yPos = 75; // Mesma altura da primeira seção
@@ -142,25 +219,29 @@ export default function TemplateSummaryModal({
       
       yPos += 20;
       
-      // Dados dos tamanhos (simulados baseados no template)
-      const sizeData = [
-        ['P:', '1 peças (Peso: 85g)'],
-        ['M:', '1 peças (Peso: 95g)'],
-        ['G:', '1 peças (Peso: 109g)']
+      // Informações de custos detalhados
+      const costData = [
+        ['Consumo de Tecido:', `${parseFloat(template.fabricConsumption).toFixed(2)}m`],
+        ['Desperdício:', `${parseFloat(template.wastePercentage).toFixed(1)}%`],
+        ['Custo Unitário:', formatPrice(parseFloat(template.totalCost) / (template.pricingMode === 'single' ? 1 : 3))],
+        ['Preço Unitário:', formatPrice(parseFloat(template.finalPrice) / (template.pricingMode === 'single' ? 1 : 3))]
       ];
       
       pdf.setFontSize(10);
-      sizeData.forEach(([size, info]) => {
+      costData.forEach(([label, value]) => {
         pdf.setFont('helvetica', 'bold');
-        pdf.text(size, rightCol, yPos);
+        pdf.text(label, rightCol, yPos);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(info, rightCol + 15, yPos);
+        pdf.text(value, rightCol + 45, yPos);
         yPos += 8;
       });
       
-      yPos += 10;
+      yPos += 5;
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Total: 3 peças', rightCol, yPos);
+      pdf.text('Lucro por Peça:', rightCol, yPos);
+      pdf.setFont('helvetica', 'normal');
+      const profitPerUnit = (parseFloat(template.finalPrice) - parseFloat(template.totalCost)) / (template.pricingMode === 'single' ? 1 : 3);
+      pdf.text(formatPrice(profitPerUnit), rightCol + 45, yPos);
       
       // Nova seção - Informações do Tecido
       yPos += 25;
@@ -245,6 +326,35 @@ export default function TemplateSummaryModal({
         if (detail3) pdf.text(detail3, col3, yPos);
         yPos += 6;
       });
+
+      // Seção de Instruções Técnicas
+      yPos += 10;
+      
+      pdf.setFillColor(255, 248, 220);
+      pdf.rect(leftCol, yPos, pageWidth - 40, 15, 'F');
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INSTRUÇÕES DE PRODUÇÃO', leftCol + 5, yPos + 10);
+      
+      yPos += 20;
+      
+      const instructions = [
+        '• Verificar a gramatura e composição do tecido antes do corte',
+        '• Considerar margem de segurança de 5% para desperdício',
+        '• Seguir rigorosamente a tabela de medidas padrão',
+        '• Documentar qualquer alteração durante a produção',
+        '• Conferir acabamentos conforme especificação técnica',
+        '• Validar qualidade antes da embalagem final'
+      ];
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      instructions.forEach((instruction, index) => {
+        pdf.text(instruction, leftCol, yPos + (index * 6));
+      });
+      
+      yPos += instructions.length * 6 + 10;
       
       // Resultado final
       yPos = pageHeight - 40;
@@ -531,6 +641,7 @@ export default function TemplateSummaryModal({
               {/* Botões reorganizados conforme layout solicitado */}
               <div className="flex gap-4 mt-6 justify-center">
                 <Button 
+                  onClick={handlePreviewPDF}
                   variant="outline"
                   disabled={isExporting}
                   className="border-gray-300 text-gray-700 hover:bg-gray-50"
