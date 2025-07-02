@@ -11,10 +11,13 @@ import FinancialManagement from "@/components/FinancialManagement";
 import InventoryManagement from "@/components/InventoryManagement";
 import AdvancedProduction from "@/components/AdvancedProduction";
 import DocumentCenter from "@/components/DocumentCenter";
+import IntelligentReports from "@/components/IntelligentReports";
+import ProductionCalendar from "@/components/ProductionCalendar";
+import QRCodeGenerator from "@/components/QRCodeGenerator";
 import OrderManagement from "@/components/OrderManagement";
 import ProductionTracking from "@/components/ProductionTracking";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory' | 'reports' | 'calendar' | 'qrcodes';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -45,6 +48,12 @@ export default function Home() {
         return <FinancialManagement />;
       case 'inventory':
         return <InventoryManagement />;
+      case 'reports':
+        return <IntelligentReports />;
+      case 'calendar':
+        return <ProductionCalendar />;
+      case 'qrcodes':
+        return <QRCodeGenerator />;
       default:
         return <Dashboard onSectionChange={setActiveSection} />;
     }

@@ -13,7 +13,10 @@ import {
   Users,
   TrendingUp,
   Package,
-  Settings
+  Settings,
+  BarChart3,
+  Calendar,
+  QrCode
 } from "lucide-react";
 import type { ActiveSection } from "@/pages/Home";
 
@@ -38,6 +41,9 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
     { id: 'advanced-production', icon: Factory, label: 'Produção Avançada', badge: null },
     { id: 'documents', icon: FileText, label: 'Central de Documentos', badge: null },
+    { id: 'reports', icon: TrendingUp, label: 'Relatórios Inteligentes', badge: null },
+    { id: 'calendar', icon: Package, label: 'Calendário Produção', badge: null },
+    { id: 'qrcodes', icon: Brain, label: 'QR Code & Etiquetas', badge: null },
   ];
 
   const managementItems = [
