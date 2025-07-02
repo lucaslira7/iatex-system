@@ -75,7 +75,6 @@ export default function Step8SummaryFixed() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Preparar dados para o PDF profissional
       const pdfData: PDFData = {
         modelName: formData.modelName,
         reference: formData.reference,
@@ -94,10 +93,8 @@ export default function Step8SummaryFixed() {
         sizes: formData.sizes || []
       };
 
-      // Gerar PDF profissional de resumo
       const pdf = generateProfessionalPricingSummary(pdfData);
       
-      // Salvar e baixar o PDF
       const fileDate = new Date().toLocaleDateString('pt-BR').replace(/\//g, '');
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
@@ -121,7 +118,6 @@ export default function Step8SummaryFixed() {
 
   const handleTechnicalSheet = async () => {
     try {
-      // Preparar dados para o PDF profissional de ficha técnica
       const pdfData: PDFData = {
         modelName: formData.modelName,
         reference: formData.reference,
@@ -140,10 +136,8 @@ export default function Step8SummaryFixed() {
         sizes: formData.sizes || []
       };
 
-      // Gerar PDF profissional de ficha técnica
       const pdf = generateProfessionalTechnicalSheet(pdfData);
       
-      // Salvar e abrir o PDF da ficha técnica
       const fileDate = new Date().toLocaleDateString('pt-BR').replace(/\//g, '');
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
@@ -294,6 +288,156 @@ export default function Step8SummaryFixed() {
         </CardContent>
       </Card>
 
+      {/* Seção de Preço Final Editável */}
+      <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-700">
+            <Calculator className="h-5 w-5" />
+            Preço Final (editável)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              {editingFinalPrice ? (
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="finalPrice" className="text-sm font-medium">
+                    Novo Preço:
+                  </Label>
+                  <Input
+                    id="finalPrice"
+                    type="number"
+                    value={tempFinalPrice}
+                    onChange={(e) => setTempFinalPrice(e.target.value)}
+                    className="w-32"
+                    step="0.01"
+                    min="0"
+                    autoFocus
+                  />
+                  <Button onClick={handleFinalPriceSubmit} size="sm">
+                    Confirmar
+                  </Button>
+                  <Button 
+                    onClick={() => setEditingFinalPrice(false)} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-green-600">
+                    R$ {formData.finalPrice.toFixed(2)}
+                  </div>
+                  <Button 
+                    onClick={() => setEditingFinalPrice(true)}
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="text-right text-sm text-gray-600">
+              <div className="font-medium">Margem: {formData.profitMargin.toFixed(1)}%</div>
+              <div className="font-medium">Lucro: R$ {(formData.finalPrice - costs.totalCost).toFixed(2)}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Breakdown de Custos Detalhado */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Breakdown Detalhado de Custos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {/* Custos de Criação */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-blue-700">Custos de Criação</h4>
+              {formData.creationCosts?.map((cost, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>{cost.description}:</span>
+                  <span>R$ {(cost.unitValue * cost.quantity).toFixed(2)}</span>
+                </div>
+              )) || <div className="text-sm text-gray-500">Nenhum custo</div>}
+              <div className="border-t pt-2 font-medium">
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span>R$ {costs.creationCosts.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Insumos */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-green-700">Insumos</h4>
+              {formData.supplies?.map((cost, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>{cost.description}:</span>
+                  <span>R$ {(cost.unitValue * cost.quantity * (1 + cost.wastePercentage / 100)).toFixed(2)}</span>
+                </div>
+              )) || <div className="text-sm text-gray-500">Nenhum insumo</div>}
+              <div className="border-t pt-2 font-medium">
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span>R$ {costs.suppliesCosts.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Mão de Obra */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-purple-700">Mão de Obra</h4>
+              {formData.labor?.map((cost, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>{cost.description}:</span>
+                  <span>R$ {(cost.unitValue * cost.quantity).toFixed(2)}</span>
+                </div>
+              )) || <div className="text-sm text-gray-500">Nenhum custo</div>}
+              <div className="border-t pt-2 font-medium">
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span>R$ {costs.laborCosts.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Custos Fixos */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-orange-700">Custos Fixos</h4>
+              {formData.fixedCosts?.map((cost, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>{cost.description}:</span>
+                  <span>R$ {(cost.unitValue * cost.quantity).toFixed(2)}</span>
+                </div>
+              )) || <div className="text-sm text-gray-500">Nenhum custo</div>}
+              <div className="border-t pt-2 font-medium">
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span>R$ {costs.fixedCosts.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Geral */}
+          <Separator className="my-4" />
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">
+              CUSTO TOTAL: R$ {costs.totalCost.toFixed(2)}
+            </div>
+            <div className="text-lg font-semibold text-green-600 mt-2">
+              PREÇO FINAL: R$ {costs.finalPrice.toFixed(2)}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Botões de Ação */}
       <div className="flex flex-wrap gap-3 justify-center">
         <Button 
@@ -325,42 +469,13 @@ export default function Step8SummaryFixed() {
         </Button>
       </div>
 
-      {/* Detalhes dos Custos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Breakdown de Custos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span>Custos de Criação:</span>
-              <span className="font-medium">R$ {costs.creationCosts.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Insumos:</span>
-              <span className="font-medium">R$ {costs.suppliesCosts.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Mão de Obra:</span>
-              <span className="font-medium">R$ {costs.laborCosts.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Custos Fixos:</span>
-              <span className="font-medium">R$ {costs.fixedCosts.toFixed(2)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total:</span>
-              <span>R$ {costs.totalCost.toFixed(2)}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações do Modelo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+      {/* Informações do Modelo */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações do Modelo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <strong>Nome:</strong> {formData.modelName}
             </div>
@@ -381,9 +496,9 @@ export default function Step8SummaryFixed() {
                 <strong>Tecido:</strong> {selectedFabric.name}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
