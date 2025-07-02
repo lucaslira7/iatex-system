@@ -42,12 +42,12 @@ export default function AdvancedSimulations() {
   const { toast } = useToast();
 
   // Fetch available models
-  const { data: models = [] } = useQuery({
+  const { data: models = [] } = useQuery<any[]>({
     queryKey: ['/api/pricing-templates'],
   });
 
   // Fetch available fabrics
-  const { data: fabrics = [] } = useQuery({
+  const { data: fabrics = [] } = useQuery<any[]>({
     queryKey: ['/api/fabrics'],
   });
 

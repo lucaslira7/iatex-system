@@ -126,10 +126,8 @@ export default function UserPanels() {
   // Mutations
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: Partial<Task>) => {
-      return apiRequest('/api/user-panels/tasks', {
-        method: 'POST',
-        body: JSON.stringify(taskData)
-      });
+      const response = await apiRequest('POST', '/api/user-panels/tasks', taskData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-panels/tasks'] });

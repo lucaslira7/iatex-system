@@ -186,10 +186,8 @@ export default function OperationalPanel() {
   // Mutations
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: Partial<KanbanTask>) => {
-      return apiRequest('/api/operational/tasks', {
-        method: 'POST',
-        body: JSON.stringify(taskData)
-      });
+      const response = await apiRequest('POST', '/api/operational/tasks', taskData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/operational/tasks'] });
@@ -203,10 +201,8 @@ export default function OperationalPanel() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<KanbanTask> }) => {
-      return apiRequest(`/api/operational/tasks/${taskId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates)
-      });
+      const response = await apiRequest('PATCH', `/api/operational/tasks/${taskId}`, updates);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/operational/tasks'] });
@@ -219,10 +215,8 @@ export default function OperationalPanel() {
 
   const createProductionMutation = useMutation({
     mutationFn: async (productionData: Partial<ProductionOrder>) => {
-      return apiRequest('/api/operational/production', {
-        method: 'POST',
-        body: JSON.stringify(productionData)
-      });
+      const response = await apiRequest('POST', '/api/operational/production', productionData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/operational/production'] });
