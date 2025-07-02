@@ -8,7 +8,7 @@ import ModelManagement from "@/components/ModelManagement";
 import OrderManagement from "@/components/OrderManagement";
 import ProductionTracking from "@/components/ProductionTracking";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'pricing' | 'quotations' | 'models' | 'orders' | 'production' | 'employees' | 'financial' | 'inventory';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'orders' | 'production' | 'employees' | 'financial' | 'inventory';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -19,8 +19,6 @@ export default function Home() {
         return <Dashboard onSectionChange={setActiveSection} />;
       case 'fabrics':
         return <FabricManagement />;
-      case 'pricing':
-        return <PricingCalculator />;
       case 'quotations':
         return <QuotationManagement />;
       case 'models':

@@ -32,9 +32,8 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
   const mainMenuItems = [
     { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null },
     { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3 },
-    { id: 'pricing', icon: Calculator, label: 'Precificação', badge: null },
+    { id: 'models', icon: Calculator, label: 'Modelos & Precificação', badge: null },
     { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null },
-    { id: 'models', icon: Shirt, label: 'Modelos', badge: null },
     { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
     { id: 'production', icon: Factory, label: 'Produção', badge: null },
   ];
