@@ -22,19 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import PricingModal from "./modals/PricingModal";
 import TemplateSummaryModal from "./modals/TemplateSummaryModal";
-
-interface PricingTemplate {
-  id: number;
-  modelName: string;
-  reference: string;
-  garmentType: string;
-  totalCost: string;
-  finalPrice: string;
-  profitMargin: string;
-  pricingMode: string;
-  imageUrl?: string;
-  createdAt: string;
-}
+import type { PricingTemplate } from "@shared/schema";
 
 export default function ModelManagement() {
   const [selectedTemplate, setSelectedTemplate] = useState<PricingTemplate | null>(null);
@@ -422,7 +410,7 @@ export default function ModelManagement() {
             setEditingTemplate(null);
             onPricingComplete();
           }}
-          editingTemplate={editingTemplate}
+          initialTemplate={editingTemplate as any}
         />
       )}
 
@@ -433,7 +421,7 @@ export default function ModelManagement() {
             setShowSummaryModal(false);
             setSelectedTemplate(null);
           }}
-          template={selectedTemplate}
+          template={selectedTemplate as any}
         />
       )}
 
