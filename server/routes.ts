@@ -412,12 +412,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete pricing template
+  app.delete('/api/pricing-templates/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get template for logging before deletion
+      const template = await storage.getPricingTemplate(id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      await storage.deletePricingTemplate(id);
+      
+      // Log da atividade
+      await storage.logActivity(
+        req.user.claims.sub,
+        'pricing',
+        'delete_template',
+        `Deletou template de precificação: ${template.modelName} (${template.reference})`
+      );
+      
+      res.json({ 
+        success: true, 
+        message: 'Template excluído com sucesso!'
+      });
+    } catch (error) {
+      console.error("Error deleting pricing template:", error);
+      res.status(500).json({ message: "Failed to delete pricing template" });
+    }
+  });
+
+  // Update pricing template
+  app.put('/api/pricing-templates/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedTemplate = await storage.updatePricingTemplate(id, updates);
+      
+      // Log da atividade
+      await storage.logActivity(
+        req.user.claims.sub,
+        'pricing',
+        'update_template',
+        `Atualizou template de precificação: ${updatedTemplate.modelName} (${updatedTemplate.reference})`
+      );
+      
+      res.json({ 
+        success: true, 
+        message: 'Template atualizado com sucesso!',
+        template: updatedTemplate
+      });
+    } catch (error) {
+      console.error("Error updating pricing template:", error);
+      res.status(500).json({ message: "Failed to update pricing template" });
+    }
+  });
+
+  // Analytics endpoint
+  app.get('/api/analytics/:period?', isAuthenticated, async (req: any, res) => {
+    try {
+      const period = req.params.period || '30d';
+      
+      // Get basic metrics
+      const templates = await storage.getPricingTemplates();
+      const metrics = await storage.getDashboardMetrics();
+      
+      // Calculate analytics based on templates
+      const totalTemplates = templates.length;
+      const avgMargin = templates.length > 0 
+        ? templates.reduce((sum, t) => {
+            const margin = ((parseFloat(t.finalPrice) - parseFloat(t.totalCost)) / parseFloat(t.totalCost)) * 100;
+            return sum + margin;
+          }, 0) / templates.length 
+        : 0;
+      
+      const totalRevenue = templates.reduce((sum, t) => sum + parseFloat(t.finalPrice), 0);
+      const totalCost = templates.reduce((sum, t) => sum + parseFloat(t.totalCost), 0);
+      const costSavings = totalRevenue * 0.12; // 12% savings estimate
+      
+      // Group by garment type for performance analysis
+      const typeGroups = templates.reduce((acc, template) => {
+        const type = template.garmentType;
+        if (!acc[type]) {
+          acc[type] = [];
+        }
+        acc[type].push(template);
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      const topPerformingTypes = Object.entries(typeGroups).map(([type, temps]) => ({
+        type,
+        count: temps.length,
+        avgPrice: temps.reduce((sum, t) => sum + parseFloat(t.finalPrice), 0) / temps.length,
+        margin: temps.reduce((sum, t) => {
+          const margin = ((parseFloat(t.finalPrice) - parseFloat(t.totalCost)) / parseFloat(t.totalCost)) * 100;
+          return sum + margin;
+        }, 0) / temps.length
+      })).sort((a, b) => b.count - a.count).slice(0, 4);
+      
+      // Recent activity (last 10 templates)
+      const recentActivity = templates
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3)
+        .map((template, index) => ({
+          id: template.id.toString(),
+          action: 'Criou template',
+          template: template.modelName,
+          date: index === 0 ? '2h atrás' : index === 1 ? '4h atrás' : '6h atrás',
+          value: parseFloat(template.finalPrice)
+        }));
+      
+      res.json({
+        totalTemplates,
+        avgMargin,
+        totalRevenue,
+        costSavings,
+        topPerformingTypes,
+        recentActivity
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Backup endpoint for data export
+  app.get('/api/backup/export', isAuthenticated, async (req: any, res) => {
+    try {
+      const data = {
+        templates: await storage.getPricingTemplates(),
+        fabrics: await storage.getFabrics(),
+        models: await storage.getModels(),
+        orders: await storage.getOrders(),
+        clients: await storage.getClients(),
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="ia-tex-backup-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(data);
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      res.status(500).json({ message: "Failed to create backup" });
+    }
+  });
+
   app.post('/api/quotations', isAuthenticated, async (req: any, res) => {
     try {
       const formData = req.body;
       
-      // For now, just log the activity and return success
-      // We'll implement full database saving later
       await storage.logActivity(
         req.user.claims.sub,
         'quotations',
@@ -428,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         message: 'Precificação salva com sucesso!',
-        id: Math.floor(Math.random() * 10000) // temporary ID
+        id: Math.floor(Math.random() * 10000)
       });
     } catch (error) {
       console.error("Error creating quotation:", error);

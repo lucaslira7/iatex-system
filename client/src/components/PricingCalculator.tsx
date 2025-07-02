@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Calculator, Eye, Copy, Download, Edit } from "lucide-react";
+import { Plus, FileText, Calculator, Eye, Copy, Download, Edit, Trash2, BarChart3 } from "lucide-react";
+import { TemplateCardSkeleton } from "@/components/ui/loading-states";
+import { useToast } from "@/hooks/use-toast";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
+import AnalyticsDashboard from "./analytics/AnalyticsDashboard";
 import PricingModal from "./modals/PricingModal";
 import TemplateViewModal from "./modals/TemplateViewModal";
 import TemplateSummaryModal from "./modals/TemplateSummaryModal";
 import type { PricingTemplate } from "@shared/schema";
+
 
 export default function PricingCalculator() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,10 +19,50 @@ export default function PricingCalculator() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [templateToEdit, setTemplateToEdit] = useState<PricingTemplate | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    template: PricingTemplate | null;
+    isDeleting: boolean;
+  }>({ isOpen: false, template: null, isDeleting: false });
 
-  // Buscar templates de precificação salvos
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Buscar templates com cache otimizado
   const { data: templates = [], isLoading } = useQuery<PricingTemplate[]>({
     queryKey: ['/api/pricing-templates'],
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    refetchOnWindowFocus: false,
+  });
+
+  // Mutation para deletar template
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const response = await fetch(`/api/pricing-templates/${templateId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Erro ao deletar template');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/pricing-templates'] });
+      toast({
+        title: "Template excluído",
+        description: "Template de precificação excluído com sucesso.",
+        variant: "success",
+      });
+      setDeleteConfirmation({ isOpen: false, template: null, isDeleting: false });
+    },
+    onError: (error) => {
+      console.error('Erro ao deletar template:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o template. Tente novamente.",
+        variant: "destructive",
+      });
+      setDeleteConfirmation(prev => ({ ...prev, isDeleting: false }));
+    },
   });
 
   const formatDate = (dateString: string) => {
@@ -38,15 +83,38 @@ export default function PricingCalculator() {
   };
 
   const handleCopyTemplate = (template: PricingTemplate) => {
-    // Copiar template como base para nova precificação
     setTemplateToEdit(template);
     setIsModalOpen(true);
+    toast({
+      title: "Template carregado",
+      description: `Template "${template.modelName}" carregado para edição.`,
+      variant: "default",
+    });
   };
 
   const handleEditTemplate = (template: PricingTemplate) => {
-    // Editar template existente
     setTemplateToEdit(template);
     setIsModalOpen(true);
+    toast({
+      title: "Editando template",
+      description: `Editando template "${template.modelName}".`,
+      variant: "default",
+    });
+  };
+
+  const handleDeleteTemplate = (template: PricingTemplate) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      template,
+      isDeleting: false,
+    });
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmation.template) {
+      setDeleteConfirmation(prev => ({ ...prev, isDeleting: true }));
+      deleteTemplateMutation.mutate(deleteConfirmation.template.id);
+    }
   };
 
   const handleShowSummary = (template: PricingTemplate) => {
@@ -65,18 +133,52 @@ export default function PricingCalculator() {
     setTemplateToEdit(null);
   };
 
+  // Mostrar analytics se selecionado
+  if (showAnalytics) {
+    return (
+      <>
+        <main className="flex-1 p-6">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+              <p className="text-sm text-gray-500 mt-1">Análise completa de performance</p>
+            </div>
+            <Button 
+              onClick={() => setShowAnalytics(false)} 
+              variant="outline"
+            >
+              <Calculator className="mr-2 h-4 w-4" />
+              Voltar para Templates
+            </Button>
+          </div>
+          <AnalyticsDashboard />
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <main className="flex-1 p-6">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Precificação</h1>
-            <p className="text-sm text-gray-500 mt-1">Calculadora de custos e preços</p>
+            <p className="text-sm text-gray-500 mt-1">Calculadora de custos e preços avançada</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="bg-primary hover:bg-primary/90">
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Precificação
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => setShowAnalytics(true)} 
+              variant="outline"
+              className="text-purple-600 border-purple-300 hover:bg-purple-50"
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Analytics
+            </Button>
+            <Button onClick={() => setIsModalOpen(true)} className="bg-primary hover:bg-primary/90">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Precificação
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -151,7 +253,7 @@ export default function PricingCalculator() {
                     </div>
                   </div>
                   
-                  <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="mt-4 grid grid-cols-4 gap-1">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -159,9 +261,9 @@ export default function PricingCalculator() {
                         e.stopPropagation();
                         handleViewTemplate(template);
                       }}
+                      title="Visualizar template"
                     >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Ver
+                      <Eye className="w-4 h-4" />
                     </Button>
                     <Button 
                       variant="outline" 
@@ -170,9 +272,9 @@ export default function PricingCalculator() {
                         e.stopPropagation();
                         handleEditTemplate(template);
                       }}
+                      title="Editar template"
                     >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
+                      <Edit className="w-4 h-4" />
                     </Button>
                     <Button 
                       variant="outline" 
@@ -181,23 +283,35 @@ export default function PricingCalculator() {
                         e.stopPropagation();
                         handleCopyTemplate(template);
                       }}
+                      title="Copiar template"
                     >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Copiar
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTemplate(template);
+                      }}
+                      className="text-red-600 hover:bg-red-50 border-red-300"
+                      title="Excluir template"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                   
                   <Button 
                     variant="default" 
                     size="sm" 
-                    className="w-full mt-2"
+                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleShowSummary(template);
                     }}
                   >
-                    <Download className="w-4 h-4 mr-1" />
-                    Resumo
+                    <Download className="w-4 h-4 mr-2" />
+                    Gerar PDFs
                   </Button>
                 </CardContent>
               </Card>
@@ -225,6 +339,18 @@ export default function PricingCalculator() {
         template={selectedTemplate}
         isOpen={isSummaryModalOpen}
         onClose={closeModals}
+      />
+
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, template: null, isDeleting: false })}
+        onConfirm={confirmDelete}
+        title="Excluir Template"
+        description={`Tem certeza que deseja excluir o template "${deleteConfirmation.template?.modelName}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        isLoading={deleteConfirmation.isDeleting}
       />
     </>
   );
