@@ -251,7 +251,7 @@ export default function AIAssistantImproved() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-h-[75vh]">
       {/* Header */}
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
@@ -313,7 +313,7 @@ export default function AIAssistantImproved() {
             {/* Messages */}
             <div className="flex-1 min-h-0">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Conversa com IA</h3>
-              <Card className="flex-1 h-96">
+              <Card className="flex-1 h-80">
                 <ScrollArea className="h-full p-4">
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
@@ -400,7 +400,7 @@ export default function AIAssistantImproved() {
         </TabsContent>
 
         {/* Suggestions Tab */}
-        <TabsContent value="suggestions" className="flex-1 mx-6 mt-4">
+        <TabsContent value="suggestions" className="flex-1 mx-6 mt-4 overflow-y-auto max-h-[65vh]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Sugestões Inteligentes</h3>
@@ -440,7 +440,7 @@ export default function AIAssistantImproved() {
         </TabsContent>
 
         {/* Optimizations Tab */}
-        <TabsContent value="optimizations" className="flex-1 mx-6 mt-4">
+        <TabsContent value="optimizations" className="flex-1 mx-6 mt-4 overflow-y-auto max-h-[65vh]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Otimizações Disponíveis</h3>
