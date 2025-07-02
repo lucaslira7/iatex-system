@@ -1,6 +1,7 @@
 import { Package } from 'lucide-react';
 import DynamicCostStep from './DynamicCostStep';
 
+// Sugestões para múltiplas peças
 const SUPPLIES_SUGGESTIONS = [
   {
     description: 'Linha de costura',
@@ -52,6 +53,46 @@ const SUPPLIES_SUGGESTIONS = [
   },
 ];
 
+// Sugestões para peça única (valores de rateio)
+const SUPPLIES_SINGLE_SUGGESTIONS = [
+  {
+    description: 'Linha de costura (rateio)',
+    unitValue: 0.45,
+    quantity: 1,
+    wastePercentage: 0,
+  },
+  {
+    description: 'Etiqueta composição',
+    unitValue: 0.15,
+    quantity: 1,
+    wastePercentage: 5,
+  },
+  {
+    description: 'Etiqueta marca',
+    unitValue: 0.25,
+    quantity: 1,
+    wastePercentage: 5,
+  },
+  {
+    description: 'Etiqueta tamanho',
+    unitValue: 0.08,
+    quantity: 1,
+    wastePercentage: 5,
+  },
+  {
+    description: 'Botão comum',
+    unitValue: 0.30,
+    quantity: 1,
+    wastePercentage: 5,
+  },
+  {
+    description: 'Zíper comum (15cm)',
+    unitValue: 3.50,
+    quantity: 1,
+    wastePercentage: 5,
+  },
+];
+
 export default function Step5Supplies() {
   return (
     <DynamicCostStep
@@ -59,6 +100,7 @@ export default function Step5Supplies() {
       description="Materiais necessários para a confecção (linhas, botões, etiquetas, elásticos, etc.)"
       fieldName="supplies"
       suggestions={SUPPLIES_SUGGESTIONS}
+      singleSuggestions={SUPPLIES_SINGLE_SUGGESTIONS}
       icon={<Package className="h-5 w-5 text-green-600" />}
     />
   );

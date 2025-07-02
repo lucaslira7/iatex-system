@@ -4,7 +4,7 @@ import DynamicCostStep from './DynamicCostStep';
 const LABOR_SUGGESTIONS = [
   {
     description: 'Costura principal',
-    unitValue: 5.50,
+    unitValue: 3.20,
     quantity: 1,
     wastePercentage: 0,
   },

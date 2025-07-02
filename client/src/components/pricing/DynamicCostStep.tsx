@@ -25,6 +25,12 @@ interface DynamicCostStepProps {
     quantity: number;
     wastePercentage: number;
   }>;
+  singleSuggestions?: Array<{
+    description: string;
+    unitValue: number;
+    quantity: number;
+    wastePercentage: number;
+  }>;
   icon: React.ReactNode;
 }
 
@@ -33,6 +39,7 @@ export default function DynamicCostStep({
   description,
   fieldName,
   suggestions,
+  singleSuggestions,
   icon
 }: DynamicCostStepProps) {
   const { formData, updateFormData } = usePricing();
@@ -96,13 +103,13 @@ export default function DynamicCostStep({
   };
 
   const addSuggestion = (suggestion: typeof suggestions[0]) => {
-    // Ajustar valores baseado no modo de precificação
-    const adjustedSuggestion = {
-      ...suggestion,
-      quantity: formData.pricingMode === 'single' ? 1 : suggestion.quantity
-    };
-    addItem(adjustedSuggestion);
+    addItem(suggestion);
   };
+
+  // Escolher quais sugestões usar baseado no modo de precificação
+  const currentSuggestions = formData.pricingMode === 'single' && singleSuggestions 
+    ? singleSuggestions 
+    : suggestions;
 
   const getTotalCost = () => {
     return items.reduce((sum, item) => sum + item.total, 0);
@@ -127,9 +134,8 @@ export default function DynamicCostStep({
             Sugestões Rápidas
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {suggestions.map((suggestion, index) => {
-              const displayQuantity = formData.pricingMode === 'single' ? 1 : suggestion.quantity;
-              const displayTotal = suggestion.unitValue * displayQuantity * (1 + suggestion.wastePercentage / 100);
+            {currentSuggestions.map((suggestion, index) => {
+              const displayTotal = suggestion.unitValue * suggestion.quantity * (1 + suggestion.wastePercentage / 100);
               
               return (
                 <button
@@ -139,7 +145,7 @@ export default function DynamicCostStep({
                 >
                   <div className="font-medium text-sm">{suggestion.description}</div>
                   <div className="text-xs text-gray-500">
-                    R$ {suggestion.unitValue.toFixed(2)} × {displayQuantity}
+                    R$ {suggestion.unitValue.toFixed(2)} × {suggestion.quantity}
                     {suggestion.wastePercentage > 0 && ` (+${suggestion.wastePercentage}% desperdício)`}
                     <div className="font-medium text-green-600">
                       Total: R$ {displayTotal.toFixed(2)}

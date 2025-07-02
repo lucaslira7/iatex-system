@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Download, Save, Calculator, TrendingUp, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Download, Save, Calculator, TrendingUp, Eye, X } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 
@@ -270,6 +271,168 @@ export default function Step8Summary() {
           {isSaving ? 'Salvando...' : 'Finalizar Precificação'}
         </Button>
       </div>
+
+      {/* Modal de Preview PDF */}
+      <Dialog open={showPDFPreview} onOpenChange={setShowPDFPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Preview da Precificação</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPDFPreview(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="bg-white p-6 space-y-4 border rounded-lg">
+            {/* Cabeçalho */}
+            <div className="text-center border-b pb-4">
+              <h1 className="text-2xl font-bold text-gray-900">ORÇAMENTO DE PRECIFICAÇÃO</h1>
+              <p className="text-gray-600">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+
+            {/* Dados do Produto */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Informações do Produto</h3>
+                <div className="space-y-2">
+                  <p><strong>Nome:</strong> {formData.modelName}</p>
+                  <p><strong>Referência:</strong> {formData.reference}</p>
+                  <p><strong>Tipo:</strong> {formData.garmentType}</p>
+                  <p><strong>Modalidade:</strong> {formData.pricingMode === 'single' ? 'Peça Única' : 'Múltiplas Peças'}</p>
+                  <p><strong>Descrição:</strong> {formData.description}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Tamanhos e Quantidades</h3>
+                <div className="space-y-1">
+                  {formData.sizes.map((size, index) => (
+                    <p key={index}>
+                      <strong>{size.size}:</strong> {size.quantity} peças (Peso: {size.weight}g)
+                    </p>
+                  ))}
+                  <p className="pt-2 border-t"><strong>Total:</strong> {costs.totalQuantity} peças</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tecido */}
+            {selectedFabric && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Informações do Tecido</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p><strong>Tecido:</strong> {selectedFabric.name}</p>
+                    <p><strong>Tipo:</strong> {selectedFabric.type}</p>
+                    <p><strong>Cor:</strong> {selectedFabric.color}</p>
+                  </div>
+                  <div>
+                    <p><strong>Consumo por peça:</strong> {formData.fabricConsumption}m</p>
+                    <p><strong>Desperdício:</strong> {formData.wastePercentage}%</p>
+                    <p><strong>Preço por metro:</strong> R$ {selectedFabric.pricePerMeter.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Custos Detalhados */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Breakdown de Custos</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="bg-gray-50 p-3 rounded">
+                    <h4 className="font-medium">Custo do Tecido</h4>
+                    <p className="text-lg font-semibold">R$ {costs.fabricCost.toFixed(2)}</p>
+                  </div>
+
+                  {formData.creationCosts.length > 0 && (
+                    <div className="bg-gray-50 p-3 rounded">
+                      <h4 className="font-medium">Custos de Criação</h4>
+                      {formData.creationCosts.map((cost, index) => (
+                        <p key={index} className="text-sm">
+                          {cost.description}: R$ {cost.total.toFixed(2)}
+                        </p>
+                      ))}
+                      <p className="text-lg font-semibold pt-1 border-t">
+                        R$ {costs.creationCosts.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+
+                  {formData.supplies.length > 0 && (
+                    <div className="bg-gray-50 p-3 rounded">
+                      <h4 className="font-medium">Insumos</h4>
+                      {formData.supplies.map((supply, index) => (
+                        <p key={index} className="text-sm">
+                          {supply.description}: R$ {supply.total.toFixed(2)}
+                        </p>
+                      ))}
+                      <p className="text-lg font-semibold pt-1 border-t">
+                        R$ {costs.suppliesCosts.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {formData.labor.length > 0 && (
+                    <div className="bg-gray-50 p-3 rounded">
+                      <h4 className="font-medium">Mão de Obra</h4>
+                      {formData.labor.map((labor, index) => (
+                        <p key={index} className="text-sm">
+                          {labor.description}: R$ {labor.total.toFixed(2)}
+                        </p>
+                      ))}
+                      <p className="text-lg font-semibold pt-1 border-t">
+                        R$ {costs.laborCosts.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+
+                  {formData.fixedCosts.length > 0 && (
+                    <div className="bg-gray-50 p-3 rounded">
+                      <h4 className="font-medium">Custos Fixos</h4>
+                      {formData.fixedCosts.map((fixed, index) => (
+                        <p key={index} className="text-sm">
+                          {fixed.description}: R$ {fixed.total.toFixed(2)}
+                        </p>
+                      ))}
+                      <p className="text-lg font-semibold pt-1 border-t">
+                        R$ {costs.fixedCosts.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="bg-green-50 p-3 rounded border-2 border-green-200">
+                    <h4 className="font-medium text-green-800">Resultado Final</h4>
+                    <p className="text-sm">Custo Total: R$ {costs.totalCost.toFixed(2)}</p>
+                    <p className="text-sm">Margem de Lucro: {formData.profitMargin}%</p>
+                    <p className="text-sm">Lucro: R$ {costs.profitAmount.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-green-900">
+                      Preço Final: R$ {costs.finalPrice.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-green-700">
+                      Preço por peça: R$ {costs.pricePerUnit.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="border-t pt-4 text-center text-sm text-gray-500">
+              <p>Este orçamento foi gerado automaticamente pelo sistema IA.TEX</p>
+              <p>Validade: 30 dias a partir da data de emissão</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
