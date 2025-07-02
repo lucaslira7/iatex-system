@@ -170,13 +170,13 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
     return cards.map(card => {
       switch (card.id) {
         case 'total-fabrics':
-          return { ...card, value: metrics?.totalFabrics || 3 };
+          return { ...card, value: (metrics as any)?.totalFabrics || 3 };
         case 'active-orders':
-          return { ...card, value: metrics?.activeOrders || 0 };
+          return { ...card, value: (metrics as any)?.activeOrders || 0 };
         case 'stock-value':
           return { 
             ...card, 
-            value: `R$ ${((metrics?.totalStockValue || 1063200) / 1000).toFixed(1)}K` 
+            value: `R$ ${(((metrics as any)?.totalStockValue || 1063200) / 1000).toFixed(1)}K` 
           };
         default:
           return card;
