@@ -37,6 +37,7 @@ interface CustomizableDashboardProps {
 
 export default function CustomizableDashboardFixed({ onSectionChange }: CustomizableDashboardProps) {
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<DashboardCard | null>(null);
   const [cards, setCards] = useState<DashboardCard[]>([]);
   const { toast } = useToast();
 
@@ -52,7 +53,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'total-fabrics',
         title: 'Total de Tecidos',
-        value: metrics?.totalFabrics?.toString() || '0',
+        value: (metrics as any)?.totalFabrics?.toString() || '0',
         icon: Scissors,
         color: 'blue',
         visible: true,
@@ -65,7 +66,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'low-stock',
         title: 'Estoque Baixo',
-        value: metrics?.lowStockFabrics?.toString() || '0',
+        value: (metrics as any)?.lowStockFabrics?.toString() || '0',
         icon: Package,
         color: 'red',
         visible: true,
@@ -78,7 +79,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'active-orders',
         title: 'Pedidos Ativos',
-        value: metrics?.activeOrders?.toString() || '0',
+        value: (metrics as any)?.activeOrders?.toString() || '0',
         icon: ShoppingCart,
         color: 'green',
         visible: true,
@@ -91,7 +92,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'stock-value',
         title: 'Valor do Estoque',
-        value: formatCurrencyBR(metrics?.totalStockValue || 0),
+        value: formatCurrencyBR((metrics as any)?.totalStockValue || 0),
         icon: DollarSign,
         color: 'purple',
         visible: true,
@@ -403,12 +404,16 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
           const IconComponent = card.icon;
           
           return (
-            <Card key={card.id} className="relative kpi-card transition-all cursor-pointer hover:shadow-lg">
+            <Card 
+              key={card.id} 
+              className="relative kpi-card transition-all cursor-pointer hover:shadow-lg"
+              onClick={() => setSelectedCard(card)}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                    <p className="text-gray-900 card-value font-semibold text-[28px]">{card.value}</p>
+                    <p className="text-gray-900 card-value font-semibold text-[28px] truncate">{card.value}</p>
                     {card.change && (
                       <div className="flex items-center gap-1 mt-1">
                         {getTrendIcon(card.trend)}
@@ -482,7 +487,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {metrics?.recentActivities?.slice(0, 5).map((activity: any, index: number) => (
+            {(metrics as any)?.recentActivities?.slice(0, 5).map((activity: any, index: number) => (
               <div key={index} className="flex items-center gap-3 py-2">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <Activity className="h-4 w-4 text-blue-600" />
@@ -500,6 +505,101 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal Detalhado do Card */}
+      <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedCard && (
+                <>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getColorClasses(selectedCard.color)}`}>
+                    <selectedCard.icon className="h-5 w-5" />
+                  </div>
+                  {selectedCard.title}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedCard?.description}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCard && (
+            <div className="space-y-6">
+              {/* Valor Principal */}
+              <div className="text-center">
+                <p className="text-4xl font-bold text-gray-900 mb-2">
+                  {selectedCard.value}
+                </p>
+                {selectedCard.change && (
+                  <div className="flex items-center justify-center gap-2">
+                    {getTrendIcon(selectedCard.trend)}
+                    <span className={`text-sm font-medium ${
+                      selectedCard.trend === 'up' ? 'text-green-600' : 
+                      selectedCard.trend === 'down' ? 'text-red-600' : 
+                      'text-gray-600'
+                    }`}>
+                      {selectedCard.change} desde último período
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Progresso */}
+              {selectedCard.progress !== undefined && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progresso</span>
+                    <span className="font-medium">{selectedCard.progress}%</span>
+                  </div>
+                  <Progress value={selectedCard.progress} className="h-3" />
+                </div>
+              )}
+
+              {/* Informações Adicionais */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-gray-600">Status</p>
+                  <p className="font-medium">
+                    {selectedCard.trend === 'up' ? 'Em crescimento' : 
+                     selectedCard.trend === 'down' ? 'Em declínio' : 
+                     'Estável'}
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-gray-600">Atualizado</p>
+                  <p className="font-medium">Agora há pouco</p>
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    if (selectedCard.id.includes('fabric')) onSectionChange('fabrics');
+                    else if (selectedCard.id.includes('order')) onSectionChange('orders');
+                    else if (selectedCard.id.includes('model')) onSectionChange('models');
+                    else if (selectedCard.id.includes('financial')) onSectionChange('financial');
+                    setSelectedCard(null);
+                  }}
+                >
+                  Ver Detalhes
+                </Button>
+                <Button 
+                  variant="default" 
+                  className="flex-1"
+                  onClick={() => setSelectedCard(null)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
