@@ -384,6 +384,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all pricing templates
+  app.get('/api/pricing-templates', isAuthenticated, async (req: any, res) => {
+    try {
+      const templates = await storage.getPricingTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching pricing templates:", error);
+      res.status(500).json({ message: "Failed to fetch pricing templates" });
+    }
+  });
+
   app.post('/api/quotations', isAuthenticated, async (req: any, res) => {
     try {
       const formData = req.body;
