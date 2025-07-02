@@ -61,18 +61,18 @@ const defaultCards: DashboardCard[] = [
   },
   {
     id: 'stock-value',
-    title: 'Estoque',
+    title: 'Valor do Estoque',
     value: 'R$ 1063.2K',
     subtitle: 'baixo estoque tecidos',
     icon: TrendingUp,
     color: 'green',
-    visible: true,
+    visible: false,
     order: 2,
     type: 'metric'
   },
   {
     id: 'production-efficiency',
-    title: 'Produção',
+    title: 'Eficiência Produção',
     value: '89%',
     subtitle: 'eficiência',
     icon: Factory,
@@ -90,7 +90,7 @@ const defaultCards: DashboardCard[] = [
     subtitle: 'meta: R$ 50K',
     icon: DollarSign,
     color: 'indigo',
-    visible: false,
+    visible: true,
     order: 4,
     type: 'metric',
     changePercent: 8.5
@@ -102,13 +102,13 @@ const defaultCards: DashboardCard[] = [
     subtitle: 'ativos',
     icon: Users,
     color: 'pink',
-    visible: false,
+    visible: true,
     order: 5,
     type: 'metric'
   },
   {
     id: 'models',
-    title: 'Modelos',
+    title: 'Modelos Ativos',
     value: 25,
     subtitle: 'ativos',
     icon: Shirt,
@@ -124,8 +124,57 @@ const defaultCards: DashboardCard[] = [
     subtitle: 'produção',
     icon: Clock,
     color: 'cyan',
-    visible: false,
+    visible: true,
     order: 7,
+    type: 'metric'
+  },
+  {
+    id: 'quality-score',
+    title: 'Score Qualidade',
+    value: '94%',
+    subtitle: 'média geral',
+    icon: Award,
+    color: 'yellow',
+    visible: false,
+    order: 8,
+    type: 'progress',
+    progressValue: 94,
+    target: 100
+  },
+  {
+    id: 'cost-efficiency',
+    title: 'Eficiência Custos',
+    value: '87%',
+    subtitle: 'otimização',
+    icon: Target,
+    color: 'red',
+    visible: false,
+    order: 9,
+    type: 'progress',
+    progressValue: 87,
+    target: 90
+  },
+  {
+    id: 'profit-margin',
+    title: 'Margem Lucro',
+    value: '32%',
+    subtitle: 'média produtos',
+    icon: BarChart3,
+    color: 'emerald',
+    visible: false,
+    order: 10,
+    type: 'metric',
+    changePercent: 5.2
+  },
+  {
+    id: 'customer-satisfaction',
+    title: 'Satisfação Cliente',
+    value: '4.8',
+    subtitle: 'de 5 estrelas',
+    icon: Activity,
+    color: 'violet',
+    visible: false,
+    order: 11,
     type: 'metric'
   }
 ];
@@ -229,11 +278,95 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
   };
 
   const toggleCardVisibility = (cardId: string) => {
-    setCards(cards.map(card => 
-      card.id === cardId 
-        ? { ...card, visible: !card.visible }
-        : card
-    ));
+    // Check if card exists
+    const existingCard = cards.find(c => c.id === cardId);
+    
+    if (existingCard) {
+      // Toggle existing card
+      setCards(cards.map(card => 
+        card.id === cardId 
+          ? { ...card, visible: !card.visible }
+          : card
+      ));
+    } else {
+      // Create new card from available cards
+      const availableCard = availableCards.find(c => c.id === cardId);
+      if (availableCard) {
+        const newCard: DashboardCard = {
+          id: availableCard.id,
+          title: availableCard.title,
+          value: getDefaultValueForCard(availableCard.id),
+          icon: availableCard.icon,
+          color: availableCard.color,
+          visible: true,
+          order: cards.length,
+          type: getCardType(availableCard.id),
+          subtitle: getDefaultSubtitle(availableCard.id),
+          progressValue: getDefaultProgress(availableCard.id),
+          target: getDefaultTarget(availableCard.id),
+          changePercent: getDefaultChange(availableCard.id)
+        };
+        setCards([...cards, newCard]);
+      }
+    }
+  };
+
+  const getDefaultValueForCard = (cardId: string) => {
+    switch (cardId) {
+      case 'quality-score': return '94%';
+      case 'cost-efficiency': return '87%';
+      case 'profit-margin': return '32%';
+      case 'customer-satisfaction': return '4.8';
+      default: return 0;
+    }
+  };
+
+  const getCardType = (cardId: string): 'metric' | 'progress' | 'trend' | 'status' => {
+    switch (cardId) {
+      case 'quality-score':
+      case 'cost-efficiency':
+      case 'production-efficiency':
+        return 'progress';
+      default:
+        return 'metric';
+    }
+  };
+
+  const getDefaultSubtitle = (cardId: string) => {
+    switch (cardId) {
+      case 'quality-score': return 'média geral';
+      case 'cost-efficiency': return 'otimização';
+      case 'profit-margin': return 'média produtos';
+      case 'customer-satisfaction': return 'de 5 estrelas';
+      default: return '';
+    }
+  };
+
+  const getDefaultProgress = (cardId: string) => {
+    switch (cardId) {
+      case 'quality-score': return 94;
+      case 'cost-efficiency': return 87;
+      case 'production-efficiency': return 89;
+      default: return undefined;
+    }
+  };
+
+  const getDefaultTarget = (cardId: string) => {
+    switch (cardId) {
+      case 'quality-score': return 100;
+      case 'cost-efficiency': return 90;
+      case 'production-efficiency': return 95;
+      default: return undefined;
+    }
+  };
+
+  const getDefaultChange = (cardId: string) => {
+    switch (cardId) {
+      case 'profit-margin': return 5.2;
+      case 'total-fabrics': return 12;
+      case 'revenue-month': return 8.5;
+      default: return undefined;
+    }
   };
 
   const resetToDefault = () => {
@@ -378,9 +511,10 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                           {card.type === 'progress' && card.progressValue && (
                             <div className="mt-4">
                               <Progress value={card.progressValue} className="h-2" />
-                              <span className="text-sm text-gray-500 mt-1">
-                                Meta: {card.target}%
-                              </span>
+                              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Atual: {card.progressValue}%</span>
+                                <span>Meta: {card.target}%</span>
+                              </div>
                             </div>
                           )}
                           
