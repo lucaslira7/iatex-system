@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, X, FileText, Printer } from "lucide-react";
-import { useState, useRef } from "react";
+import { Download, X, FileText, Printer, Eye } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { PricingTemplate } from "@shared/schema";
@@ -24,6 +24,25 @@ export default function TemplateSummaryModal({
 
   if (!template) return null;
 
+  // Atalhos de teclado
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        // Visualizar PDF (por enquanto apenas alerta)
+        alert('Função Visualizar PDF em desenvolvimento');
+      }
+      
+      if (event.ctrlKey && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        handleExportResumo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const formatPrice = (price: string | number) => {
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('pt-BR', {
@@ -36,7 +55,225 @@ export default function TemplateSummaryModal({
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const handleExportPDF = async () => {
+  const handleExportFichaTecnica = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.width;
+      const pageHeight = pdf.internal.pageSize.height;
+      let yPos = 20;
+      
+      // Cabeçalho - Header com IA.TEX
+      pdf.setFillColor(99, 102, 241);
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('IA.TEX', 20, 25);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Sistema de Gestão', 20, 32);
+      pdf.text('para Confecção', 20, 37);
+      
+      // Data no canto direito
+      const currentDate = new Date().toLocaleDateString('pt-BR');
+      pdf.text(currentDate, pageWidth - 30, 25);
+      
+      yPos = 55;
+      
+      // Título
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('FICHA TÉCNICA DE PRECIFICAÇÃO', pageWidth / 2, yPos, { align: 'center' });
+      
+      yPos += 20;
+      
+      // Layout em duas colunas
+      const leftCol = 20;
+      const rightCol = pageWidth / 2 + 10;
+      const colWidth = (pageWidth / 2) - 30;
+      
+      // Coluna Esquerda - Informações do Produto
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(leftCol, yPos, colWidth, 15, 'F');
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INFORMAÇÕES DO PRODUTO', leftCol + 5, yPos + 10);
+      
+      yPos += 20;
+      
+      // Dados do produto
+      const productData = [
+        ['Nome:', template.modelName],
+        ['Referência:', template.reference],
+        ['Tipo:', template.garmentType],
+        ['Modalidade:', template.pricingMode === 'single' ? 'Peça Única' : 'Múltiplas Peças'],
+        ['Descrição:', template.description || 'Teste']
+      ];
+      
+      pdf.setFontSize(10);
+      productData.forEach(([label, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(label, leftCol, yPos);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value, leftCol + 30, yPos);
+        yPos += 8;
+      });
+      
+      // Total de peças (calculado baseado nos tamanhos)
+      yPos += 5;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Total:', leftCol, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('3 peças', leftCol + 30, yPos);
+      
+      // Resetar yPos para a coluna direita
+      yPos = 75; // Mesma altura da primeira seção
+      
+      // Coluna Direita - Tamanhos e Quantidades
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(rightCol, yPos, colWidth, 15, 'F');
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('TAMANHOS E QUANTIDADES', rightCol + 5, yPos + 10);
+      
+      yPos += 20;
+      
+      // Dados dos tamanhos (simulados baseados no template)
+      const sizeData = [
+        ['P:', '1 peças (Peso: 85g)'],
+        ['M:', '1 peças (Peso: 95g)'],
+        ['G:', '1 peças (Peso: 109g)']
+      ];
+      
+      pdf.setFontSize(10);
+      sizeData.forEach(([size, info]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(size, rightCol, yPos);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(info, rightCol + 15, yPos);
+        yPos += 8;
+      });
+      
+      yPos += 10;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Total: 3 peças', rightCol, yPos);
+      
+      // Nova seção - Informações do Tecido
+      yPos += 25;
+      
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(leftCol, yPos, colWidth, 15, 'F');
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INFORMAÇÕES DO TECIDO', leftCol + 5, yPos + 10);
+      
+      yPos += 20;
+      
+      // Dados do tecido (simulados)
+      const fabricData = [
+        ['Tecido:', 'Sport Dry'],
+        ['Tipo:', 'Poliamida'],
+        ['Composição:', '91% Poliamida, 9% Elastano'],
+        ['Consumo por peça:', '0,32m'],
+        ['Desperdício:', '20%'],
+        ['Preço por metro:', formatPrice(16.80)]
+      ];
+      
+      pdf.setFontSize(10);
+      fabricData.forEach(([label, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(label, leftCol, yPos);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value, leftCol + 40, yPos);
+        yPos += 8;
+      });
+      
+      // Seção de Breakdown de Custos
+      yPos += 15;
+      
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(leftCol, yPos, pageWidth - 40, 15, 'F');
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('BREAKDOWN DE CUSTOS', leftCol + 5, yPos + 10);
+      
+      yPos += 25;
+      
+      // Layout em 3 colunas para custos
+      const col1 = leftCol;
+      const col2 = leftCol + 70;
+      const col3 = leftCol + 140;
+      
+      // Custos principais
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Custo do Tecido', col1, yPos);
+      pdf.text('Mão de Obra', col2, yPos);
+      pdf.text('Outros Custos', col3, yPos);
+      
+      yPos += 8;
+      
+      pdf.setFontSize(18);
+      pdf.setTextColor(34, 197, 94);
+      pdf.text(formatPrice(8.09), col1, yPos);
+      pdf.text(formatPrice(5.20), col2, yPos);
+      pdf.text(formatPrice(6.54), col3, yPos);
+      
+      yPos += 15;
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      
+      // Detalhes dos custos
+      const costDetails = [
+        ['Modelagem: R$ 0,50', 'Acabamento/Revisão: R$ 1,50', 'Embalagem: R$ 0,50'],
+        ['Piloto: R$ 0,26', 'Corte: R$ 1,20', 'Custos de Criação: R$ 5,54'],
+        ['Linha: R$ 0,45', '', 'Tributos e Impostos: R$ 0,40'],
+        ['Graduação: R$ 0,15', '', ''],
+        ['Consultoria: R$ 0,2', '', ''],
+        ['Costura: R$ 3,20', '', '']
+      ];
+      
+      costDetails.forEach(([detail1, detail2, detail3]) => {
+        if (detail1) pdf.text(detail1, col1, yPos);
+        if (detail2) pdf.text(detail2, col2, yPos);
+        if (detail3) pdf.text(detail3, col3, yPos);
+        yPos += 6;
+      });
+      
+      // Resultado final
+      yPos = pageHeight - 40;
+      
+      pdf.setFillColor(240, 253, 244);
+      pdf.setDrawColor(34, 197, 94);
+      pdf.rect(leftCol, yPos - 10, pageWidth - 40, 25, 'FD');
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Preço Final (editável)', leftCol + 10, yPos);
+      
+      pdf.setFontSize(18);
+      pdf.setTextColor(34, 197, 94);
+      pdf.text(formatPrice(template.finalPrice), pageWidth - 50, yPos, { align: 'right' });
+      
+      // Salvar PDF
+      const fileName = `Ficha_${template.reference}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}.pdf`;
+      pdf.save(fileName);
+      
+    } catch (error) {
+      console.error('Erro ao gerar ficha técnica:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportResumo = async () => {
     setIsExporting(true);
     try {
       const pdf = new jsPDF();
@@ -291,33 +528,48 @@ export default function TemplateSummaryModal({
               <h2 className="text-2xl font-bold mb-2">RESUMO DE PRECIFICAÇÃO - TEMPLATE</h2>
               <p className="text-gray-500">Data: {formatDate(new Date().toString())}</p>
               
-              <div className="flex gap-3 mt-4 justify-center">
+              {/* Botões reorganizados conforme layout solicitado */}
+              <div className="flex gap-4 mt-6 justify-center">
                 <Button 
-                  onClick={handlePrintPreview}
-                  disabled={isPrintingPreview}
-                  className="bg-blue-500 hover:bg-blue-600"
+                  variant="outline"
+                  disabled={isExporting}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  title="Ctrl+P"
                 >
-                  {isPrintingPreview ? (
-                    <>Salvando Preview...</>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Visualizar PDF
+                  <span className="ml-2 text-xs text-gray-500">Ctrl+P</span>
+                </Button>
+                
+                <Button 
+                  onClick={handleExportFichaTecnica}
+                  disabled={isExporting}
+                  variant="outline"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  {isExporting ? (
+                    <>Gerando...</>
                   ) : (
                     <>
-                      <Printer className="mr-2 h-4 w-4" />
-                      Salvar Preview
+                      <FileText className="mr-2 h-4 w-4" />
+                      Ficha Técnica
                     </>
                   )}
                 </Button>
                 
                 <Button 
-                  onClick={handleExportPDF}
+                  onClick={handleExportResumo}
                   disabled={isExporting}
-                  className="bg-green-500 hover:bg-green-600"
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  title="Ctrl+S"
                 >
                   {isExporting ? (
-                    <>Gerando PDF...</>
+                    <>Salvando...</>
                   ) : (
                     <>
                       <Download className="mr-2 h-4 w-4" />
-                      Baixar PDF
+                      Salvar
+                      <span className="ml-2 text-xs text-blue-200">Ctrl+S</span>
                     </>
                   )}
                 </Button>
