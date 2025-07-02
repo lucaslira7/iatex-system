@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import PricingModal from "./modals/PricingModal";
 import TemplateSummaryModal from "./modals/TemplateSummaryModal";
+import { CopyTemplateModal } from "./modals/CopyTemplateModal";
 import type { PricingTemplate } from "@shared/schema";
 
 export default function ModelManagement() {
@@ -31,6 +32,8 @@ export default function ModelManagement() {
   const [editingTemplate, setEditingTemplate] = useState<PricingTemplate | null>(null);
   const [duplicatingTemplate, setDuplicatingTemplate] = useState<PricingTemplate | null>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [copyingTemplate, setCopyingTemplate] = useState<PricingTemplate | null>(null);
+  const [showCopyModal, setShowCopyModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const { toast } = useToast();
@@ -80,17 +83,24 @@ export default function ModelManagement() {
   };
 
   const handleCopyTemplate = (template: PricingTemplate) => {
-    const templateCopy = {
-      ...template,
-      modelName: `${template.modelName} - Cópia`,
-      reference: `${template.reference}-COPY`,
-    };
-    setEditingTemplate(templateCopy);
-    setShowPricingModal(true);
-    toast({
-      title: "Template copiado",
-      description: "Template carregado para edição",
-    });
+    setCopyingTemplate(template);
+    setShowCopyModal(true);
+  };
+
+  const handleConfirmCopy = (newName: string, newReference: string) => {
+    if (copyingTemplate) {
+      setEditingTemplate({
+        ...copyingTemplate,
+        id: 0, // New template
+        modelName: newName,
+        reference: newReference
+      });
+      setShowPricingModal(true);
+      toast({
+        title: "Template copiado",
+        description: "Template carregado para edição com novo nome e referência",
+      });
+    }
   };
 
   const handleNewPricing = () => {
@@ -494,6 +504,14 @@ export default function ModelManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Copy Template Modal */}
+      <CopyTemplateModal
+        isOpen={showCopyModal}
+        onClose={() => setShowCopyModal(false)}
+        template={copyingTemplate}
+        onConfirm={handleConfirmCopy}
+      />
     </main>
   );
 }
