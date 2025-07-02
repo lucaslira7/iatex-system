@@ -399,7 +399,7 @@ export default function UserPanels() {
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs text-gray-500">
                             <span>Progresso: {task.progress}%</span>
-                            <span>Prazo: {task.dueDate.toLocaleDateString()}</span>
+                            <span>Prazo: {new Date(task.dueDate).toLocaleDateString()}</span>
                           </div>
                           <Progress value={task.progress} className="h-2" />
                         </div>

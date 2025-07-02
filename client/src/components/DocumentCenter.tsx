@@ -324,7 +324,7 @@ export default function DocumentCenter() {
                       <SelectValue placeholder="Selecionar modelo..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Documento Geral</SelectItem>
+                      <SelectItem value="general">Documento Geral</SelectItem>
                       {models.map(model => (
                         <SelectItem key={model.id} value={model.id.toString()}>
                           {model.reference} - {model.name}

@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { 
   Brain,
   Gauge,
@@ -22,7 +24,9 @@ import {
   Shield,
   Download,
   Bell,
-  Settings
+  Settings,
+  Star,
+  StarOff
 } from "lucide-react";
 import { ActiveSection } from "../pages/Home";
 import { useAuth } from "../hooks/useAuth";
@@ -34,151 +38,233 @@ interface SidebarProps {
 
 export default function SidebarImproved({ activeSection, onSectionChange }: SidebarProps) {
   const { user } = useAuth();
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  // Carregar favoritos do localStorage
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('ia-tex-favorites');
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites));
+    }
+  }, []);
+
+  // Salvar favoritos no localStorage
+  const saveFavorites = (newFavorites: string[]) => {
+    setFavorites(newFavorites);
+    localStorage.setItem('ia-tex-favorites', JSON.stringify(newFavorites));
+  };
+
+  // Toggle favorito
+  const toggleFavorite = (moduleId: string) => {
+    const newFavorites = favorites.includes(moduleId)
+      ? favorites.filter(id => id !== moduleId)
+      : [...favorites, moduleId];
+    saveFavorites(newFavorites);
+  };
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
   };
 
-  // Módulos Principais
-  const mainModules = [
-    { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null },
-    { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null },
+  // Lista completa de todos os módulos
+  const allModules = [
+    // Principais
+    { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null, section: 'main' },
+    { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null, section: 'main' },
+    
+    // Produção & Materiais
+    { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3, section: 'production' },
+    { id: 'models', icon: Calculator, label: 'Modelos & Precificação', badge: null, section: 'production' },
+    { id: 'simulations', icon: BarChart3, label: 'Simulações Avançadas', badge: null, section: 'production' },
+    { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null, section: 'production' },
+    { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12, section: 'production' },
+    { id: 'production-advanced', icon: Factory, label: 'Produção Avançada', badge: null, section: 'production' },
+    { id: 'inventory', icon: Package, label: 'Estoque Inteligente', badge: null, section: 'production' },
+    
+    // Ferramentas & Relatórios
+    { id: 'documents', icon: FolderOpen, label: 'Central de Documentos', badge: null, section: 'tools' },
+    { id: 'reports', icon: PieChart, label: 'Relatórios Inteligentes', badge: null, section: 'tools' },
+    { id: 'calendar', icon: Calendar, label: 'Calendário de Produção', badge: null, section: 'tools' },
+    { id: 'qr-generator', icon: QrCode, label: 'QR Code & Etiquetas', badge: null, section: 'tools' },
+    
+    // Painéis
+    { id: 'operational-panel', icon: CheckSquare, label: 'Painel Operacional', badge: null, section: 'panels' },
+    { id: 'employee-management', icon: UserCheck, label: 'Gestão de Funcionários', badge: null, section: 'panels' },
+    { id: 'user-panels', icon: Users, label: 'Painéis de Usuário', badge: null, section: 'panels' },
+    { id: 'ai-assistant', icon: Bot, label: 'Assistente IA', badge: null, section: 'panels' },
+    
+    // Gestão
+    { id: 'clients', icon: Building, label: 'Gestão de Clientes', badge: null, section: 'management' },
+    { id: 'administration', icon: Shield, label: 'Administração', badge: null, section: 'management' },
+    { id: 'backup', icon: Download, label: 'Backup & Exportação', badge: null, section: 'management' },
+    { id: 'notifications', icon: Bell, label: 'Central de Notificações', badge: null, section: 'management' },
+    
+    // Configurações
+    { id: 'brand-settings', icon: Settings, label: 'Configurações da Marca', badge: null, section: 'settings' },
   ];
 
-  // Produção & Materiais
-  const productionModules = [
-    { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3 },
-    { id: 'models', icon: Calculator, label: 'Modelos & Precificação', badge: null },
-    { id: 'simulations', icon: BarChart3, label: 'Simulações Avançadas', badge: null },
-    { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null },
-    { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
-    { id: 'advanced-production', icon: Factory, label: 'Produção Avançada', badge: null },
-  ];
+  // Módulos agrupados por seção para exibição
+  const mainModules = allModules.filter(m => m.section === 'main');
+  const productionModules = allModules.filter(m => m.section === 'production');
+  const toolsModules = allModules.filter(m => m.section === 'tools');
+  const panelsModules = allModules.filter(m => m.section === 'panels');
+  const managementModules = allModules.filter(m => m.section === 'management');
+  const settingsModules = allModules.filter(m => m.section === 'settings');
 
-  // Ferramentas & Relatórios
-  const toolsModules = [
-    { id: 'documents', icon: FolderOpen, label: 'Central de Documentos', badge: null },
-    { id: 'reports', icon: PieChart, label: 'Relatórios Inteligentes', badge: null },
-    { id: 'calendar', icon: Calendar, label: 'Calendário Produção', badge: null },
-    { id: 'qrcodes', icon: QrCode, label: 'QR Code & Etiquetas', badge: null },
-  ];
+  // Módulos favoritos
+  const favoriteModules = allModules.filter(module => favorites.includes(module.id));
 
-  // Painéis Operacionais
-  const operationalModules = [
-    { id: 'operational', icon: CheckSquare, label: 'Painel Operacional', badge: 'NOVO' },
-    { id: 'user-panels', icon: UserCheck, label: 'Painéis de Usuário', badge: null },
-    { id: 'ai-assistant', icon: Bot, label: 'Assistente IA', badge: 'NOVO' },
-  ];
-
-  // Gestão & Administração
-  const managementModules = [
-    { id: 'clients', icon: Building, label: 'Clientes', badge: null },
-    { id: 'employees', icon: Users, label: 'Funcionários', badge: null },
-    { id: 'inventory', icon: Package, label: 'Estoque', badge: null },
-  ];
-
-  // Configurações & Sistema
-  const systemModules = [
-    { id: 'admin', icon: Shield, label: 'Administração', badge: 'NOVO' },
-    { id: 'backup', icon: Download, label: 'Backup & Export', badge: null },
-    { id: 'notifications', icon: Bell, label: 'Notificações', badge: null },
-    { id: 'brand-settings', icon: Settings, label: 'Configurações da Marca', badge: 'NOVO' },
-  ];
-
-  const sections = [
-    { title: '', items: mainModules },
-    { title: 'PRODUÇÃO & MATERIAIS', items: productionModules },
-    { title: 'FERRAMENTAS & RELATÓRIOS', items: toolsModules },
-    { title: 'PAINÉIS OPERACIONAIS', items: operationalModules },
-    { title: 'GESTÃO & ADMINISTRAÇÃO', items: managementModules },
-    { title: 'CONFIGURAÇÕES & SISTEMA', items: systemModules },
-  ];
+  // Componente para renderizar item do menu
+  const renderMenuItem = (item: any, showFavoriteButton = false) => {
+    const IconComponent = item.icon;
+    const isFavorite = favorites.includes(item.id);
+    
+    return (
+      <div key={item.id} className="group relative">
+        <button
+          onClick={() => onSectionChange(item.id)}
+          className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors ${
+            activeSection === item.id
+              ? 'bg-blue-100 text-blue-900'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <IconComponent className="h-4 w-4" />
+            <span>{item.label}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {item.badge && (
+              <Badge variant={typeof item.badge === 'number' ? 'destructive' : 'secondary'} className="text-xs">
+                {item.badge}
+              </Badge>
+            )}
+            {showFavoriteButton && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(item.id);
+                }}
+              >
+                {isFavorite ? (
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                ) : (
+                  <StarOff className="h-3 w-3" />
+                )}
+              </Button>
+            )}
+          </div>
+        </button>
+      </div>
+    );
+  };
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-72 bg-slate-800 shadow-lg">
-      <div className="flex h-full flex-col">
-        {/* Logo Area */}
-        <div className="flex h-20 items-center px-6 border-b border-slate-700">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
-              <Brain className="h-6 w-6 text-white" />
+    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <Brain className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-bold text-lg">IA.TEX</span>
+        </div>
+        {user && (
+          <p className="text-xs text-gray-500 mt-2 truncate">
+            {user.email}
+          </p>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+        
+        {/* Módulos Favoritos */}
+        {favoriteModules.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+              ⭐ Favoritos
+            </h3>
+            <div className="space-y-1">
+              {favoriteModules.map(item => renderMenuItem(item, true))}
             </div>
-            <span className="text-xl font-bold text-white">IA.TEX</span>
+          </div>
+        )}
+
+        {/* Principais */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Principais
+          </h3>
+          <div className="space-y-1">
+            {mainModules.map(item => renderMenuItem(item, true))}
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {sections.map((section, sectionIndex) => (
-            <div key={sectionIndex}>
-              {/* Section Header */}
-              {section.title && (
-                <div className="py-3">
-                  {sectionIndex > 0 && <div className="border-t border-slate-700 mb-3"></div>}
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">
-                    {section.title}
-                  </p>
-                </div>
-              )}
-              
-              {/* Section Items */}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => onSectionChange(item.id as ActiveSection)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 text-left rounded-lg transition-all duration-200 text-sm ${
-                        isActive 
-                          ? 'bg-blue-600 text-white shadow-lg' 
-                          : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="font-medium truncate">{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <Badge 
-                          variant="destructive" 
-                          className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-bold flex-shrink-0 ml-2"
-                        >
-                          {typeof item.badge === 'string' ? item.badge.slice(0, 3) : item.badge}
-                        </Badge>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* User Section */}
-        <div className="border-t border-slate-700 p-4">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-full bg-slate-600 flex items-center justify-center">
-              <div className="h-6 w-6 rounded-full bg-slate-400"></div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                {user?.email || 'Usuário'}
-              </p>
-              <button
-                onClick={handleLogout}
-                className="text-xs text-slate-400 hover:text-white transition-colors"
-              >
-                Sair
-              </button>
-            </div>
-            <button className="text-slate-400 hover:text-white transition-colors">
-              <Settings className="h-4 w-4" />
-            </button>
+        {/* Produção & Materiais */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Produção & Materiais
+          </h3>
+          <div className="space-y-1">
+            {productionModules.map(item => renderMenuItem(item, true))}
           </div>
         </div>
+
+        {/* Ferramentas & Relatórios */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Ferramentas & Relatórios
+          </h3>
+          <div className="space-y-1">
+            {toolsModules.map(item => renderMenuItem(item, true))}
+          </div>
+        </div>
+
+        {/* Painéis */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Painéis
+          </h3>
+          <div className="space-y-1">
+            {panelsModules.map(item => renderMenuItem(item, true))}
+          </div>
+        </div>
+
+        {/* Gestão */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Gestão
+          </h3>
+          <div className="space-y-1">
+            {managementModules.map(item => renderMenuItem(item, true))}
+          </div>
+        </div>
+
+        {/* Configurações */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Configurações
+          </h3>
+          <div className="space-y-1">
+            {settingsModules.map(item => renderMenuItem(item, true))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t">
+        <Button 
+          onClick={handleLogout}
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+        >
+          Sair
+        </Button>
       </div>
     </div>
   );
