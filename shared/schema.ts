@@ -338,7 +338,6 @@ export const pricingTemplates = pgTable("pricing_templates", {
   imageUrl: text("image_url"),
   pricingMode: varchar("pricing_mode", { length: 20 }).notNull(), // 'single' | 'multiple'
   fabricId: integer("fabric_id").references(() => fabrics.id),
-  modelId: integer("model_id").references(() => models.id), // Nova relação com modelos
   fabricConsumption: decimal("fabric_consumption", { precision: 10, scale: 3 }).notNull(),
   wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }).notNull().default("0"),
   profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }).notNull(),
@@ -375,10 +374,7 @@ export const pricingTemplatesRelations = relations(pricingTemplates, ({ one, man
     fields: [pricingTemplates.fabricId],
     references: [fabrics.id],
   }),
-  model: one(models, {
-    fields: [pricingTemplates.modelId],
-    references: [models.id],
-  }),
+
   sizes: many(pricingTemplateSizes),
   costs: many(pricingTemplateCosts),
 }));

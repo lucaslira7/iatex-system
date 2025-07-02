@@ -11,6 +11,15 @@ import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import {
+  createModernHeader,
+  createSection,
+  createInfoCard,
+  createFinancialSummary,
+  createSimpleTable,
+  createFooter,
+  addImageToPDF
+} from '@/lib/pdfUtils';
 
 export default function Step8Summary() {
   const { formData, updateFormData } = usePricing();
@@ -137,38 +146,124 @@ export default function Step8Summary() {
     setIsExporting(true);
     try {
       const pdf = new jsPDF();
-      const pageWidth = pdf.internal.pageSize.width;
-      let yPos = 20;
       
-      // Cabeçalho com logo IA.TEX (cópia exata da visualização)
-      pdf.setFillColor(99, 102, 241);
-      pdf.rect(0, 0, pageWidth, 50, 'F');
+      // Criar cabeçalho profissional
+      let yPos = createModernHeader(pdf, 'RESUMO DE PRECIFICAÇÃO', formData.reference);
       
-      // Logo IA.TEX
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(28);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('IA.TEX', 20, 30);
+      // Seção de Informações do Produto
+      yPos = createSection(pdf, 'INFORMAÇÕES DO PRODUTO', yPos);
       
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Sistema de Gestão para Confecção', 20, 42);
+      const productInfo = [
+        { label: 'Nome do Modelo', value: formData.modelName },
+        { label: 'Referência', value: formData.reference, highlight: true },
+        { label: 'Tipo de Peça', value: formData.garmentType },
+        { label: 'Modalidade', value: formData.pricingMode === 'single' ? 'Peça Única' : 'Múltiplas Peças' },
+        { label: 'Descrição', value: formData.description || 'N/A' }
+      ];
       
-      // Título principal centralizado
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      const titleText = 'FICHA TÉCNICA DE PRECIFICAÇÃO';
-      const titleWidth = pdf.getTextWidth(titleText);
-      pdf.text(titleText, (pageWidth - titleWidth) / 2, 70);
+      yPos = createInfoCard(pdf, 'Dados do Produto', productInfo, yPos);
       
-      // Data no canto direito
-      const todayDate = new Date().toLocaleDateString('pt-BR');
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Data: ${todayDate}`, pageWidth - 60, 70);
+      // Seção de Tamanhos e Quantidades
+      yPos = createSection(pdf, 'COMPOSIÇÃO E QUANTIDADES', yPos);
       
-      // Botão Download visual (cópia exata)
+      const totalQty = formData.sizes.reduce((total, size) => total + size.quantity, 0);
+      const totalWt = formData.sizes.reduce((total, size) => total + (size.quantity * size.weight), 0);
+      
+      const sizesHeaders = ['Tamanho', 'Quantidade', 'Peso Unit. (g)', 'Peso Total (g)'];
+      const sizesRows = formData.sizes.map(size => [
+        size.size,
+        size.quantity.toString(),
+        size.weight.toString(),
+        (size.quantity * size.weight).toString()
+      ]);
+      
+      // Adicionar linha de totais
+      sizesRows.push([
+        'TOTAL',
+        totalQty.toString(),
+        '-',
+        totalWt.toString()
+      ]);
+      
+      yPos = createSimpleTable(pdf, sizesHeaders, sizesRows, yPos);
+      
+      // Seção de Custos Detalhados
+      yPos = createSection(pdf, 'ANÁLISE DE CUSTOS', yPos);
+      
+      const costHeaders = ['Categoria', 'Descrição', 'Valor Unit.', 'Qtde', 'Total'];
+      const costRows: string[][] = [];
+      
+      // Custos de criação
+      formData.creationCosts.forEach(cost => {
+        costRows.push([
+          'Criação',
+          cost.description,
+          `R$ ${cost.unitValue.toFixed(2)}`,
+          cost.quantity.toString(),
+          `R$ ${(cost.unitValue * cost.quantity).toFixed(2)}`
+        ]);
+      });
+      
+      yPos = createSimpleTable(pdf, costHeaders, costRows, yPos);
+      
+      // Informações do Tecido se disponível
+      if (selectedFabric) {
+        yPos = createSection(pdf, 'INFORMAÇÕES DO TECIDO', yPos);
+        
+        const fabricInfo = [
+          { label: 'Nome', value: selectedFabric.name },
+          { label: 'Tipo', value: selectedFabric.type },
+          { label: 'Composição', value: selectedFabric.composition || 'N/A' },
+          { label: 'Largura', value: `${selectedFabric.usableWidth}cm` },
+          { label: 'Peso', value: `${selectedFabric.gramWeight}g/m²` },
+          { label: 'Consumo', value: `${consumptionPerPiece.toFixed(2)}m/peça` },
+          { label: 'Desperdício', value: `${formData.wastePercentage}%` }
+        ];
+        
+        yPos = createInfoCard(pdf, 'Especificações do Tecido', fabricInfo, yPos);
+      }
+      
+      // Resumo Financeiro Final
+      yPos = createSection(pdf, 'RESUMO FINANCEIRO', yPos);
+      
+      const financialData = {
+        totalCost: costs.totalCost,
+        finalPrice: costs.finalPrice,
+        profit: costs.finalPrice - costs.totalCost,
+        marginPercent: ((costs.finalPrice - costs.totalCost) / costs.totalCost) * 100,
+        pricePerUnit: costs.pricePerUnit
+      };
+      
+      yPos = createFinancialSummary(pdf, financialData, yPos);
+      
+      // Rodapé profissional
+      createFooter(
+        pdf,
+        'Este resumo de precificação foi gerado automaticamente pelo sistema IA.TEX',
+        `Template salvo permanentemente - Ref: ${formData.reference}`
+      );
+      
+      // Salvar e baixar o PDF
+      const fileDate = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Resumo_${formData.reference}_${fileDate}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
       pdf.setFillColor(34, 197, 94);
       pdf.roundedRect((pageWidth - 70) / 2, 80, 70, 15, 3, 3, 'F');
       pdf.setTextColor(255, 255, 255);
@@ -200,7 +295,7 @@ export default function Step8Summary() {
       pdf.text(formData.modelName, leftCol + 25, yPos);
       
       // Tamanhos (direita)
-      const totalQuantity = formData.sizes.reduce((total, size) => total + size.quantity, 0);
+      const totalQtdPieces = formData.sizes.reduce((total, size) => total + size.quantity, 0);
       let rightYPos = yPos;
       formData.sizes.forEach((size) => {
         pdf.setFontSize(11);

@@ -11,7 +11,7 @@ import Step4CreationCosts from "@/components/pricing/Step4CreationCosts";
 import Step5Supplies from "@/components/pricing/Step5Supplies";
 import Step6Labor from "@/components/pricing/Step6Labor";
 import Step7FixedCosts from "@/components/pricing/Step7FixedCosts";
-import Step8Summary from "@/components/pricing/Step8Summary";
+import Step8SummaryFixed from "@/components/pricing/Step8SummaryFixed";
 import type { PricingTemplate } from "@shared/schema";
 
 interface PricingModalProps {
@@ -128,7 +128,7 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
       case 7:
         return <Step7FixedCosts />;
       case 8:
-        return <Step8Summary />;
+        return <Step8SummaryFixed />;
       default:
         return <Step0PricingMode />;
     }
