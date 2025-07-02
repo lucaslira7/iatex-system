@@ -18,8 +18,9 @@ import OrderManagement from "@/components/OrderManagement";
 import ProductionTracking from "@/components/ProductionTracking";
 import AIAssistant from "@/components/AIAssistant";
 import UserPanels from "@/components/UserPanels";
+import OperationalPanel from "@/components/OperationalPanel";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory' | 'reports' | 'calendar' | 'qrcodes' | 'ai-assistant' | 'user-panels';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory' | 'reports' | 'calendar' | 'qrcodes' | 'ai-assistant' | 'user-panels' | 'operational';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -60,6 +61,8 @@ export default function Home() {
         return <AIAssistant />;
       case 'user-panels':
         return <UserPanels />;
+      case 'operational':
+        return <OperationalPanel />;
       default:
         return <CustomizableDashboard onSectionChange={setActiveSection} />;
     }

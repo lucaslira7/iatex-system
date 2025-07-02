@@ -923,6 +923,331 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Operational Panel routes (Kanban style)
+  app.get("/api/operational/tasks", isAuthenticated, async (req, res) => {
+    try {
+      // Mock kanban tasks with enhanced data structure
+      const mockKanbanTasks = [
+        {
+          id: "kanban-1",
+          title: "Prensar 200 camisas modelo C001",
+          description: "Prensar lote completo de camisas sociais brancas tamanho M",
+          priority: "high",
+          status: "todo",
+          type: "production",
+          assignedTo: "current-user",
+          assignedBy: "Supervisor",
+          dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+          tags: ["produção", "prensagem", "urgente"],
+          attachments: [],
+          progress: 0,
+          location: "Setor de Acabamento",
+          notes: [],
+          createdAt: new Date(),
+          estimatedHours: 4,
+          model: "C001",
+          quantity: 200
+        },
+        {
+          id: "kanban-2",
+          title: "Buscar insumos na Facção Maria",
+          description: "Retirar linha preta e botões dourados solicitados",
+          priority: "medium",
+          status: "doing", 
+          type: "supply",
+          assignedTo: "current-user",
+          assignedBy: "Gerente",
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+          tags: ["transporte", "insumos"],
+          attachments: [
+            {
+              id: "att-k1",
+              filename: "lista-insumos.pdf",
+              url: "/uploads/lista-insumos.pdf",
+              type: "document",
+              uploadedAt: new Date(),
+              uploadedBy: "supervisor"
+            }
+          ],
+          progress: 60,
+          location: "Facção Maria - Centro",
+          notes: ["Já confirmado horário de retirada", "Levar sacolas grandes"],
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          estimatedHours: 3,
+          actualHours: 2
+        },
+        {
+          id: "kanban-3",
+          title: "Entregar lote na Facção João",
+          description: "Entregar 150 vestidos para costura",
+          priority: "urgent",
+          status: "done",
+          type: "delivery",
+          assignedTo: "delivery-team",
+          assignedBy: "Coordenador",
+          dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          tags: ["entrega", "facção", "vestidos"],
+          attachments: [],
+          progress: 100,
+          location: "Facção João",
+          notes: ["Entrega realizada às 14h", "Recibo assinado"],
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          estimatedHours: 2,
+          actualHours: 1.5,
+          model: "V001",
+          quantity: 150
+        }
+      ];
+      
+      res.json(mockKanbanTasks);
+    } catch (error) {
+      console.error('Error fetching operational tasks:', error);
+      res.status(500).json({ message: "Failed to fetch operational tasks" });
+    }
+  });
+
+  app.get("/api/operational/production", isAuthenticated, async (req, res) => {
+    try {
+      // Mock production orders with fabric cutting integration
+      const mockProductionOrders = [
+        {
+          id: "prod-1",
+          modelCode: "C001",
+          modelName: "Camisa Social Branca",
+          fabricUsed: "Tricoline Branco",
+          totalWeight: 36,
+          estimatedPieces: 132,
+          actualPieces: 128,
+          sizes: [
+            { size: "P", quantity: 30, color: "branco" },
+            { size: "M", quantity: 50, color: "branco" },
+            { size: "G", quantity: 48, color: "branco" }
+          ],
+          factoryAssigned: "Facção Maria",
+          status: "in-production",
+          sentDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+          expectedReturn: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+          qrCode: "QR-C001-240102"
+        },
+        {
+          id: "prod-2",
+          modelCode: "V001", 
+          modelName: "Vestido Estampado",
+          fabricUsed: "Crepe Estampado",
+          totalWeight: 24,
+          estimatedPieces: 85,
+          actualPieces: 82,
+          sizes: [
+            { size: "P", quantity: 25, color: "floral" },
+            { size: "M", quantity: 35, color: "floral" },
+            { size: "G", quantity: 22, color: "floral" }
+          ],
+          factoryAssigned: "Facção João",
+          status: "ready-pickup",
+          sentDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          expectedReturn: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          actualReturn: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          qrCode: "QR-V001-240105"
+        },
+        {
+          id: "prod-3",
+          modelCode: "CJ001",
+          modelName: "Conjunto Verão",
+          fabricUsed: "Linho Azul",
+          totalWeight: 18,
+          estimatedPieces: 60,
+          sizes: [
+            { size: "P", quantity: 20, color: "azul claro" },
+            { size: "M", quantity: 25, color: "azul claro" },
+            { size: "G", quantity: 15, color: "azul claro" }
+          ],
+          factoryAssigned: "Facção Silva",
+          status: "cutting",
+          expectedReturn: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+          qrCode: "QR-CJ001-240108"
+        }
+      ];
+      
+      res.json(mockProductionOrders);
+    } catch (error) {
+      console.error('Error fetching production orders:', error);
+      res.status(500).json({ message: "Failed to fetch production orders" });
+    }
+  });
+
+  app.get("/api/operational/goals", isAuthenticated, async (req, res) => {
+    try {
+      // Mock daily goals for productivity tracking
+      const mockDailyGoals = [
+        {
+          id: "goal-1",
+          employeeId: "current-user",
+          title: "Prensagem Diária",
+          target: 300,
+          current: 180,
+          unit: "peças",
+          type: "pressing",
+          date: new Date(),
+          completed: false
+        },
+        {
+          id: "goal-2",
+          employeeId: "current-user", 
+          title: "Controle de Qualidade",
+          target: 150,
+          current: 150,
+          unit: "peças",
+          type: "quality-check",
+          date: new Date(),
+          completed: true
+        },
+        {
+          id: "goal-3",
+          employeeId: "current-user",
+          title: "Embalagem",
+          target: 100,
+          current: 45,
+          unit: "pacotes",
+          type: "packing",
+          date: new Date(),
+          completed: false
+        },
+        {
+          id: "goal-4",
+          employeeId: "current-user",
+          title: "Entregas",
+          target: 3,
+          current: 2,
+          unit: "rotas",
+          type: "delivery",
+          date: new Date(),
+          completed: false
+        }
+      ];
+      
+      res.json(mockDailyGoals);
+    } catch (error) {
+      console.error('Error fetching daily goals:', error);
+      res.status(500).json({ message: "Failed to fetch daily goals" });
+    }
+  });
+
+  app.get("/api/operational/supplies", isAuthenticated, async (req, res) => {
+    try {
+      // Mock supply requests with enhanced structure
+      const mockSupplyRequests = [
+        {
+          id: "supply-op-1",
+          items: [
+            { name: "Linha preta", brand: "Corrente", reference: "120", quantity: 10, unit: "cones" },
+            { name: "Botões dourados", brand: null, reference: "BT-001", quantity: 500, unit: "unidades" },
+            { name: "Zíper 20cm", brand: "YKK", reference: "Z20", quantity: 50, unit: "unidades" }
+          ],
+          requestedBy: "Facção Maria",
+          factoryName: "Facção Maria",
+          urgency: "medium",
+          status: "pending",
+          requestDate: new Date(Date.now() - 3 * 60 * 60 * 1000),
+          notes: "Urgente para finalizar lote de blazers da próxima semana",
+          attachments: [
+            {
+              id: "att-supply-1",
+              filename: "foto-estoque-linha.jpg",
+              url: "/uploads/foto-estoque-linha.jpg",
+              type: "photo",
+              uploadedAt: new Date(),
+              uploadedBy: "faccao-maria"
+            }
+          ]
+        },
+        {
+          id: "supply-op-2",
+          items: [
+            { name: "Elástico 2cm", brand: "Santista", reference: "EL-02", quantity: 100, unit: "metros" },
+            { name: "Etiquetas composição", brand: null, reference: "ET-COMP", quantity: 200, unit: "unidades" }
+          ],
+          requestedBy: "Facção João",
+          factoryName: "Facção João",
+          urgency: "high",
+          status: "approved",
+          requestDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          expectedDelivery: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+          notes: "Para o lote de vestidos que está terminando esta semana",
+          attachments: []
+        }
+      ];
+      
+      res.json(mockSupplyRequests);
+    } catch (error) {
+      console.error('Error fetching supply requests:', error);
+      res.status(500).json({ message: "Failed to fetch supply requests" });
+    }
+  });
+
+  app.post("/api/operational/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskData = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'operational',
+        'create-kanban-task',
+        `Criou tarefa Kanban: ${taskData.title}`
+      );
+      
+      res.json({ 
+        success: true,
+        id: `kanban-${Date.now()}`,
+        message: 'Tarefa criada no quadro Kanban!'
+      });
+    } catch (error) {
+      console.error('Error creating kanban task:', error);
+      res.status(500).json({ message: "Failed to create kanban task" });
+    }
+  });
+
+  app.patch("/api/operational/tasks/:taskId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { taskId } = req.params;
+      const updates = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'operational',
+        'update-kanban-task',
+        `Atualizou tarefa Kanban ${taskId}: moveu para ${updates.status || 'atualizada'}`
+      );
+      
+      res.json({ success: true, message: 'Tarefa atualizada no Kanban!' });
+    } catch (error) {
+      console.error('Error updating kanban task:', error);
+      res.status(500).json({ message: "Failed to update kanban task" });
+    }
+  });
+
+  app.post("/api/operational/production", isAuthenticated, async (req: any, res) => {
+    try {
+      const productionData = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'operational',
+        'create-production-order',
+        `Criou ordem de produção: ${productionData.modelCode || 'nova ordem'}`
+      );
+      
+      res.json({ 
+        success: true,
+        id: `prod-${Date.now()}`,
+        qrCode: `QR-${productionData.modelCode || 'MODEL'}-${new Date().toISOString().slice(2,10).replace(/-/g, '')}`,
+        message: 'Ordem de produção criada e enviada para a facção!'
+      });
+    } catch (error) {
+      console.error('Error creating production order:', error);
+      res.status(500).json({ message: "Failed to create production order" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

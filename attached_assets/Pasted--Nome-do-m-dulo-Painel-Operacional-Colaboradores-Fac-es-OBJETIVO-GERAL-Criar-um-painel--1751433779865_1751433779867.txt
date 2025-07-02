@@ -1,0 +1,147 @@
+🧩 Nome do módulo:
+Painel Operacional (Colaboradores & Facções)
+
+🎯 OBJETIVO GERAL:
+Criar um painel visual estilo Trello, com cards de tarefas e metas organizados por status (Ex: “A Fazer”, “Em andamento”, “Concluído”), interligado com as áreas de Produção, Estoque, Corte e Orçamentos.
+
+🧑‍💼 PARA FUNCIONÁRIOS INTERNOS
+👀 Acesso Individual:
+Cada funcionário só vê:
+
+Suas tarefas
+
+Suas metas (diárias, semanais)
+
+Cards atribuídos a ele
+
+✅ Funcionalidades:
+Painel de tarefas tipo Kanban (Ex: Prensar 200 peças, Buscar insumos, Entregar na facção X)
+
+Cada tarefa pode ter:
+
+Prioridade (baixa, média, alta)
+
+Prazo
+
+Tags (ex: produção, entrega, compras)
+
+Uploads (foto, comprovante)
+
+Status arrastável (a fazer → fazendo → feito)
+
+Metas de produção com barra de progresso
+
+Tarefas podem ser criadas manualmente ou atribuídas automaticamente (ex: requisição feita por facção)
+
+Histórico completo de cada ação
+
+🧵 PARA FACÇÕES
+👀 Acesso Individual:
+Cada facção vê:
+
+Modelos recebidos (grade, cores, datas)
+
+Status de produção por modelo
+
+Requisições enviadas
+
+Tarefas internas (opcional)
+
+✅ Funcionalidades:
+Visualizar envios de produção:
+
+Modelo: C001
+
+Enviado: 01/02/2025
+
+Grade: 100P (20 branca, 40 preta...), 80M, 60G
+
+Previsão de entrega
+
+Atualizar progresso por tamanho/cor
+
+Botão: “Liberar para coleta”
+
+Enviar requisição de insumo:
+(Ex: “Linha cinza, marca X, ref 01253, 10 cones”)
+
+Anexar fotos (ex: estoque, avarias)
+
+Histórico completo por lote
+
+🧮 NOVO FLUXO DE PRODUÇÃO INTELIGENTE
+🧾 Começa com Geração de Produção:
+"Comprei 36kg de Sport Dry Branco e 16kg de Preto"
+
+Você cria um planejamento:
+
+Corta-se 1 P do modelo C001
+
+2 M do modelo C001
+
+1 G do modelo C002
+
+O sistema automaticamente:
+Calcula quantas peças rendem com base na gramatura
+
+Aponta: “Você conseguirá cortar aprox. 132 blusas”
+
+Gera pré-produção com divisão por modelo, tamanho e cor
+
+Permite você corrigir após corte real
+
+Encaminha a produção à facção escolhida
+
+Quando sair do corte:
+Você atualiza a contagem real (Ex: “Saíram 128 peças”)
+
+Sistema atualiza estoque de tecidos e produção
+
+Facção recebe os dados imediatamente no painel dela
+
+🔗 INTERLIGAÇÕES ENTRE MÓDULOS
+Ação	Integra com...
+Criar produção a partir de tecido comprado	Estoque + Corte + Facções
+Facção pede insumo	Estoque + Tarefas do funcionário
+Delegar entrega ou busca de peças	Tarefas do funcionário
+Acompanhar metas de prensagem	Painel do funcionário
+Liberar peça pronta	Sistema de Pedidos
+Gerar orçamento	Pedidos + Ficha Técnica
+
+📊 GESTOR TEM VISÃO GERAL
+Cards de todos os funcionários e facções
+
+KPIs: produtividade por semana, metas batidas, pedidos atrasados
+
+Mapa de movimentações: corte → facção → retorno
+
+Exportar histórico por produção, usuário, ou lote
+
+📎 EXTRAS INTELIGENTES (já incluídos no design):
+Uploads de fotos por tarefa
+
+Histórico de alterações
+
+Notificações automatizadas (vencimento, coleta, atraso)
+
+Filtros por status, prioridade, tipo (interno ou facção)
+
+QR Code opcional para tarefas externas
+
+✔️ VERIFICAÇÃO FINAL – O QUE VOCÊ QUERIA:
+✅ Painel visual estilo Trello? → Sim, com tarefas/metas por status
+✅ Divisão entre metas e tarefas? → Sim, separadas por tipo e prioridade
+✅ Interligado com estoque, produção, corte? → Sim, gera produção com base no tecido
+✅ Facção com acesso individual para marcar produção? → Sim
+✅ Requisições de insumos por facção com delegado automático para funcionário? → Sim
+✅ Histórico e notificações? → Sim
+✅ Correção de grade após corte e atualização da produção? → Sim
+
+⚙️ PRONTO PARA IMPLEMENTAÇÃO!
+Se desejar, posso agora gerar:
+
+✅ O prompt final completo oficial (atualizado)
+
+✅ A estrutura de pastas e arquivos iniciais
+
+✅ O fluxo de banco de dados e wireframe dos painéis
