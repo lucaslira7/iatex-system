@@ -11,8 +11,9 @@ import {
   costCategories,
   activityLog,
   quotations,
-  quotationSizes,
-  quotationCosts,
+  quotationItems,
+  quotationItemSizes,
+  quotationItemCosts,
   type User,
   type UpsertUser,
   type Fabric,
@@ -31,10 +32,12 @@ import {
   type CostCategory,
   type Quotation,
   type InsertQuotation,
-  type QuotationSize,
-  type InsertQuotationSize,
-  type QuotationCost,
-  type InsertQuotationCost,
+  type QuotationItem,
+  type InsertQuotationItem,
+  type QuotationItemSize,
+  type InsertQuotationItemSize,
+  type QuotationItemCost,
+  type InsertQuotationItemCost,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, count, sum } from "drizzle-orm";
@@ -95,7 +98,7 @@ export interface IStorage {
   // Quotation operations
   getQuotations(): Promise<Quotation[]>;
   getQuotation(id: number): Promise<Quotation | undefined>;
-  createQuotation(quotation: InsertQuotation, sizes: InsertQuotationSize[], costs: InsertQuotationCost[]): Promise<Quotation>;
+  createQuotation(quotation: InsertQuotation, item: InsertQuotationItem, sizes: InsertQuotationItemSize[], costs: InsertQuotationItemCost[]): Promise<Quotation>;
   updateQuotation(id: number, quotation: Partial<InsertQuotation>): Promise<Quotation>;
   deleteQuotation(id: number): Promise<void>;
 }
@@ -337,30 +340,41 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createQuotation(quotation: InsertQuotation, sizes: InsertQuotationSize[], costs: InsertQuotationCost[]): Promise<Quotation> {
+  async createQuotation(quotation: InsertQuotation, item: InsertQuotationItem, sizes: InsertQuotationItemSize[], costs: InsertQuotationItemCost[]): Promise<Quotation> {
     return await db.transaction(async (tx) => {
+      // Generate unique quotation number
+      const timestamp = Date.now().toString().slice(-6);
+      const quotationNumber = `ORC-${timestamp}`;
+      
       // Insert main quotation
       const [newQuotation] = await tx.insert(quotations).values({
         ...quotation,
+        quotationNumber,
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       }).returning();
 
-      // Insert sizes
+      // Insert quotation item
+      const [newItem] = await tx.insert(quotationItems).values({
+        ...item,
+        quotationId: newQuotation.id,
+      }).returning();
+
+      // Insert sizes for the item
       if (sizes.length > 0) {
-        await tx.insert(quotationSizes).values(
+        await tx.insert(quotationItemSizes).values(
           sizes.map(size => ({
             ...size,
-            quotationId: newQuotation.id,
+            itemId: newItem.id,
           }))
         );
       }
 
-      // Insert costs
+      // Insert costs for the item
       if (costs.length > 0) {
-        await tx.insert(quotationCosts).values(
+        await tx.insert(quotationItemCosts).values(
           costs.map(cost => ({
             ...cost,
-            quotationId: newQuotation.id,
+            itemId: newItem.id,
           }))
         );
       }

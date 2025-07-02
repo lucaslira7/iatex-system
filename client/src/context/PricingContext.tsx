@@ -100,6 +100,38 @@ const defaultFormData: PricingFormData = {
   totalCost: 0,
 };
 
+// Function to generate automatic reference based on garment type
+const generateReference = (garmentType: string, existingReference?: string): string => {
+  if (existingReference && existingReference.trim()) {
+    return existingReference;
+  }
+  
+  const garmentTypeLower = garmentType.toLowerCase();
+  let prefix = '';
+  
+  if (garmentTypeLower.includes('calça') || garmentTypeLower.includes('calca')) {
+    prefix = 'CL';
+  } else if (garmentTypeLower.includes('camisa')) {
+    prefix = 'C';
+  } else if (garmentTypeLower.includes('top')) {
+    prefix = 'T';
+  } else if (garmentTypeLower.includes('conjunto')) {
+    prefix = 'CJ';
+  } else if (garmentTypeLower.includes('camiseta')) {
+    prefix = 'C';
+  } else if (garmentTypeLower.includes('blusa')) {
+    prefix = 'C';
+  } else if (garmentTypeLower.includes('vestido')) {
+    prefix = 'V';
+  } else {
+    prefix = 'P'; // P for "Peça" (generic piece)
+  }
+  
+  // Generate a sequential number (this is simplified - in production you'd check existing references)
+  const timestamp = Date.now().toString().slice(-3);
+  return `${prefix}${timestamp}`;
+};
+
 const PricingContext = createContext<PricingContextType | undefined>(undefined);
 
 export function PricingProvider({ children }: { children: ReactNode }) {
@@ -109,6 +141,12 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   const updateFormData = (field: string, value: any) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
+      
+      // Auto-generate reference when garment type changes
+      if (field === 'garmentType' && value) {
+        updated.reference = generateReference(value, prev.reference);
+      }
+      
       // Auto-save to localStorage
       localStorage.setItem('ia-tex-pricing-data', JSON.stringify(updated));
       return updated;

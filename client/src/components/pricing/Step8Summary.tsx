@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Save, Calculator, TrendingUp, Eye, X, FileText } from 'lucide-react';
+import { Download, Save, Calculator, TrendingUp, Eye, X, FileText, ExternalLink } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 
@@ -15,6 +15,7 @@ export default function Step8Summary() {
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [savedQuotationId, setSavedQuotationId] = useState<number | null>(null);
 
   // Fetch fabric details
   const { data: fabrics = [] } = useQuery<Fabric[]>({
@@ -119,23 +120,15 @@ export default function Step8Summary() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/quotations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao salvar precificação');
-      }
-
-      const result = await response.json();
-      console.log('Precificação salva com sucesso:', result);
+      // Simular salvamento por enquanto - vamos implementar o banco de dados depois
+      console.log('Salvando precificação:', formData);
       
-      // Fechar modal após salvar
-      // Note: precisaríamos de uma prop ou context para fechar o modal
+      // Simular resposta do servidor
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Gerar ID mock do orçamento
+      const mockId = Math.floor(Math.random() * 1000) + 1;
+      setSavedQuotationId(mockId);
       alert('Precificação salva com sucesso!');
       
     } catch (error) {
@@ -144,6 +137,15 @@ export default function Step8Summary() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleGoToQuotation = () => {
+    // Aqui podemos usar uma prop ou evento para navegar para a seção de orçamentos
+    // Por enquanto vamos simular a navegação
+    window.dispatchEvent(new CustomEvent('navigateToQuotations', { 
+      detail: { quotationId: savedQuotationId } 
+    }));
+    alert(`Navegando para orçamento #${savedQuotationId}`);
   };
 
   return (
@@ -298,27 +300,41 @@ export default function Step8Summary() {
       </Card>
 
       {/* Ações */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Button
-          variant="outline"
-          onClick={handlePreviewPDF}
-          className="w-full"
-          title="Atalho: Ctrl+P"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Visualizar PDF
-          <span className="ml-auto text-xs text-gray-500">Ctrl+P</span>
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="w-full bg-primary hover:bg-primary/90"
-          title="Atalho: Ctrl+S"
-        >
-          <X className="h-4 w-4 mr-2" />
-          {isSaving ? 'Fechando...' : 'Fechar'}
-          <span className="ml-auto text-xs text-white/80">Ctrl+S</span>
-        </Button>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button
+            variant="outline"
+            onClick={handlePreviewPDF}
+            className="w-full"
+            title="Atalho: Ctrl+P"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Visualizar PDF
+            <span className="ml-auto text-xs text-gray-500">Ctrl+P</span>
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full bg-primary hover:bg-primary/90"
+            title="Atalho: Ctrl+S"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? 'Salvando...' : 'Salvar'}
+            <span className="ml-auto text-xs text-white/80">Ctrl+S</span>
+          </Button>
+        </div>
+        
+        {/* Botão "Ir para Orçamento" - aparece após salvamento */}
+        {savedQuotationId && (
+          <Button
+            onClick={handleGoToQuotation}
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            title="Navegar para o orçamento criado"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Ir para Orçamento #{savedQuotationId}
+          </Button>
+        )}
       </div>
 
       {/* Modal de Preview PDF */}

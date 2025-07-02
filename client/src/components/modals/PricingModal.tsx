@@ -35,13 +35,13 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
         event.preventDefault();
       }
       
-      // Setas para navegar entre etapas
-      if (event.key === 'ArrowRight' && currentStep < 8) {
+      // Ctrl+N para próxima etapa, Ctrl+B para etapa anterior
+      if (event.ctrlKey && event.key.toLowerCase() === 'n' && currentStep < 8) {
         handleNext();
         event.preventDefault();
       }
       
-      if (event.key === 'ArrowLeft' && currentStep > 0) {
+      if (event.ctrlKey && event.key.toLowerCase() === 'b' && currentStep > 0) {
         handlePrevious();
         event.preventDefault();
       }
@@ -177,27 +177,23 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
           </Button>
           <div className="space-x-3">
             {currentStep > 1 && (
-              <Button type="button" variant="outline" onClick={handlePrevious} title="Atalho: ←">
+              <Button type="button" variant="outline" onClick={handlePrevious} title="Atalho: Ctrl+B">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Anterior
-                <span className="ml-2 text-xs text-gray-500">←</span>
+                <span className="ml-2 text-xs text-gray-500">Ctrl+B</span>
               </Button>
             )}
-            {currentStep < 8 ? (
+            {currentStep < 8 && (
               <Button 
                 type="button" 
                 onClick={handleNext}
                 disabled={!canGoNext()}
                 className="bg-primary hover:bg-primary/90"
-                title="Atalho: →"
+                title="Atalho: Ctrl+N"
               >
                 Próximo
                 <ArrowRight className="ml-2 h-4 w-4" />
-                <span className="ml-2 text-xs text-white/80">→</span>
-              </Button>
-            ) : (
-              <Button type="button" className="bg-green-600 hover:bg-green-700 text-white">
-                Finalizar Precificação
+                <span className="ml-2 text-xs text-white/80">Ctrl+N</span>
               </Button>
             )}
           </div>

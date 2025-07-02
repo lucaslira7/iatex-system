@@ -196,11 +196,26 @@ export const activityLog = pgTable("activity_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Quotations/Precificações table
+// Quotations/Orçamentos table - Header information
 export const quotations = pgTable("quotations", {
   id: serial("id").primaryKey(),
+  quotationNumber: varchar("quotation_number", { length: 50 }).notNull().unique(), // Número único do orçamento
   userId: varchar("user_id").references(() => users.id),
   clientId: integer("client_id").references(() => clients.id),
+  clientName: varchar("client_name", { length: 255 }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("draft"), // draft, approved, sent
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quotation Items - Multiple models per quotation
+export const quotationItems = pgTable("quotation_items", {
+  id: serial("id").primaryKey(),
+  quotationId: integer("quotation_id").references(() => quotations.id, { onDelete: "cascade" }),
   modelName: varchar("model_name", { length: 255 }).notNull(),
   reference: varchar("reference", { length: 100 }).notNull(),
   description: text("description"),
@@ -211,27 +226,28 @@ export const quotations = pgTable("quotations", {
   fabricConsumption: decimal("fabric_consumption", { precision: 10, scale: 3 }),
   wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }),
   profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
   totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
-  finalPrice: decimal("final_price", { precision: 10, scale: 2 }),
-  status: varchar("status", { length: 50 }).default("draft"), // draft, approved, sent
-  validUntil: timestamp("valid_until"),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }),
+  hasColors: boolean("has_colors").default(false), // Se tem variações de cor
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Quotation sizes table
-export const quotationSizes = pgTable("quotation_sizes", {
+// Quotation item sizes - Tamanhos por item do orçamento
+export const quotationItemSizes = pgTable("quotation_item_sizes", {
   id: serial("id").primaryKey(),
-  quotationId: integer("quotation_id").references(() => quotations.id, { onDelete: "cascade" }),
+  itemId: integer("item_id").references(() => quotationItems.id, { onDelete: "cascade" }),
   size: varchar("size", { length: 20 }).notNull(),
   quantity: integer("quantity").notNull(),
   weight: integer("weight").notNull(), // em gramas
+  color: varchar("color", { length: 50 }), // cor opcional (branco, preto, azul, etc.)
 });
 
-// Quotation costs table (para custos de criação, insumos, mão de obra, custos fixos)
-export const quotationCosts = pgTable("quotation_costs", {
+// Quotation item costs - Custos por item do orçamento
+export const quotationItemCosts = pgTable("quotation_item_costs", {
   id: serial("id").primaryKey(),
-  quotationId: integer("quotation_id").references(() => quotations.id, { onDelete: "cascade" }),
+  itemId: integer("item_id").references(() => quotationItems.id, { onDelete: "cascade" }),
   category: varchar("category", { length: 50 }).notNull(), // creation, supplies, labor, fixed
   description: varchar("description", { length: 255 }).notNull(),
   unitValue: decimal("unit_value", { precision: 10, scale: 2 }),
@@ -281,25 +297,33 @@ export const quotationsRelations = relations(quotations, ({ one, many }) => ({
     fields: [quotations.clientId],
     references: [clients.id],
   }),
+  items: many(quotationItems),
+}));
+
+export const quotationItemsRelations = relations(quotationItems, ({ one, many }) => ({
+  quotation: one(quotations, {
+    fields: [quotationItems.quotationId],
+    references: [quotations.id],
+  }),
   fabric: one(fabrics, {
-    fields: [quotations.fabricId],
+    fields: [quotationItems.fabricId],
     references: [fabrics.id],
   }),
-  sizes: many(quotationSizes),
-  costs: many(quotationCosts),
+  sizes: many(quotationItemSizes),
+  costs: many(quotationItemCosts),
 }));
 
-export const quotationSizesRelations = relations(quotationSizes, ({ one }) => ({
-  quotation: one(quotations, {
-    fields: [quotationSizes.quotationId],
-    references: [quotations.id],
+export const quotationItemSizesRelations = relations(quotationItemSizes, ({ one }) => ({
+  item: one(quotationItems, {
+    fields: [quotationItemSizes.itemId],
+    references: [quotationItems.id],
   }),
 }));
 
-export const quotationCostsRelations = relations(quotationCosts, ({ one }) => ({
-  quotation: one(quotations, {
-    fields: [quotationCosts.quotationId],
-    references: [quotations.id],
+export const quotationItemCostsRelations = relations(quotationItemCosts, ({ one }) => ({
+  item: one(quotationItems, {
+    fields: [quotationItemCosts.itemId],
+    references: [quotationItems.id],
   }),
 }));
 
@@ -310,8 +334,9 @@ export const insertModelSchema = createInsertSchema(models).omit({ id: true, cre
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true, createdAt: true });
 export const insertQuotationSchema = createInsertSchema(quotations).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertQuotationSizeSchema = createInsertSchema(quotationSizes).omit({ id: true });
-export const insertQuotationCostSchema = createInsertSchema(quotationCosts).omit({ id: true });
+export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit({ id: true, createdAt: true });
+export const insertQuotationItemSizeSchema = createInsertSchema(quotationItemSizes).omit({ id: true });
+export const insertQuotationItemCostSchema = createInsertSchema(quotationItemCosts).omit({ id: true });
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
@@ -333,7 +358,9 @@ export type ModelCost = typeof modelCosts.$inferSelect;
 export type CostCategory = typeof costCategories.$inferSelect;
 export type Quotation = typeof quotations.$inferSelect;
 export type InsertQuotation = typeof insertQuotationSchema._type;
-export type QuotationSize = typeof quotationSizes.$inferSelect;
-export type InsertQuotationSize = typeof insertQuotationSizeSchema._type;
-export type QuotationCost = typeof quotationCosts.$inferSelect;
-export type InsertQuotationCost = typeof insertQuotationCostSchema._type;
+export type QuotationItem = typeof quotationItems.$inferSelect;
+export type InsertQuotationItem = typeof insertQuotationItemSchema._type;
+export type QuotationItemSize = typeof quotationItemSizes.$inferSelect;
+export type InsertQuotationItemSize = typeof insertQuotationItemSizeSchema._type;
+export type QuotationItemCost = typeof quotationItemCosts.$inferSelect;
+export type InsertQuotationItemCost = typeof insertQuotationItemCostSchema._type;
