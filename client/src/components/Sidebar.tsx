@@ -41,28 +41,27 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
 
   const mainMenuItems = [
     { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null },
+    { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null },
     { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3 },
     { id: 'models', icon: Calculator, label: 'Modelos & Precificação', badge: null },
-    { id: 'simulations', icon: TrendingUp, label: 'Simulações Avançadas', badge: null },
+    { id: 'simulations', icon: BarChart3, label: 'Simulações Avançadas', badge: null },
     { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null },
     { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
     { id: 'advanced-production', icon: Factory, label: 'Produção Avançada', badge: null },
     { id: 'documents', icon: FileText, label: 'Central de Documentos', badge: null },
-    { id: 'reports', icon: TrendingUp, label: 'Relatórios Inteligentes', badge: null },
-    { id: 'calendar', icon: Package, label: 'Calendário Produção', badge: null },
+    { id: 'reports', icon: BarChart3, label: 'Relatórios Inteligentes', badge: null },
+    { id: 'calendar', icon: Calendar, label: 'Calendário Produção', badge: null },
     { id: 'qrcodes', icon: QrCode, label: 'QR Code & Etiquetas', badge: null },
-    { id: 'operational', icon: Users, label: 'Painel Operacional', badge: 'NOVO' },
-    { id: 'ai-assistant', icon: Bot, label: 'Assistente IA', badge: 'NOVO' },
+    { id: 'operational', icon: CheckSquare, label: 'Painel Operacional', badge: 'NOVO' },
     { id: 'user-panels', icon: UserCheck, label: 'Painéis de Usuário', badge: null },
   ];
 
   const managementItems = [
     { id: 'clients', icon: Building, label: 'Clientes', badge: null },
     { id: 'employees', icon: Users, label: 'Funcionários', badge: null },
-    { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null },
     { id: 'inventory', icon: Package, label: 'Estoque', badge: null },
     { id: 'admin', icon: Shield, label: 'Administração', badge: 'NOVO' },
-    { id: 'backup', icon: Download, label: 'Backup & Export', badge: null },
+    { id: 'backup', icon: Settings, label: 'Backup & Export', badge: null },
     { id: 'notifications', icon: Bell, label: 'Notificações', badge: null },
   ];
 
