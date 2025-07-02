@@ -212,6 +212,7 @@ The system provides an integrated solution for small to medium-sized clothing ma
 - July 02, 2025. Enhanced template system with image positioning, complete data loading for edit/copy buttons, preview PDF capture, and custom keyboard shortcuts (Ctrl+F1/F3)
 - July 02, 2025. Comprehensive system improvements: fixed all bugs, implemented toast notifications, confirmation dialogs, smart caching, loading states, form validation, analytics dashboard, backup system, and delete functionality
 - July 02, 2025. Integrated pricing templates with models module - templates now appear in models section with full CRUD operations and statistics
+- July 02, 2025. Unified Pricing and Models into single integrated module "Modelos & Precificação" - eliminated redundancy, improved UX with unified interface, advanced search/filters, and seamless workflow from pricing to model management
 
 ## User Preferences
 
