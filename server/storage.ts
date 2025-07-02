@@ -178,10 +178,15 @@ export class DatabaseStorage implements IStorage {
 
   // Model operations
   async getModels(): Promise<Model[]> {
-    return await db
-      .select()
-      .from(models)
-      .orderBy(desc(models.createdAt));
+    const result = await db.query.models.findMany({
+      with: {
+        fabric: true,
+        garmentType: true,
+        pricingTemplates: true, // Incluir templates de precificação relacionados
+      },
+      orderBy: (models, { desc }) => [desc(models.createdAt)],
+    });
+    return result;
   }
 
   async getModel(id: number): Promise<Model | undefined> {
