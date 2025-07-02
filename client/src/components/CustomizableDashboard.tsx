@@ -490,7 +490,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                 const IconComponent = card.icon;
                 
                 return (
-                  <Draggable key={card.id} draggableId={card.id} index={index}>
+                  <Draggable key={card.id} draggableId={String(card.id)} index={index}>
                     {(provided, snapshot) => (
                       <Card 
                         ref={provided.innerRef}

@@ -187,11 +187,7 @@ class NotificationManager {
     this.toast({
       title: notification.title,
       description: notification.message,
-      variant,
-      action: notification.actionUrl ? {
-        altText: notification.actionLabel || 'Ver',
-        onClick: () => window.location.href = notification.actionUrl!
-      } : undefined
+      variant
     });
   }
 

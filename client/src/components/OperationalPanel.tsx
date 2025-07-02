@@ -421,7 +421,7 @@ export default function OperationalPanel() {
                       className="space-y-3 min-h-[400px] p-2 bg-gray-50 rounded-lg"
                     >
                       {kanbanColumns.todo.map((task, index) => (
-                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                        <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                           {(provided) => (
                             <Card
                               ref={provided.innerRef}
@@ -506,7 +506,7 @@ export default function OperationalPanel() {
                       className="space-y-3 min-h-[400px] p-2 bg-blue-50 rounded-lg"
                     >
                       {kanbanColumns.doing.map((task, index) => (
-                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                        <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                           {(provided) => (
                             <Card
                               ref={provided.innerRef}
@@ -594,7 +594,7 @@ export default function OperationalPanel() {
                       className="space-y-3 min-h-[400px] p-2 bg-green-50 rounded-lg"
                     >
                       {kanbanColumns.done.map((task, index) => (
-                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                        <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                           {(provided) => (
                             <Card
                               ref={provided.innerRef}
