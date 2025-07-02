@@ -143,10 +143,10 @@
   @apply border-gray-200;
 }
 
-/* Classe global para valores truncados - evita estouros de layout */
+/* Classe global para valores dos cards - layout responsivo */
 .card-value {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
+  overflow: visible;
+  max-width: 100%;
+  word-break: break-word;
 }

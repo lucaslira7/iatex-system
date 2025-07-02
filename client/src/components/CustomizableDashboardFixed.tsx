@@ -96,7 +96,11 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'stock-value',
         title: 'Valor do Estoque',
-        value: formatCurrencyCompact((metrics as any)?.totalStockValue || 0),
+        value: ((metrics as any)?.totalStockValue || 0) >= 1000000 ? 
+          `R$ ${(((metrics as any)?.totalStockValue || 0) / 1000000).toFixed(1).replace('.', ',')}M` :
+          ((metrics as any)?.totalStockValue || 0) >= 1000 ?
+          `R$ ${(((metrics as any)?.totalStockValue || 0) / 1000).toFixed(1).replace('.', ',')}K` :
+          formatCurrencyBR((metrics as any)?.totalStockValue || 0),
         rawValue: (metrics as any)?.totalStockValue || 0,
         icon: DollarSign,
         color: 'purple',
@@ -124,7 +128,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'monthly-revenue',
         title: 'Receita Mensal',
-        value: formatCurrencyCompact(45280),
+        value: 'R$ 45,3K',
         rawValue: 45280,
         icon: TrendingUp,
         color: 'green',
