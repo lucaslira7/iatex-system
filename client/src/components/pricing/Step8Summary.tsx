@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Save, Calculator, TrendingUp, Eye, X } from 'lucide-react';
+import { Download, Save, Calculator, TrendingUp, Eye, X, FileText } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 
@@ -22,6 +22,40 @@ export default function Step8Summary() {
   });
 
   const selectedFabric = fabrics.find(f => f.id === formData.fabricId);
+
+  // Atalhos de teclado
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // ESC para fechar modal ou cancelar
+      if (event.key === 'Escape') {
+        if (showPDFPreview) {
+          setShowPDFPreview(false);
+        }
+        event.preventDefault();
+      }
+      
+      // Ctrl/Cmd + P para visualizar PDF
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+        event.preventDefault();
+        handlePreviewPDF();
+      }
+      
+      // Ctrl/Cmd + S para salvar/fechar
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        handleSave();
+      }
+      
+      // Ctrl/Cmd + D para download (apenas quando modal estiver aberto)
+      if ((event.ctrlKey || event.metaKey) && event.key === 'd' && showPDFPreview) {
+        event.preventDefault();
+        handleExport();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showPDFPreview]);
 
   const calculateCosts = () => {
     // Para o resumo, calculamos custo por peça (não total de produção)
@@ -244,31 +278,26 @@ export default function Step8Summary() {
       </Card>
 
       {/* Ações */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button
           variant="outline"
           onClick={handlePreviewPDF}
           className="w-full"
+          title="Atalho: Ctrl+P"
         >
           <Eye className="h-4 w-4 mr-2" />
           Visualizar PDF
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleExport}
-          disabled={isExporting}
-          className="w-full"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          {isExporting ? 'Exportando...' : 'Exportar PDF'}
+          <span className="ml-auto text-xs text-gray-500">Ctrl+P</span>
         </Button>
         <Button
           onClick={handleSave}
           disabled={isSaving}
           className="w-full bg-primary hover:bg-primary/90"
+          title="Atalho: Ctrl+S"
         >
-          <Save className="h-4 w-4 mr-2" />
-          {isSaving ? 'Salvando...' : 'Finalizar Precificação'}
+          <X className="h-4 w-4 mr-2" />
+          {isSaving ? 'Fechando...' : 'Fechar'}
+          <span className="ml-auto text-xs text-white/80">Ctrl+S</span>
         </Button>
       </div>
 
@@ -289,10 +318,33 @@ export default function Step8Summary() {
           </DialogHeader>
           
           <div className="bg-white p-6 space-y-4 border rounded-lg">
-            {/* Cabeçalho */}
+            {/* Cabeçalho com Logo */}
             <div className="text-center border-b pb-4">
-              <h1 className="text-2xl font-bold text-gray-900">ORÇAMENTO DE PRECIFICAÇÃO</h1>
+              <div className="flex items-center justify-center mb-4">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-lg mr-4">
+                  <FileText className="h-8 w-8" />
+                </div>
+                <div className="text-left">
+                  <h1 className="text-2xl font-bold text-gray-900">IA.TEX</h1>
+                  <p className="text-sm text-gray-600">Sistema de Gestão para Confecção</p>
+                </div>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">ORÇAMENTO DE PRECIFICAÇÃO</h2>
               <p className="text-gray-600">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+              
+              {/* Botão de Download no cabeçalho */}
+              <div className="mt-4">
+                <Button
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="bg-green-600 hover:bg-green-700"
+                  title="Atalho: Ctrl+D"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? 'Baixando...' : 'Baixar PDF'}
+                  <span className="ml-2 text-xs text-white/80">Ctrl+D</span>
+                </Button>
+              </div>
             </div>
 
             {/* Dados do Produto */}

@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, X } from "lucide-react";
+import { useEffect } from "react";
 import { PricingProvider, usePricing } from "@/context/PricingContext";
 import Step0PricingMode from "@/components/pricing/Step0PricingMode";
 import Step1GarmentType from "@/components/pricing/Step1GarmentType";
@@ -24,6 +25,31 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
     resetForm();
     onClose();
   };
+
+  // Atalhos de teclado para navegação
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // ESC para fechar modal
+      if (event.key === 'Escape') {
+        handleClose();
+        event.preventDefault();
+      }
+      
+      // Setas para navegar entre etapas
+      if (event.key === 'ArrowRight' && currentStep < 8) {
+        handleNext();
+        event.preventDefault();
+      }
+      
+      if (event.key === 'ArrowLeft' && currentStep > 0) {
+        handlePrevious();
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [currentStep]);
 
   const handleNext = () => {
     if (currentStep < 9) {
@@ -145,14 +171,16 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
 
         {/* Action Buttons */}
         <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-          <Button type="button" variant="outline" onClick={handleClose}>
+          <Button type="button" variant="outline" onClick={handleClose} title="Atalho: ESC">
             Cancelar
+            <span className="ml-2 text-xs text-gray-500">ESC</span>
           </Button>
           <div className="space-x-3">
             {currentStep > 1 && (
-              <Button type="button" variant="outline" onClick={handlePrevious}>
+              <Button type="button" variant="outline" onClick={handlePrevious} title="Atalho: ←">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Anterior
+                <span className="ml-2 text-xs text-gray-500">←</span>
               </Button>
             )}
             {currentStep < 8 ? (
@@ -161,9 +189,11 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
                 onClick={handleNext}
                 disabled={!canGoNext()}
                 className="bg-primary hover:bg-primary/90"
+                title="Atalho: →"
               >
                 Próximo
                 <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="ml-2 text-xs text-white/80">→</span>
               </Button>
             ) : (
               <Button type="button" className="bg-green-600 hover:bg-green-700 text-white">
