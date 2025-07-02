@@ -136,72 +136,183 @@ export default function Step8Summary() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Gerar PDF real usando jsPDF
       const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.width;
       
-      // Configurar fonte
-      pdf.setFont('helvetica');
+      // Cabeçalho com logo IA.TEX
+      pdf.setFillColor(99, 102, 241); // Cor azul do sistema
+      pdf.rect(0, 0, pageWidth, 40, 'F');
       
-      // Título
-      pdf.setFontSize(20);
-      pdf.text('Ficha Técnica de Precificação', 20, 30);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('IA.TEX', 20, 25);
       
-      // Informações básicas
       pdf.setFontSize(12);
-      pdf.text(`Modelo: ${formData.modelName}`, 20, 50);
-      pdf.text(`Referência: ${formData.reference}`, 20, 60);
-      pdf.text(`Tipo: ${formData.garmentType}`, 20, 70);
-      pdf.text(`Tecido: ${selectedFabric?.name || 'N/A'}`, 20, 80);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Sistema de Gestão para Confecção', 20, 35);
       
-      // Tamanhos e pesos
-      let yPos = 100;
-      pdf.setFontSize(14);
-      pdf.text('Tamanhos e Pesos:', 20, yPos);
-      yPos += 10;
+      // Título principal
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('FICHA TÉCNICA DE PRECIFICAÇÃO', 20, 55);
+      
+      // Data
+      const currentDate = new Date().toLocaleDateString('pt-BR');
       pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Data: ${currentDate}`, pageWidth - 60, 55);
       
-      formData.sizes.forEach((size, index) => {
-        pdf.text(`${size.size}: ${size.quantity} peças - ${size.weight}g cada`, 25, yPos);
-        yPos += 8;
-      });
-      
-      // Custos
-      yPos += 10;
-      pdf.setFontSize(14);
-      pdf.text('Resumo de Custos:', 20, yPos);
-      yPos += 10;
+      // Botão Download (visual)
+      pdf.setFillColor(34, 197, 94);
+      pdf.roundedRect(20, 65, 60, 12, 2, 2, 'F');
+      pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('📥 Baixar PDF', 25, 73);
       
-      pdf.text(`Custo do Tecido: R$ ${costs.fabricCost.toFixed(2)}`, 25, yPos);
-      yPos += 8;
-      pdf.text(`Custos de Criação: R$ ${costs.creationCosts.toFixed(2)}`, 25, yPos);
-      yPos += 8;
-      pdf.text(`Aviamentos: R$ ${costs.suppliesCosts.toFixed(2)}`, 25, yPos);
-      yPos += 8;
-      pdf.text(`Mão de Obra: R$ ${costs.laborCosts.toFixed(2)}`, 25, yPos);
-      yPos += 8;
-      pdf.text(`Custos Fixos: R$ ${costs.fixedCosts.toFixed(2)}`, 25, yPos);
+      let yPos = 90;
+      
+      // Seção: Informações do Produto
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Informações do Produto', 20, yPos);
       yPos += 15;
       
-      // Resultado final
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Nome: ${formData.modelName}`, 20, yPos);
+      yPos += 8;
+      pdf.text(`Referência: ${formData.reference}`, 20, yPos);
+      yPos += 8;
+      pdf.text(`Tipo: ${formData.garmentType}`, 20, yPos);
+      yPos += 8;
+      pdf.text(`Modalidade: ${formData.pricingMode === 'single' ? 'Peça Única' : 'Múltiplas Peças'}`, 20, yPos);
+      yPos += 8;
+      pdf.text(`Descrição: ${formData.description || 'N/A'}`, 20, yPos);
+      yPos += 15;
+      
+      // Seção: Tamanhos e Quantidades (lado direito)
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Tamanhos e Quantidades', pageWidth/2 + 10, 105);
+      
+      let rightYPos = 120;
+      const totalQuantity = formData.sizes.reduce((total, size) => total + size.quantity, 0);
+      
+      formData.sizes.forEach((size) => {
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`${size.size}: ${size.quantity} peças (Peso: ${size.weight}g)`, pageWidth/2 + 10, rightYPos);
+        rightYPos += 8;
+      });
+      
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Total: ${totalQuantity} peças`, pageWidth/2 + 10, rightYPos + 5);
+      
+      yPos += 10;
+      
+      // Seção: Informações do Tecido
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Informações do Tecido', 20, yPos);
+      yPos += 15;
+      
+      if (selectedFabric) {
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Tecido: ${selectedFabric.name}`, 20, yPos);
+        yPos += 8;
+        pdf.text(`Tipo: ${selectedFabric.type}`, 20, yPos);
+        yPos += 8;
+        pdf.text(`Composição: ${selectedFabric.composition || 'N/A'}`, 20, yPos);
+        yPos += 8;
+        
+        const fabricConsumption = formData.fabricConsumption || (formData.sizes.reduce((total, size) => total + (size.quantity * size.weight), 0) / 1000) / (selectedFabric.gramWeight / 1000);
+        const wastePercentage = 20; // Percentual de desperdício padrão
+        const pricePerMeter = parseFloat(selectedFabric.pricePerMeter || '0');
+        
+        pdf.text(`Consumo por peça: ${(fabricConsumption / totalQuantity).toFixed(2)}m`, pageWidth/2 + 10, yPos - 16);
+        pdf.text(`Desperdício: ${wastePercentage}%`, pageWidth/2 + 10, yPos - 8);
+        pdf.text(`Preço por metro: R$ ${pricePerMeter.toFixed(2)}`, pageWidth/2 + 10, yPos);
+      }
+      
+      yPos += 20;
+      
+      // Seção: Breakdown de Custos
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(15, yPos - 5, pageWidth - 30, 80, 'F');
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Breakdown de Custos', 20, yPos + 5);
+      yPos += 20;
+      
+      // Duas colunas de custos
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Custo do Tecido', 20, yPos);
+      pdf.text('Mão de Obra', pageWidth/2 + 10, yPos);
+      yPos += 8;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`R$ ${costs.fabricCost.toFixed(2)}`, 20, yPos);
+      
+      // Detalhes da mão de obra
+      const laborDetails = formData.labor || [];
+      let laborYPos = yPos;
+      laborDetails.forEach((labor) => {
+        pdf.text(`${labor.description}: R$ ${labor.total.toFixed(2)}`, pageWidth/2 + 10, laborYPos);
+        laborYPos += 6;
+      });
+      
+      yPos = Math.max(yPos + 15, laborYPos + 10);
+      
+      // Custos de criação, aviamentos, custos fixos
+      const costCategories = [
+        { name: 'Custos de Criação', value: costs.creationCosts, items: formData.creationCosts || [] },
+        { name: 'Aviamentos', value: costs.suppliesCosts, items: formData.supplies || [] },
+        { name: 'Custos Fixos', value: costs.fixedCosts, items: formData.fixedCosts || [] }
+      ];
+      
+      costCategories.forEach((category, index) => {
+        const xPos = 20 + (index * (pageWidth - 40) / 3);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(category.name, xPos, yPos);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`R$ ${category.value.toFixed(2)}`, xPos, yPos + 8);
+      });
+      
+      yPos += 30;
+      
+      // Resultado Final (destaque)
+      pdf.setFillColor(240, 253, 244);
+      pdf.setDrawColor(34, 197, 94);
+      pdf.rect(15, yPos - 5, pageWidth - 30, 40, 'FD');
+      
+      pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(12);
-      pdf.text(`Custo Total: R$ ${costs.totalCost.toFixed(2)}`, 25, yPos);
-      yPos += 10;
-      pdf.text(`Margem de Lucro: ${formData.profitMargin}%`, 25, yPos);
-      yPos += 10;
-      pdf.text(`Preço Final: R$ ${costs.finalPrice.toFixed(2)}`, 25, yPos);
-      yPos += 10;
-      pdf.text(`Preço por Peça: R$ ${costs.pricePerUnit.toFixed(2)}`, 25, yPos);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Custo Total: R$ ${costs.totalCost.toFixed(2)}`, 20, yPos + 5);
+      pdf.text(`Margem de Lucro: ${((costs.finalPrice - costs.totalCost) / costs.totalCost * 100).toFixed(2)}%`, 20, yPos + 15);
+      
+      pdf.setFontSize(14);
+      pdf.text(`Preço Final: R$ ${costs.finalPrice.toFixed(2)}`, pageWidth/2 + 10, yPos + 5);
+      pdf.text(`Preço por Peça: R$ ${costs.pricePerUnit.toFixed(2)}`, pageWidth/2 + 10, yPos + 15);
       
       // Rodapé
+      pdf.setTextColor(128, 128, 128);
       pdf.setFontSize(8);
       pdf.text('Esta ficha técnica foi gerada automaticamente pelo sistema IA.TEX', 20, 280);
+      pdf.text(`Template salvo permanentemente - Ref: ${formData.reference}`, 20, 285);
       
       // Salvar e abrir
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       
-      // Download
       const link = document.createElement('a');
       link.href = url;
       link.download = `Ficha_Tecnica_${formData.reference}_${formData.modelName}.pdf`;
@@ -209,14 +320,10 @@ export default function Step8Summary() {
       link.click();
       document.body.removeChild(link);
       
-      // Abrir em nova aba
       window.open(url, '_blank');
-      
-      // Limpar URL
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       
       setIsExporting(false);
-      console.log('PDF gerado e aberto com sucesso');
     } catch (error) {
       setIsExporting(false);
       console.error('Erro ao gerar PDF:', error);

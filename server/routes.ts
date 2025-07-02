@@ -318,6 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Converter os dados do formulário para o formato do template
       const template = {
+        name: formData.modelName,
         modelName: formData.modelName,
         reference: formData.reference,
         garmentType: formData.garmentType,
@@ -326,6 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricingMode: formData.pricingMode,
         fabricId: formData.fabricId,
         fabricConsumption: formData.fabricConsumption.toString(),
+        fabricCost: formData.fabricCost?.toString() || '0',
         wastePercentage: formData.wastePercentage.toString(),
         profitMargin: formData.profitMargin.toString(),
         totalCost: formData.totalCost.toString(),
