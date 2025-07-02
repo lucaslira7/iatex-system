@@ -78,6 +78,7 @@ interface PricingContextType {
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => void;
   calculateTotals: () => void;
+  loadTemplateData: (templateId: number) => Promise<void>;
 }
 
 const defaultFormData: PricingFormData = {
@@ -191,6 +192,80 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const loadTemplateData = async (templateId: number) => {
+    try {
+      const response = await fetch(`/api/pricing-templates/${templateId}/details`);
+      if (!response.ok) throw new Error('Failed to fetch template details');
+      
+      const data = await response.json();
+      const { template, sizes, costs } = data;
+      
+      // Converter tamanhos do template
+      const templateSizes = sizes.map((size: any) => ({
+        size: size.size,
+        quantity: parseInt(size.quantity),
+        weight: parseFloat(size.weight)
+      }));
+      
+      // Organizar custos por categoria
+      const creationCosts: any[] = [];
+      const supplies: any[] = [];
+      const labor: any[] = [];
+      const fixedCosts: any[] = [];
+      
+      costs.forEach((cost: any) => {
+        const costItem = {
+          id: cost.id.toString(),
+          description: cost.description,
+          unitValue: parseFloat(cost.unitValue),
+          quantity: parseFloat(cost.quantity),
+          wastePercentage: parseFloat(cost.wastePercentage),
+          total: parseFloat(cost.total)
+        };
+        
+        switch (cost.category) {
+          case 'creation':
+            creationCosts.push(costItem);
+            break;
+          case 'supplies':
+            supplies.push(costItem);
+            break;
+          case 'labor':
+            labor.push(costItem);
+            break;
+          case 'fixed':
+            fixedCosts.push(costItem);
+            break;
+        }
+      });
+      
+      // Carregar todos os dados no formulário
+      setFormData({
+        pricingMode: template.pricingMode as 'single' | 'multiple',
+        garmentType: template.garmentType,
+        modelName: template.modelName,
+        reference: template.reference,
+        description: template.description || '',
+        imageUrl: template.imageUrl || '',
+        sizes: templateSizes,
+        fabricId: template.fabricId,
+        fabricConsumption: parseFloat(template.fabricConsumption) || 0,
+        wastePercentage: parseFloat(template.wastePercentage) || 20,
+        creationCosts,
+        supplies,
+        labor,
+        fixedCosts,
+        profitMargin: parseFloat(template.profitMargin) || 50,
+        totalCost: parseFloat(template.totalCost) || 0,
+        finalPrice: parseFloat(template.finalPrice) || 0,
+      });
+      
+    } catch (error) {
+      console.error('Error loading template data:', error);
+      throw error;
+    }
+  };
+
   // Load data on mount
   useEffect(() => {
     loadFromLocalStorage();
@@ -212,6 +287,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
         saveToLocalStorage,
         loadFromLocalStorage,
         calculateTotals,
+        loadTemplateData,
       }}
     >
       {children}

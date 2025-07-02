@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, X, FileText } from "lucide-react";
-import { useState } from "react";
+import { Download, X, FileText, Printer } from "lucide-react";
+import { useState, useRef } from "react";
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { PricingTemplate } from "@shared/schema";
 
 interface TemplateSummaryModalProps {
@@ -18,6 +19,8 @@ export default function TemplateSummaryModal({
   onClose
 }: TemplateSummaryModalProps) {
   const [isExporting, setIsExporting] = useState(false);
+  const [isPrintingPreview, setIsPrintingPreview] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   if (!template) return null;
 
@@ -209,6 +212,56 @@ export default function TemplateSummaryModal({
     }
   };
 
+  const handlePrintPreview = async () => {
+    setIsPrintingPreview(true);
+    try {
+      if (!previewRef.current) return;
+
+      // Capturar screenshot do preview
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      // Criar PDF com a imagem do preview
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      
+      // Calcular dimensões para manter proporção
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10; // margem superior
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      
+      // Salvar PDF do preview
+      const fileDate = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Preview_${template.reference}_${fileDate}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+      setIsPrintingPreview(false);
+      
+    } catch (error) {
+      setIsPrintingPreview(false);
+      console.error('Erro ao salvar preview:', error);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -222,7 +275,7 @@ export default function TemplateSummaryModal({
         </DialogHeader>
 
         {/* Replica exata da visualização do sistema */}
-        <div className="space-y-6">
+        <div ref={previewRef} className="space-y-6">
           {/* Cabeçalho igual ao sistema */}
           <div className="bg-blue-600 text-white p-6 rounded-t-lg">
             <div className="flex justify-between items-center">
@@ -238,20 +291,37 @@ export default function TemplateSummaryModal({
               <h2 className="text-2xl font-bold mb-2">RESUMO DE PRECIFICAÇÃO - TEMPLATE</h2>
               <p className="text-gray-500">Data: {formatDate(new Date().toString())}</p>
               
-              <Button 
-                onClick={handleExportPDF}
-                disabled={isExporting}
-                className="mt-4 bg-green-500 hover:bg-green-600"
-              >
-                {isExporting ? (
-                  <>Gerando PDF...</>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    📥 Baixar PDF Ctrl+D
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3 mt-4 justify-center">
+                <Button 
+                  onClick={handlePrintPreview}
+                  disabled={isPrintingPreview}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  {isPrintingPreview ? (
+                    <>Salvando Preview...</>
+                  ) : (
+                    <>
+                      <Printer className="mr-2 h-4 w-4" />
+                      Salvar Preview
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="bg-green-500 hover:bg-green-600"
+                >
+                  {isExporting ? (
+                    <>Gerando PDF...</>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Baixar PDF
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
             {/* Layout de duas colunas igual ao sistema */}

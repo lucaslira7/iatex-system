@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Shirt, ShirtIcon, Zap, Waves, Square } from 'lucide-react';
+import { Upload, Shirt, ShirtIcon, Zap, Waves, Square, Move } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 
 const GARMENT_TYPES = [
@@ -19,6 +19,9 @@ const GARMENT_TYPES = [
 export default function Step1GarmentType() {
   const { formData, updateFormData } = usePricing();
   const [newGarmentType, setNewGarmentType] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState({ x: 50, y: 50 }); // percentual da posição
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const handleGarmentTypeSelect = (type: string) => {
     updateFormData('garmentType', type);
@@ -38,9 +41,34 @@ export default function Step1GarmentType() {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         updateFormData('imageUrl', result);
+        // Reset posição para centro quando nova imagem é carregada
+        setDragPosition({ x: 50, y: 50 });
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !imageContainerRef.current) return;
+    
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    // Limitar entre 0 e 100%
+    const clampedX = Math.max(0, Math.min(100, x));
+    const clampedY = Math.max(0, Math.min(100, y));
+    
+    setDragPosition({ x: clampedX, y: clampedY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   return (
@@ -134,22 +162,60 @@ export default function Step1GarmentType() {
             className="hidden"
             id="imageUpload"
           />
-          <label
-            htmlFor="imageUpload"
-            className="cursor-pointer flex flex-col items-center justify-center space-y-2"
-          >
-            <Upload className="h-8 w-8 text-gray-400" />
-            <span className="text-sm text-gray-500">
-              {formData.imageUrl ? 'Clique para alterar a imagem' : 'Escolher arquivo'}
-            </span>
-          </label>
-          {formData.imageUrl && (
-            <div className="mt-2">
-              <img
-                src={formData.imageUrl}
-                alt="Preview"
-                className="h-20 w-20 object-cover rounded-lg mx-auto"
-              />
+          
+          {!formData.imageUrl ? (
+            <label
+              htmlFor="imageUpload"
+              className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+            >
+              <Upload className="h-8 w-8 text-gray-400" />
+              <span className="text-sm text-gray-500">Escolher arquivo</span>
+            </label>
+          ) : (
+            <div className="space-y-4">
+              {/* Preview da imagem com posicionamento */}
+              <div 
+                ref={imageContainerRef}
+                className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden cursor-crosshair"
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              >
+                <img
+                  src={formData.imageUrl}
+                  alt="Preview"
+                  className="absolute w-full h-full object-cover"
+                  style={{
+                    objectPosition: `${dragPosition.x}% ${dragPosition.y}%`
+                  }}
+                />
+                
+                {/* Indicador de posição */}
+                <div
+                  className={`absolute w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg transform -translate-x-1/2 -translate-y-1/2 ${
+                    isDragging ? 'scale-125' : 'scale-100'
+                  } transition-transform cursor-move`}
+                  style={{
+                    left: `${dragPosition.x}%`,
+                    top: `${dragPosition.y}%`,
+                  }}
+                  onMouseDown={handleMouseDown}
+                />
+              </div>
+              
+              {/* Controles */}
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Move className="h-4 w-4" />
+                  <span>Arraste o ponto azul para posicionar a imagem</span>
+                </div>
+                <label
+                  htmlFor="imageUpload"
+                  className="cursor-pointer text-blue-600 hover:text-blue-700"
+                >
+                  Alterar imagem
+                </label>
+              </div>
             </div>
           )}
         </div>

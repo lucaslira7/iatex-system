@@ -395,6 +395,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pricing template with details
+  app.get('/api/pricing-templates/:id/details', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const templateWithDetails = await storage.getPricingTemplateWithDetails(id);
+      
+      if (!templateWithDetails) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      res.json(templateWithDetails);
+    } catch (error) {
+      console.error("Error fetching pricing template details:", error);
+      res.status(500).json({ message: "Failed to fetch template details" });
+    }
+  });
+
   app.post('/api/quotations', isAuthenticated, async (req: any, res) => {
     try {
       const formData = req.body;

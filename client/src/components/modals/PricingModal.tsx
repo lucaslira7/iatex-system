@@ -21,7 +21,7 @@ interface PricingModalProps {
 }
 
 function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void; initialTemplate?: PricingTemplate | null }) {
-  const { currentStep, setCurrentStep, resetForm, formData, updateFormData } = usePricing();
+  const { currentStep, setCurrentStep, resetForm, formData, updateFormData, loadTemplateData } = usePricing();
 
   const handleClose = () => {
     resetForm();
@@ -31,22 +31,19 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
   // Carregar dados do template inicial
   useEffect(() => {
     if (initialTemplate) {
-      // Carregar dados básicos do template
-      updateFormData('modelName', initialTemplate.modelName);
-      updateFormData('reference', initialTemplate.reference);
-      updateFormData('garmentType', initialTemplate.garmentType);
-      updateFormData('description', initialTemplate.description || '');
-      updateFormData('imageUrl', initialTemplate.imageUrl || '');
-      updateFormData('pricingMode', initialTemplate.pricingMode);
-      
-      // Valores padrão para começar
-      updateFormData('wastePercentage', 20);
-      updateFormData('profitMargin', 50);
-      
-      // TODO: Aqui deveríamos buscar os dados relacionados (tamanhos, custos, etc.)
-      // Por enquanto, o usuário precisará preencher essas informações novamente
+      // Carregar todos os dados do template usando a nova função
+      loadTemplateData(initialTemplate.id).catch(error => {
+        console.error('Erro ao carregar dados do template:', error);
+        // Fallback para dados básicos apenas
+        updateFormData('modelName', initialTemplate.modelName);
+        updateFormData('reference', initialTemplate.reference);
+        updateFormData('garmentType', initialTemplate.garmentType);
+        updateFormData('description', initialTemplate.description || '');
+        updateFormData('imageUrl', initialTemplate.imageUrl || '');
+        updateFormData('pricingMode', initialTemplate.pricingMode);
+      });
     }
-  }, [initialTemplate, updateFormData]);
+  }, [initialTemplate, loadTemplateData, updateFormData]);
 
   // Atalhos de teclado para navegação
   useEffect(() => {

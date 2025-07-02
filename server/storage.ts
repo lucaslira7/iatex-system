@@ -114,6 +114,7 @@ export interface IStorage {
   // Pricing Template operations
   getPricingTemplates(): Promise<PricingTemplate[]>;
   getPricingTemplate(id: number): Promise<PricingTemplate | undefined>;
+  getPricingTemplateWithDetails(id: number): Promise<{ template: PricingTemplate; sizes: PricingTemplateSize[]; costs: PricingTemplateCost[]; } | undefined>;
   createPricingTemplate(template: InsertPricingTemplate, sizes: InsertPricingTemplateSize[], costs: InsertPricingTemplateCost[]): Promise<PricingTemplate>;
   updatePricingTemplate(id: number, template: Partial<InsertPricingTemplate>): Promise<PricingTemplate>;
   deletePricingTemplate(id: number): Promise<void>;
@@ -420,6 +421,24 @@ export class DatabaseStorage implements IStorage {
   async getPricingTemplate(id: number): Promise<PricingTemplate | undefined> {
     const [template] = await db.select().from(pricingTemplates).where(eq(pricingTemplates.id, id));
     return template || undefined;
+  }
+
+  async getPricingTemplateWithDetails(id: number): Promise<{
+    template: PricingTemplate;
+    sizes: PricingTemplateSize[];
+    costs: PricingTemplateCost[];
+  } | undefined> {
+    const template = await this.getPricingTemplate(id);
+    if (!template) return undefined;
+
+    const sizes = await db.select().from(pricingTemplateSizes).where(eq(pricingTemplateSizes.templateId, id));
+    const costs = await db.select().from(pricingTemplateCosts).where(eq(pricingTemplateCosts.templateId, id));
+
+    return {
+      template,
+      sizes,
+      costs
+    };
   }
 
   async createPricingTemplate(template: InsertPricingTemplate, sizes: InsertPricingTemplateSize[], costs: InsertPricingTemplateCost[]): Promise<PricingTemplate> {
