@@ -17,10 +17,10 @@ import type { PricingTemplate } from "@shared/schema";
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTemplate?: PricingTemplate | null;
+  initialTemplate?: PricingTemplate | Partial<PricingTemplate> | null;
 }
 
-function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void; initialTemplate?: PricingTemplate | null }) {
+function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void; initialTemplate?: PricingTemplate | Partial<PricingTemplate> | null }) {
   const { currentStep, setCurrentStep, resetForm, formData, updateFormData, loadTemplateData } = usePricing();
 
   const handleClose = () => {
@@ -30,8 +30,8 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
 
   // Carregar dados do template inicial
   useEffect(() => {
-    if (initialTemplate) {
-      // Carregar todos os dados do template usando a nova função
+    if (initialTemplate && initialTemplate.id) {
+      // Carregar todos os dados do template usando a nova função (apenas se tem ID válido)
       loadTemplateData(initialTemplate.id).catch(error => {
         console.error('Erro ao carregar dados do template:', error);
         // Fallback para dados básicos apenas
@@ -42,6 +42,20 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
         updateFormData('imageUrl', initialTemplate.imageUrl || '');
         updateFormData('pricingMode', initialTemplate.pricingMode);
       });
+    } else if (initialTemplate && !initialTemplate.id) {
+      // Template para cópia - carregar apenas dados básicos
+      updateFormData('modelName', initialTemplate.modelName);
+      updateFormData('reference', initialTemplate.reference);
+      updateFormData('garmentType', initialTemplate.garmentType);
+      updateFormData('description', initialTemplate.description || '');
+      updateFormData('imageUrl', initialTemplate.imageUrl || '');
+      updateFormData('pricingMode', initialTemplate.pricingMode);
+      updateFormData('fabricId', initialTemplate.fabricId);
+      updateFormData('fabricConsumption', parseFloat(initialTemplate.fabricConsumption) || 0);
+      updateFormData('wastePercentage', parseFloat(initialTemplate.wastePercentage) || 20);
+      updateFormData('profitMargin', parseFloat(initialTemplate.profitMargin) || 50);
+      updateFormData('totalCost', parseFloat(initialTemplate.totalCost) || 0);
+      updateFormData('finalPrice', parseFloat(initialTemplate.finalPrice) || 0);
     }
   }, [initialTemplate, loadTemplateData, updateFormData]);
 

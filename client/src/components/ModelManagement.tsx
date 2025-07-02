@@ -29,7 +29,7 @@ export default function ModelManagement() {
   const [selectedTemplate, setSelectedTemplate] = useState<PricingTemplate | null>(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<PricingTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<PricingTemplate | Partial<PricingTemplate> | null>(null);
   const [duplicatingTemplate, setDuplicatingTemplate] = useState<PricingTemplate | null>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [copyingTemplate, setCopyingTemplate] = useState<PricingTemplate | null>(null);
@@ -89,12 +89,23 @@ export default function ModelManagement() {
 
   const handleConfirmCopy = (newName: string, newReference: string) => {
     if (copyingTemplate) {
-      setEditingTemplate({
-        ...copyingTemplate,
-        id: 0, // New template
+      // Criar template para cópia com dados essenciais apenas (sem ID, createdAt, updatedAt)
+      const templateForCopy = {
         modelName: newName,
-        reference: newReference
-      });
+        reference: newReference,
+        garmentType: copyingTemplate.garmentType,
+        description: copyingTemplate.description,
+        imageUrl: copyingTemplate.imageUrl,
+        pricingMode: copyingTemplate.pricingMode,
+        fabricId: copyingTemplate.fabricId,
+        fabricConsumption: copyingTemplate.fabricConsumption,
+        wastePercentage: copyingTemplate.wastePercentage,
+        profitMargin: copyingTemplate.profitMargin,
+        totalCost: copyingTemplate.totalCost,
+        finalPrice: copyingTemplate.finalPrice
+      };
+      
+      setEditingTemplate(templateForCopy);
       setShowPricingModal(true);
       toast({
         title: "Template copiado",
