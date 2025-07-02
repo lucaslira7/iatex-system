@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import SidebarImproved from "@/components/SidebarImproved";
 import CustomizableDashboardFixed from "@/components/CustomizableDashboardFixed";
 import FabricManagement from "@/components/FabricManagement";
 import PricingCalculator from "@/components/PricingCalculator";
@@ -86,7 +86,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <SidebarImproved activeSection={activeSection} onSectionChange={setActiveSection} />
       
       <div className="flex-1 flex flex-col overflow-hidden ml-72">
         {renderContent()}
