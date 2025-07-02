@@ -14,13 +14,14 @@ import {
   ArrowUp, ArrowDown, MoveUp, MoveDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrencyBR, formatDateBR, formatNumberBR } from "@/lib/utils/format";
+import { formatCurrencyBR, formatDateBR, formatNumberBR, formatCurrencyCompact, formatNumberCompact } from "@/lib/utils/format";
 import type { ActiveSection } from "@/pages/Home";
 
 interface DashboardCard {
   id: string;
   title: string;
   value: string;
+  rawValue?: number; // Valor bruto para exibir no modal
   icon: any;
   color: string;
   visible: boolean;
@@ -53,7 +54,8 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'total-fabrics',
         title: 'Total de Tecidos',
-        value: (metrics as any)?.totalFabrics?.toString() || '0',
+        value: formatNumberCompact((metrics as any)?.totalFabrics || 0),
+        rawValue: (metrics as any)?.totalFabrics || 0,
         icon: Scissors,
         color: 'blue',
         visible: true,
@@ -66,7 +68,8 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'low-stock',
         title: 'Estoque Baixo',
-        value: (metrics as any)?.lowStockFabrics?.toString() || '0',
+        value: formatNumberCompact((metrics as any)?.lowStockFabrics || 0),
+        rawValue: (metrics as any)?.lowStockFabrics || 0,
         icon: Package,
         color: 'red',
         visible: true,
@@ -79,7 +82,8 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'active-orders',
         title: 'Pedidos Ativos',
-        value: (metrics as any)?.activeOrders?.toString() || '0',
+        value: formatNumberCompact((metrics as any)?.activeOrders || 0),
+        rawValue: (metrics as any)?.activeOrders || 0,
         icon: ShoppingCart,
         color: 'green',
         visible: true,
@@ -92,7 +96,8 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'stock-value',
         title: 'Valor do Estoque',
-        value: formatCurrencyBR((metrics as any)?.totalStockValue || 0),
+        value: formatCurrencyCompact((metrics as any)?.totalStockValue || 0),
+        rawValue: (metrics as any)?.totalStockValue || 0,
         icon: DollarSign,
         color: 'purple',
         visible: true,
@@ -106,6 +111,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
         id: 'production-efficiency',
         title: 'Eficiência Produção',
         value: '87%',
+        rawValue: 87,
         icon: Factory,
         color: 'orange',
         visible: true,
@@ -118,7 +124,8 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'monthly-revenue',
         title: 'Receita Mensal',
-        value: 'R$ 45.280',
+        value: formatCurrencyCompact(45280),
+        rawValue: 45280,
         icon: TrendingUp,
         color: 'green',
         visible: true,
@@ -132,6 +139,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
         id: 'pending-deliveries',
         title: 'Entregas Pendentes',
         value: '7',
+        rawValue: 7,
         icon: Clock,
         color: 'yellow',
         visible: true,
@@ -530,7 +538,15 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
               {/* Valor Principal */}
               <div className="text-center">
                 <p className="text-4xl font-bold text-gray-900 mb-2">
-                  {selectedCard.value}
+                  {selectedCard.id.includes('revenue') || selectedCard.id.includes('stock-value') ? 
+                    formatCurrencyBR(selectedCard.rawValue || 0) : 
+                    selectedCard.id.includes('efficiency') || selectedCard.id.includes('goal') ? 
+                    `${selectedCard.rawValue}%` :
+                    selectedCard.id.includes('score') ? 
+                    `${selectedCard.rawValue}/5` :
+                    selectedCard.rawValue ? 
+                    formatNumberBR(selectedCard.rawValue) : 
+                    selectedCard.value}
                 </p>
                 {selectedCard.change && (
                   <div className="flex items-center justify-center gap-2">
