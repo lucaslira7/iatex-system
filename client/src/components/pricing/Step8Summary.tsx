@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Download, Save, Calculator, TrendingUp, Eye, X, FileText, ExternalLink } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function Step8Summary() {
   const { formData, updateFormData } = usePricing();
@@ -134,53 +136,178 @@ export default function Step8Summary() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Simular geração do PDF
-      setTimeout(() => {
-        setIsExporting(false);
-        
-        // Criar um blob de exemplo do PDF (você pode substituir por geração real)
-        const pdfContent = `Ficha Técnica de Precificação - ${formData.modelName}`;
-        const blob = new Blob([pdfContent], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        
-        // Criar um link temporário e fazer download
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Ficha_Tecnica_${formData.reference}_${formData.modelName}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Abrir o PDF em uma nova aba
-        window.open(url, '_blank');
-        
-        // Limpar o URL após um tempo
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        
-        console.log('PDF exportado e aberto automaticamente');
-      }, 2000);
+      // Gerar PDF real usando jsPDF
+      const pdf = new jsPDF();
+      
+      // Configurar fonte
+      pdf.setFont('helvetica');
+      
+      // Título
+      pdf.setFontSize(20);
+      pdf.text('Ficha Técnica de Precificação', 20, 30);
+      
+      // Informações básicas
+      pdf.setFontSize(12);
+      pdf.text(`Modelo: ${formData.modelName}`, 20, 50);
+      pdf.text(`Referência: ${formData.reference}`, 20, 60);
+      pdf.text(`Tipo: ${formData.garmentType}`, 20, 70);
+      pdf.text(`Tecido: ${selectedFabric?.name || 'N/A'}`, 20, 80);
+      
+      // Tamanhos e pesos
+      let yPos = 100;
+      pdf.setFontSize(14);
+      pdf.text('Tamanhos e Pesos:', 20, yPos);
+      yPos += 10;
+      pdf.setFontSize(10);
+      
+      formData.sizes.forEach((size, index) => {
+        pdf.text(`${size.size}: ${size.quantity} peças - ${size.weight}g cada`, 25, yPos);
+        yPos += 8;
+      });
+      
+      // Custos
+      yPos += 10;
+      pdf.setFontSize(14);
+      pdf.text('Resumo de Custos:', 20, yPos);
+      yPos += 10;
+      pdf.setFontSize(10);
+      
+      pdf.text(`Custo do Tecido: R$ ${costs.fabricCost.toFixed(2)}`, 25, yPos);
+      yPos += 8;
+      pdf.text(`Custos de Criação: R$ ${costs.creationCosts.toFixed(2)}`, 25, yPos);
+      yPos += 8;
+      pdf.text(`Aviamentos: R$ ${costs.suppliesCosts.toFixed(2)}`, 25, yPos);
+      yPos += 8;
+      pdf.text(`Mão de Obra: R$ ${costs.laborCosts.toFixed(2)}`, 25, yPos);
+      yPos += 8;
+      pdf.text(`Custos Fixos: R$ ${costs.fixedCosts.toFixed(2)}`, 25, yPos);
+      yPos += 15;
+      
+      // Resultado final
+      pdf.setFontSize(12);
+      pdf.text(`Custo Total: R$ ${costs.totalCost.toFixed(2)}`, 25, yPos);
+      yPos += 10;
+      pdf.text(`Margem de Lucro: ${formData.profitMargin}%`, 25, yPos);
+      yPos += 10;
+      pdf.text(`Preço Final: R$ ${costs.finalPrice.toFixed(2)}`, 25, yPos);
+      yPos += 10;
+      pdf.text(`Preço por Peça: R$ ${costs.pricePerUnit.toFixed(2)}`, 25, yPos);
+      
+      // Rodapé
+      pdf.setFontSize(8);
+      pdf.text('Esta ficha técnica foi gerada automaticamente pelo sistema IA.TEX', 20, 280);
+      
+      // Salvar e abrir
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      
+      // Download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Ficha_Tecnica_${formData.reference}_${formData.modelName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Abrir em nova aba
+      window.open(url, '_blank');
+      
+      // Limpar URL
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      setIsExporting(false);
+      console.log('PDF gerado e aberto com sucesso');
     } catch (error) {
       setIsExporting(false);
-      console.error('Erro ao exportar PDF:', error);
+      console.error('Erro ao gerar PDF:', error);
     }
   };
 
   const handleTechnicalSheet = () => {
-    // Abrir ficha técnica sem valores financeiros
-    const technicalData = {
-      ...formData,
-      // Remover valores financeiros
-      finalPrice: 0,
-      totalCost: 0,
-      profitMargin: 0,
-      creationCosts: [],
-      supplies: [],
-      labor: [],
-      fixedCosts: []
-    };
-    
-    console.log('Abrindo ficha técnica sem valores:', technicalData);
-    // Aqui você pode implementar a abertura da ficha técnica
+    try {
+      // Gerar ficha técnica sem valores financeiros
+      const pdf = new jsPDF();
+      
+      // Configurar fonte
+      pdf.setFont('helvetica');
+      
+      // Título
+      pdf.setFontSize(20);
+      pdf.text('Ficha Técnica do Produto', 20, 30);
+      
+      // Informações básicas
+      pdf.setFontSize(12);
+      pdf.text(`Modelo: ${formData.modelName}`, 20, 50);
+      pdf.text(`Referência: ${formData.reference}`, 20, 60);
+      pdf.text(`Tipo: ${formData.garmentType}`, 20, 70);
+      pdf.text(`Tecido: ${selectedFabric?.name || 'N/A'}`, 20, 80);
+      
+      // Especificações do tecido
+      if (selectedFabric) {
+        let yPos = 100;
+        pdf.setFontSize(14);
+        pdf.text('Especificações do Tecido:', 20, yPos);
+        yPos += 10;
+        pdf.setFontSize(10);
+        
+        pdf.text(`Tipo: ${selectedFabric.type}`, 25, yPos);
+        yPos += 8;
+        pdf.text(`Composição: ${selectedFabric.composition || 'N/A'}`, 25, yPos);
+        yPos += 8;
+        pdf.text(`Gramatura: ${selectedFabric.gramWeight}g/m²`, 25, yPos);
+        yPos += 8;
+        pdf.text(`Largura: ${selectedFabric.usableWidth}cm`, 25, yPos);
+        yPos += 8;
+        pdf.text(`Fornecedor: ${selectedFabric.supplierId || 'N/A'}`, 25, yPos);
+        yPos += 20;
+        
+        // Tamanhos e especificações
+        pdf.setFontSize(14);
+        pdf.text('Grade de Tamanhos:', 20, yPos);
+        yPos += 10;
+        pdf.setFontSize(10);
+        
+        formData.sizes.forEach((size) => {
+          pdf.text(`${size.size}: ${size.quantity} peças - ${size.weight}g por peça`, 25, yPos);
+          yPos += 8;
+        });
+        
+        // Consumo total
+        yPos += 10;
+        pdf.setFontSize(12);
+        const totalWeight = formData.sizes.reduce((total, size) => total + (size.quantity * size.weight), 0);
+        const totalConsumption = (totalWeight / 1000) / (selectedFabric.gramWeight / 1000);
+        pdf.text(`Consumo Total de Tecido: ${totalConsumption.toFixed(2)} metros`, 25, yPos);
+        yPos += 10;
+        pdf.text(`Peso Total das Peças: ${(totalWeight / 1000).toFixed(2)} kg`, 25, yPos);
+        
+        // Rodapé
+        pdf.setFontSize(8);
+        pdf.text('Esta ficha técnica foi gerada automaticamente pelo sistema IA.TEX', 20, 280);
+      }
+      
+      // Salvar e abrir
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      
+      // Download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Ficha_Tecnica_${formData.reference}_${formData.modelName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Abrir em nova aba
+      window.open(url, '_blank');
+      
+      // Limpar URL
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      console.log('Ficha técnica gerada com sucesso');
+    } catch (error) {
+      console.error('Erro ao gerar ficha técnica:', error);
+    }
   };
 
   const handleSave = async () => {
