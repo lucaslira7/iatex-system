@@ -120,20 +120,30 @@ export default function Step8Summary() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Simular salvamento por enquanto - vamos implementar o banco de dados depois
-      console.log('Salvando precificação:', formData);
+      console.log('Salvando template de precificação:', formData);
       
-      // Simular resposta do servidor
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('/api/pricing-templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao salvar template de precificação');
+      }
+
+      const result = await response.json();
+      console.log('Template de precificação salvo com sucesso:', result);
       
-      // Gerar ID mock do orçamento
-      const mockId = Math.floor(Math.random() * 1000) + 1;
-      setSavedQuotationId(mockId);
-      alert('Precificação salva com sucesso!');
+      // Salvar o ID do template criado
+      setSavedQuotationId(result.id);
+      alert('Template de precificação salvo com sucesso!');
       
     } catch (error) {
-      console.error('Erro ao salvar precificação:', error);
-      alert('Erro ao salvar precificação. Tente novamente.');
+      console.error('Erro ao salvar template de precificação:', error);
+      alert('Erro ao salvar template de precificação. Tente novamente.');
     } finally {
       setIsSaving(false);
     }

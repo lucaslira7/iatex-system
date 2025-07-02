@@ -14,6 +14,9 @@ import {
   quotationItems,
   quotationItemSizes,
   quotationItemCosts,
+  pricingTemplates,
+  pricingTemplateSizes,
+  pricingTemplateCosts,
   type User,
   type UpsertUser,
   type Fabric,
@@ -38,6 +41,12 @@ import {
   type InsertQuotationItemSize,
   type QuotationItemCost,
   type InsertQuotationItemCost,
+  type PricingTemplate,
+  type InsertPricingTemplate,
+  type PricingTemplateSize,
+  type InsertPricingTemplateSize,
+  type PricingTemplateCost,
+  type InsertPricingTemplateCost,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, count, sum } from "drizzle-orm";
@@ -101,6 +110,13 @@ export interface IStorage {
   createQuotation(quotation: InsertQuotation, item: InsertQuotationItem, sizes: InsertQuotationItemSize[], costs: InsertQuotationItemCost[]): Promise<Quotation>;
   updateQuotation(id: number, quotation: Partial<InsertQuotation>): Promise<Quotation>;
   deleteQuotation(id: number): Promise<void>;
+
+  // Pricing Template operations
+  getPricingTemplates(): Promise<PricingTemplate[]>;
+  getPricingTemplate(id: number): Promise<PricingTemplate | undefined>;
+  createPricingTemplate(template: InsertPricingTemplate, sizes: InsertPricingTemplateSize[], costs: InsertPricingTemplateCost[]): Promise<PricingTemplate>;
+  updatePricingTemplate(id: number, template: Partial<InsertPricingTemplate>): Promise<PricingTemplate>;
+  deletePricingTemplate(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -394,6 +410,52 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuotation(id: number): Promise<void> {
     await db.delete(quotations).where(eq(quotations.id, id));
+  }
+
+  // Pricing Template operations
+  async getPricingTemplates(): Promise<PricingTemplate[]> {
+    return await db.select().from(pricingTemplates).orderBy(desc(pricingTemplates.createdAt));
+  }
+
+  async getPricingTemplate(id: number): Promise<PricingTemplate | undefined> {
+    const [template] = await db.select().from(pricingTemplates).where(eq(pricingTemplates.id, id));
+    return template || undefined;
+  }
+
+  async createPricingTemplate(template: InsertPricingTemplate, sizes: InsertPricingTemplateSize[], costs: InsertPricingTemplateCost[]): Promise<PricingTemplate> {
+    const [createdTemplate] = await db.insert(pricingTemplates).values(template).returning();
+    
+    // Inserir tamanhos
+    if (sizes.length > 0) {
+      const sizesWithTemplateId = sizes.map(size => ({
+        ...size,
+        templateId: createdTemplate.id
+      }));
+      await db.insert(pricingTemplateSizes).values(sizesWithTemplateId);
+    }
+    
+    // Inserir custos
+    if (costs.length > 0) {
+      const costsWithTemplateId = costs.map(cost => ({
+        ...cost,
+        templateId: createdTemplate.id
+      }));
+      await db.insert(pricingTemplateCosts).values(costsWithTemplateId);
+    }
+    
+    return createdTemplate;
+  }
+
+  async updatePricingTemplate(id: number, template: Partial<InsertPricingTemplate>): Promise<PricingTemplate> {
+    const [updated] = await db.update(pricingTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(pricingTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePricingTemplate(id: number): Promise<void> {
+    await db.delete(pricingTemplates).where(eq(pricingTemplates.id, id));
   }
 }
 

@@ -327,6 +327,70 @@ export const quotationItemCostsRelations = relations(quotationItemCosts, ({ one 
   }),
 }));
 
+// Tabela para templates de precificação (como os tecidos)
+export const pricingTemplates = pgTable("pricing_templates", {
+  id: serial("id").primaryKey(),
+  modelName: varchar("model_name", { length: 255 }).notNull(),
+  reference: varchar("reference", { length: 100 }).notNull().unique(),
+  garmentType: varchar("garment_type", { length: 100 }).notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  pricingMode: varchar("pricing_mode", { length: 20 }).notNull(), // 'single' | 'multiple'
+  fabricId: integer("fabric_id").references(() => fabrics.id),
+  fabricConsumption: decimal("fabric_consumption", { precision: 10, scale: 3 }).notNull(),
+  wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }).notNull().default("0"),
+  profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }).notNull(),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  finalPrice: decimal("final_price", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tamanhos do template de precificação
+export const pricingTemplateSizes = pgTable("pricing_template_sizes", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => pricingTemplates.id, { onDelete: "cascade" }),
+  size: varchar("size", { length: 20 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // peso em gramas
+});
+
+// Custos do template de precificação
+export const pricingTemplateCosts = pgTable("pricing_template_costs", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => pricingTemplates.id, { onDelete: "cascade" }),
+  category: varchar("category", { length: 50 }).notNull(), // 'creation', 'supplies', 'labor', 'fixed'
+  description: varchar("description", { length: 255 }).notNull(),
+  unitValue: decimal("unit_value", { precision: 10, scale: 2 }).notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 3 }).notNull(),
+  wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }).notNull().default("0"),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+});
+
+// Relations para templates de precificação
+export const pricingTemplatesRelations = relations(pricingTemplates, ({ one, many }) => ({
+  fabric: one(fabrics, {
+    fields: [pricingTemplates.fabricId],
+    references: [fabrics.id],
+  }),
+  sizes: many(pricingTemplateSizes),
+  costs: many(pricingTemplateCosts),
+}));
+
+export const pricingTemplateSizesRelations = relations(pricingTemplateSizes, ({ one }) => ({
+  template: one(pricingTemplates, {
+    fields: [pricingTemplateSizes.templateId],
+    references: [pricingTemplates.id],
+  }),
+}));
+
+export const pricingTemplateCostsRelations = relations(pricingTemplateCosts, ({ one }) => ({
+  template: one(pricingTemplates, {
+    fields: [pricingTemplateCosts.templateId],
+    references: [pricingTemplates.id],
+  }),
+}));
+
 // Insert schemas
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true });
 export const insertFabricSchema = createInsertSchema(fabrics).omit({ id: true, createdAt: true, updatedAt: true });
@@ -337,6 +401,11 @@ export const insertQuotationSchema = createInsertSchema(quotations).omit({ id: t
 export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit({ id: true, createdAt: true });
 export const insertQuotationItemSizeSchema = createInsertSchema(quotationItemSizes).omit({ id: true });
 export const insertQuotationItemCostSchema = createInsertSchema(quotationItemCosts).omit({ id: true });
+
+// Schemas para templates de precificação
+export const insertPricingTemplateSchema = createInsertSchema(pricingTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPricingTemplateSizeSchema = createInsertSchema(pricingTemplateSizes).omit({ id: true });
+export const insertPricingTemplateCostSchema = createInsertSchema(pricingTemplateCosts).omit({ id: true });
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
@@ -364,3 +433,11 @@ export type QuotationItemSize = typeof quotationItemSizes.$inferSelect;
 export type InsertQuotationItemSize = typeof insertQuotationItemSizeSchema._type;
 export type QuotationItemCost = typeof quotationItemCosts.$inferSelect;
 export type InsertQuotationItemCost = typeof insertQuotationItemCostSchema._type;
+
+// Types para templates de precificação
+export type PricingTemplate = typeof pricingTemplates.$inferSelect;
+export type InsertPricingTemplate = typeof insertPricingTemplateSchema._type;
+export type PricingTemplateSize = typeof pricingTemplateSizes.$inferSelect;
+export type InsertPricingTemplateSize = typeof insertPricingTemplateSizeSchema._type;
+export type PricingTemplateCost = typeof pricingTemplateCosts.$inferSelect;
+export type InsertPricingTemplateCost = typeof insertPricingTemplateCostSchema._type;

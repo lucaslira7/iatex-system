@@ -301,6 +301,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pricing Templates routes
+  app.get('/api/pricing-templates', isAuthenticated, async (req, res) => {
+    try {
+      const templates = await storage.getPricingTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching pricing templates:", error);
+      res.status(500).json({ message: "Failed to fetch pricing templates" });
+    }
+  });
+
+  app.post('/api/pricing-templates', isAuthenticated, async (req: any, res) => {
+    try {
+      const formData = req.body;
+      
+      // Converter os dados do formulário para o formato do template
+      const template = {
+        modelName: formData.modelName,
+        reference: formData.reference,
+        garmentType: formData.garmentType,
+        description: formData.description || null,
+        imageUrl: formData.imageUrl || null,
+        pricingMode: formData.pricingMode,
+        fabricId: formData.fabricId,
+        fabricConsumption: formData.fabricConsumption.toString(),
+        wastePercentage: formData.wastePercentage.toString(),
+        profitMargin: formData.profitMargin.toString(),
+        totalCost: formData.totalCost.toString(),
+        finalPrice: formData.finalPrice.toString(),
+      };
+
+      // Converter tamanhos
+      const sizes = formData.sizes.map((size: any) => ({
+        size: size.size,
+        quantity: size.quantity,
+        weight: size.weight.toString(),
+      }));
+
+      // Converter custos de todas as categorias
+      const costs: any[] = [];
+      
+      ['creationCosts', 'supplies', 'labor', 'fixedCosts'].forEach(category => {
+        if (formData[category]) {
+          formData[category].forEach((cost: any) => {
+            costs.push({
+              category: category === 'creationCosts' ? 'creation' : 
+                       category === 'supplies' ? 'supplies' :
+                       category === 'labor' ? 'labor' : 'fixed',
+              description: cost.description,
+              unitValue: cost.unitValue.toString(),
+              quantity: cost.quantity.toString(),
+              wastePercentage: cost.wastePercentage.toString(),
+              total: cost.total.toString(),
+            });
+          });
+        }
+      });
+
+      // Salvar o template
+      const savedTemplate = await storage.createPricingTemplate(template, sizes, costs);
+      
+      // Log da atividade
+      await storage.logActivity(
+        req.user.claims.sub,
+        'pricing',
+        'create_template',
+        `Criou template de precificação: ${formData.modelName} (${formData.reference})`
+      );
+      
+      res.json({ 
+        success: true, 
+        message: 'Template de precificação salvo com sucesso!',
+        id: savedTemplate.id,
+        template: savedTemplate
+      });
+    } catch (error) {
+      console.error("Error creating pricing template:", error);
+      res.status(500).json({ message: "Failed to create pricing template" });
+    }
+  });
+
   app.post('/api/quotations', isAuthenticated, async (req: any, res) => {
     try {
       const formData = req.body;
