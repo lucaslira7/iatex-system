@@ -10,6 +10,8 @@ import LandingPage from "@/pages/LandingPage";
 import DemoPage from "@/pages/DemoPage";
 import LeadCapture from "@/pages/LeadCapture";
 import NotFound from "@/pages/not-found";
+import { useEffect } from "react";
+import { pwaManager } from "@/utils/pwa";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -32,6 +34,13 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // Inicializar PWA quando app carrega
+    if (typeof window !== 'undefined') {
+      pwaManager;
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

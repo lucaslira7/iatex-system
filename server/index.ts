@@ -6,6 +6,25 @@ const app = express();
 app.use(express.json({ limit: '50mb' })); // Aumentar limite para aceitar imagens base64
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
+// Servir arquivos PWA
+app.use(express.static('public'));
+
+// Headers PWA
+app.use((req, res, next) => {
+  // Service Worker precisa ser servido com Content-Type correto
+  if (req.path === '/sw.js') {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
+  }
+  
+  // Manifest.json
+  if (req.path === '/manifest.json') {
+    res.setHeader('Content-Type', 'application/manifest+json');
+  }
+  
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
