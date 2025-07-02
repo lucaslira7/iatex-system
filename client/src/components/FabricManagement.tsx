@@ -8,6 +8,7 @@ import { Scissors, Plus } from "lucide-react";
 import FabricModal from "./modals/FabricModal";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { formatCurrencyBR, formatDateBR } from "@/lib/utils/format";
 import type { Fabric } from "@shared/schema";
 
 export default function FabricManagement() {
@@ -205,10 +206,10 @@ export default function FabricManagement() {
                   
                   <div className="space-y-2 mb-4">
                     <p className="text-sm text-gray-700">
-                      Preço por kg: <span className="font-semibold text-blue-600">R$ {parseFloat(fabric.pricePerKg?.toString() || '0').toFixed(2)}</span>
+                      Preço por kg: <span className="font-semibold text-blue-600">{formatCurrencyBR(parseFloat(fabric.pricePerKg?.toString() || '0'))}</span>
                     </p>
                     <p className="text-sm text-gray-700">
-                      Preço por metro: <span className="font-semibold text-blue-600">R$ {parseFloat(fabric.pricePerMeter?.toString() || '0').toFixed(3)}</span>
+                      Preço por metro: <span className="font-semibold text-blue-600">{formatCurrencyBR(parseFloat(fabric.pricePerMeter?.toString() || '0'))}</span>
                     </p>
                     <p className="text-sm text-gray-700">
                       Rendimento: <span className="font-semibold">{parseFloat(fabric.yieldEstimate?.toString() || '0').toFixed(2)} m/kg</span>

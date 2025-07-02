@@ -1,0 +1,74 @@
+✅ COMANDO ÚNICO DE AJUSTE VISUAL E FORMATAÇÃO
+Objetivo: Corrigir os seguintes pontos:
+
+Formatar corretamente os valores monetários no padrão brasileiro (R$ 1.000,00)
+
+Corrigir a exibição de datas para o formato DD/MM/AAAA
+
+Remover o espaçamento excessivo entre a sidebar e o conteúdo da página (melhor alinhamento)
+
+🛠️ Aplique este ajuste global no projeto (React + Tailwind + TypeScript):
+1. Função global de formatação (lib/utils/format.ts):
+ts
+Copiar
+Editar
+// lib/utils/format.ts
+export const formatCurrencyBR = (value: number): string => {
+  return value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+};
+
+export const formatDateBR = (date: string | Date): string => {
+  const d = new Date(date);
+  return d.toLocaleDateString('pt-BR'); // exibe como DD/MM/AAAA
+};
+2. Exemplo de uso (em qualquer card ou componente):
+tsx
+Copiar
+Editar
+import { formatCurrencyBR, formatDateBR } from "@/lib/utils/format";
+
+<span className="text-xl font-bold truncate">
+  {formatCurrencyBR(1063170.05)}
+</span>
+
+<p className="text-sm text-muted-foreground">
+  Atualizado em {formatDateBR("2025-07-02")}
+</p>
+3. Ajuste no layout para remover espaçamento excessivo entre menu e página (ex: DashboardLayout.tsx):
+tsx
+Copiar
+Editar
+// Exemplo no container principal da página
+<div className="pl-6 pr-6 pt-4 max-w-full">
+  {/* Conteúdo da página aqui */}
+</div>
+Se estiver com espaço lateral muito grande, verifique se há alguma ml-72 ou ml-[300px] e substitua por ml-[var(--sidebar-width)] se estiver usando variável, ou ajuste manualmente com ml-64 (para sidebar de ~256px).
+
+4. Tailwind para garantir responsividade e truncamento:
+tsx
+Copiar
+Editar
+<div className="flex flex-col justify-between w-full max-w-[250px] truncate">
+  <span className="text-xl font-bold">{formatCurrencyBR(valor)}</span>
+</div>
+✅ Resultado Esperado
+Problema	Solução Aplicada
+Valor monetário estourando	formatCurrencyBR() + truncate
+Data fora do padrão BR	formatDateBR() → exibe 02/07/2025
+Espaço lateral excessivo	Ajuste no padding/margin do Layout principal
+Layout quebrando no card	Uso de max-w, truncate e overflow-hidden
+
+✅ Extra (opcional – global CSS fixo)
+css
+Copiar
+Editar
+/* src/styles/global.css ou tailwind/base */
+.card-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}

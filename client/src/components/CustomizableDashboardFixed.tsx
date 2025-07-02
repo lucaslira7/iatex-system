@@ -14,6 +14,7 @@ import {
   ArrowUp, ArrowDown, MoveUp, MoveDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrencyBR, formatDateBR, formatNumberBR } from "@/lib/utils/format";
 import type { ActiveSection } from "@/pages/Home";
 
 interface DashboardCard {
@@ -90,7 +91,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
       {
         id: 'stock-value',
         title: 'Valor do Estoque',
-        value: `R$ ${(metrics?.totalStockValue || 0).toLocaleString('pt-BR')}`,
+        value: formatCurrencyBR(metrics?.totalStockValue || 0),
         icon: DollarSign,
         color: 'purple',
         visible: true,
@@ -406,9 +407,9 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
             <Card key={card.id} className="relative kpi-card transition-all cursor-pointer hover:shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                    <p className="text-3xl font-bold text-gray-900 card-value">{card.value}</p>
                     {card.change && (
                       <div className="flex items-center gap-1 mt-1">
                         {getTrendIcon(card.trend)}

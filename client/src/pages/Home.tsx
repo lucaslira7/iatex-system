@@ -88,8 +88,10 @@ export default function Home() {
     <div className="flex h-screen bg-gray-50">
       <SidebarImproved activeSection={activeSection} onSectionChange={setActiveSection} />
       
-      <div className="flex-1 flex flex-col overflow-hidden ml-72">
-        {renderContent()}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="p-6 overflow-y-auto">
+          {renderContent()}
+        </div>
       </div>
 
       {/* Botão Flutuante da IA */}
