@@ -135,7 +135,7 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
   };
 
   return (
-    <Dialog open={true} onOpenChange={() => {}}>
+    <Dialog open={true} onOpenChange={handleClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">

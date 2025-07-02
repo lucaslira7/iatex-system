@@ -39,13 +39,13 @@ export default function Step8SummaryFixed() {
 
   // Cálculos de custos
   const costs = {
-    creationCosts: formData.creationCosts.reduce((total, cost) => total + (cost.unitValue * cost.quantity), 0),
-    suppliesCosts: formData.suppliesCosts.reduce((total, cost) => {
+    creationCosts: formData.creationCosts?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
+    suppliesCosts: formData.supplies?.reduce((total: number, cost: any) => {
       const withWaste = cost.unitValue * cost.quantity * (1 + cost.wastePercentage / 100);
       return total + withWaste;
-    }, 0),
-    laborCosts: formData.laborCosts.reduce((total, cost) => total + (cost.unitValue * cost.quantity), 0),
-    fixedCosts: formData.fixedCosts.reduce((total, cost) => total + (cost.unitValue * cost.quantity), 0),
+    }, 0) || 0,
+    laborCosts: formData.labor?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
+    fixedCosts: formData.fixedCosts?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
     get totalCost() {
       return this.creationCosts + this.suppliesCosts + this.laborCosts + this.fixedCosts;
     },
@@ -297,14 +297,40 @@ export default function Step8SummaryFixed() {
         weight: size.weight
       }));
 
-      const costsData = formData.creationCosts.map(cost => ({
-        category: 'creation',
-        description: cost.description,
-        unitValue: cost.unitValue,
-        quantity: cost.quantity,
-        wastePercentage: 0,
-        total: cost.unitValue * cost.quantity
-      }));
+      const costsData = [
+        ...formData.creationCosts?.map(cost => ({
+          category: 'creation',
+          description: cost.description,
+          unitValue: cost.unitValue,
+          quantity: cost.quantity,
+          wastePercentage: 0,
+          total: cost.unitValue * cost.quantity
+        })) || [],
+        ...formData.supplies?.map(cost => ({
+          category: 'supplies',
+          description: cost.description,
+          unitValue: cost.unitValue,
+          quantity: cost.quantity,
+          wastePercentage: cost.wastePercentage,
+          total: cost.unitValue * cost.quantity * (1 + cost.wastePercentage / 100)
+        })) || [],
+        ...formData.labor?.map(cost => ({
+          category: 'labor',
+          description: cost.description,
+          unitValue: cost.unitValue,
+          quantity: cost.quantity,
+          wastePercentage: 0,
+          total: cost.unitValue * cost.quantity
+        })) || [],
+        ...formData.fixedCosts?.map(cost => ({
+          category: 'fixed',
+          description: cost.description,
+          unitValue: cost.unitValue,
+          quantity: cost.quantity,
+          wastePercentage: 0,
+          total: cost.unitValue * cost.quantity
+        })) || []
+      ];
 
       const response = await fetch('/api/pricing-templates', {
         method: 'POST',
