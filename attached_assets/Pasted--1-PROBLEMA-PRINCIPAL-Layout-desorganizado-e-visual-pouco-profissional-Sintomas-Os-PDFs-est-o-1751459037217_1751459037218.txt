@@ -1,0 +1,89 @@
+✅ 1. PROBLEMA PRINCIPAL: Layout desorganizado e visual pouco profissional
+🔎 Sintomas:
+Os PDFs estão sendo gerados com visual muito simples, sem estrutura de colunas/tabelas.
+
+Quebra de linhas ruim em alguns blocos (como "BREAKDOWN DE CUSTOS").
+
+Tudo aparece empilhado verticalmente, sem uso de grade ou divisões claras.
+
+🎯 Causa:
+O PDF está sendo gerado com base em texto bruto usando fpdf (ou fpdf2) com multi_cell() ou cell() sem alinhamento em colunas ou tabelas.
+
+✅ Solução:
+Substituir o uso de multi_cell simples por um sistema de tabela real com cell() posicionado com set_x() e set_y().
+
+Ou migrar para uma biblioteca com suporte nativo a tabelas como reportlab.
+
+✅ 2. ERROS DE PADRÃO E INCONSISTÊNCIA ENTRE FICHAS
+PDF	Problema
+Ficha_C001... (1)-(3)	Informações repetidas (ex: “Total: 3 peças” aparece 2x), layout truncado.
+Resumo_C002_02-07-2025	Melhor estruturado, mas ainda sem estética refinada nem destaque visual nos blocos.
+Ficha_C001_02072025 (2) e (3)	Versões diferentes com variações mínimas, o que pode indicar problema no salvamento múltiplo.
+
+🎯 Causa:
+O código pode estar reaproveitando os mesmos dados em blocos diferentes sem checar duplicações.
+
+O template usado não padroniza a ordem e estilo de exibição.
+
+✅ Solução:
+Criar um template único e padronizado para a ficha técnica.
+
+Evitar gerar PDFs com dados duplicados.
+
+Garantir que o processo de salvamento/exportação esteja controlando múltiplos cliques (debounce ou st.button(disabled=True)).
+
+✅ 3. PROBLEMA NA FORMATAÇÃO MONETÁRIA
+🔎 Sintomas:
+Em alguns PDFs, valores como "Preço por metro: R$ 16,80" estão sem espaçamento ou alinhamento.
+
+Em outros, os valores aparecem truncados ou colados com texto.
+
+🎯 Causa:
+A fonte usada pode ser proporcional (não monoespaçada).
+
+Falta de formatação com .rjust() ou posicionamento fixo com set_x().
+
+✅ Solução:
+Usar fonte monoespaçada (Courier) ou alinhar os valores com base em largura fixa de célula.
+
+Aplicar formatação padronizada com f"R$ {valor:.2f}".rjust(10) ou equivalente visual.
+
+✅ 4. AUSÊNCIA DE ELEMENTOS VISUAIS (bordas, sombreamento, divisões)
+🔎 Sintomas:
+Os PDFs não têm linhas de separação, destaque para títulos, nem uso de cores suaves.
+
+✅ Solução:
+Adicionar:
+
+Linhas horizontais com line()
+
+Títulos com set_fill_color() e cell(fill=True)
+
+Bordas nos blocos com border=1
+
+Cores leves em fundo de sessão (set_fill_color(230,230,230))
+
+✅ 5. AUSÊNCIA DE IMAGEM DO MODELO
+Mesmo com campo para imagem, nenhum dos PDFs inclui a foto da peça. Isso empobrece muito a apresentação visual.
+
+✅ Solução:
+Usar pdf.image(caminho_arquivo_img, x=..., y=..., w=...) com checagem se há imagem.
+
+Se não houver, usar imagem genérica padrão (ex: modelo_padrao.jpg com blusa básica).
+
+✅ 6. ERRO DE PROPORÇÃO ENTRE BLOCOS
+O bloco de custos (BREAKDOWN DE CUSTOS) mistura textos e valores soltos, o que prejudica a leitura e causa quebras de linha inesperadas.
+
+✅ Solução:
+Separar por colunas reais:
+
+Coluna 1: Descrição
+
+Coluna 2: Valor unitário
+
+Coluna 3: Quantidade
+
+Coluna 4: Desperdício
+
+Coluna 5: Total
+

@@ -44,18 +44,18 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
       });
     } else if (initialTemplate && !initialTemplate.id) {
       // Template para cópia - carregar apenas dados básicos
-      updateFormData('modelName', initialTemplate.modelName);
-      updateFormData('reference', initialTemplate.reference);
-      updateFormData('garmentType', initialTemplate.garmentType);
+      updateFormData('modelName', initialTemplate.modelName || '');
+      updateFormData('reference', initialTemplate.reference || '');
+      updateFormData('garmentType', initialTemplate.garmentType || '');
       updateFormData('description', initialTemplate.description || '');
       updateFormData('imageUrl', initialTemplate.imageUrl || '');
-      updateFormData('pricingMode', initialTemplate.pricingMode);
-      updateFormData('fabricId', initialTemplate.fabricId);
-      updateFormData('fabricConsumption', parseFloat(initialTemplate.fabricConsumption) || 0);
-      updateFormData('wastePercentage', parseFloat(initialTemplate.wastePercentage) || 20);
-      updateFormData('profitMargin', parseFloat(initialTemplate.profitMargin) || 50);
-      updateFormData('totalCost', parseFloat(initialTemplate.totalCost) || 0);
-      updateFormData('finalPrice', parseFloat(initialTemplate.finalPrice) || 0);
+      updateFormData('pricingMode', initialTemplate.pricingMode || 'single');
+      updateFormData('fabricId', initialTemplate.fabricId || null);
+      updateFormData('fabricConsumption', typeof initialTemplate.fabricConsumption === 'string' ? parseFloat(initialTemplate.fabricConsumption) : (initialTemplate.fabricConsumption || 0));
+      updateFormData('wastePercentage', typeof initialTemplate.wastePercentage === 'string' ? parseFloat(initialTemplate.wastePercentage) : (initialTemplate.wastePercentage || 20));
+      updateFormData('profitMargin', typeof initialTemplate.profitMargin === 'string' ? parseFloat(initialTemplate.profitMargin) : (initialTemplate.profitMargin || 50));
+      updateFormData('totalCost', typeof initialTemplate.totalCost === 'string' ? parseFloat(initialTemplate.totalCost) : (initialTemplate.totalCost || 0));
+      updateFormData('finalPrice', typeof initialTemplate.finalPrice === 'string' ? parseFloat(initialTemplate.finalPrice) : (initialTemplate.finalPrice || 0));
     }
   }, [initialTemplate, loadTemplateData, updateFormData]);
 
