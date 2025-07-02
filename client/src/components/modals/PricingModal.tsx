@@ -54,13 +54,13 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
         event.preventDefault();
       }
       
-      // Ctrl+N para próxima etapa, Ctrl+B para etapa anterior
-      if (event.ctrlKey && event.key.toLowerCase() === 'n' && currentStep < 8) {
+      // Ctrl+F3 para próxima etapa, Ctrl+F1 para etapa anterior
+      if (event.ctrlKey && event.key === 'F3' && currentStep < 8 && canGoNext()) {
         handleNext();
         event.preventDefault();
       }
       
-      if (event.ctrlKey && event.key.toLowerCase() === 'b' && currentStep > 0) {
+      if (event.ctrlKey && event.key === 'F1' && currentStep > 0) {
         handlePrevious();
         event.preventDefault();
       }
@@ -196,10 +196,10 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
           </Button>
           <div className="space-x-3">
             {currentStep > 1 && (
-              <Button type="button" variant="outline" onClick={handlePrevious} title="Atalho: Ctrl+B">
+              <Button type="button" variant="outline" onClick={handlePrevious} title="Atalho: Ctrl+F1">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Anterior
-                <span className="ml-2 text-xs text-gray-500">Ctrl+B</span>
+                <span className="ml-2 text-xs text-gray-500">Ctrl+F1</span>
               </Button>
             )}
             {currentStep < 8 && (
@@ -208,11 +208,11 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
                 onClick={handleNext}
                 disabled={!canGoNext()}
                 className="bg-primary hover:bg-primary/90"
-                title="Atalho: Ctrl+N"
+                title="Atalho: Ctrl+F3"
               >
                 Próximo
                 <ArrowRight className="ml-2 h-4 w-4" />
-                <span className="ml-2 text-xs text-white/80">Ctrl+N</span>
+                <span className="ml-2 text-xs text-white/80">Ctrl+F3</span>
               </Button>
             )}
           </div>
