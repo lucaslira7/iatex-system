@@ -147,25 +147,139 @@ export default function Step8SummaryFixed() {
         
         yPos = createInfoCard(pdf, 'Especificações do Tecido', fabricInfo, yPos);
       }
+
+      // BREAKDOWN DETALHADO DE CUSTOS
+      yPos = createSection(pdf, 'BREAKDOWN DE CUSTOS', yPos);
+      
+      // Custos de Criação
+      if (formData.creationCosts && formData.creationCosts.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Custos de Criação:', 20, yPos);
+        yPos += 10;
+        
+        const creationHeaders = ['Descrição', 'Valor Unit.', 'Qtd', 'Total'];
+        const creationRows = formData.creationCosts.map(cost => [
+          cost.description,
+          `R$ ${cost.unitValue.toFixed(2)}`,
+          cost.quantity.toString(),
+          `R$ ${(cost.unitValue * cost.quantity).toFixed(2)}`
+        ]);
+        creationRows.push([
+          'SUBTOTAL CRIAÇÃO',
+          '',
+          '',
+          `R$ ${costs.creationCosts.toFixed(2)}`
+        ]);
+        
+        yPos = createSimpleTable(pdf, creationHeaders, creationRows, yPos);
+      }
+
+      // Custos de Insumos
+      if (formData.supplies && formData.supplies.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Insumos e Materiais:', 20, yPos);
+        yPos += 10;
+        
+        const suppliesHeaders = ['Descrição', 'Valor Unit.', 'Qtd', 'Desperdício', 'Total'];
+        const suppliesRows = formData.supplies.map(cost => [
+          cost.description,
+          `R$ ${cost.unitValue.toFixed(2)}`,
+          cost.quantity.toString(),
+          `${cost.wastePercentage}%`,
+          `R$ ${(cost.unitValue * cost.quantity * (1 + cost.wastePercentage / 100)).toFixed(2)}`
+        ]);
+        suppliesRows.push([
+          'SUBTOTAL INSUMOS',
+          '',
+          '',
+          '',
+          `R$ ${costs.suppliesCosts.toFixed(2)}`
+        ]);
+        
+        yPos = createSimpleTable(pdf, suppliesHeaders, suppliesRows, yPos);
+      }
+
+      // Custos de Mão de Obra
+      if (formData.labor && formData.labor.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Mão de Obra:', 20, yPos);
+        yPos += 10;
+        
+        const laborHeaders = ['Descrição', 'Valor Unit.', 'Qtd', 'Total'];
+        const laborRows = formData.labor.map(cost => [
+          cost.description,
+          `R$ ${cost.unitValue.toFixed(2)}`,
+          cost.quantity.toString(),
+          `R$ ${(cost.unitValue * cost.quantity).toFixed(2)}`
+        ]);
+        laborRows.push([
+          'SUBTOTAL MÃO DE OBRA',
+          '',
+          '',
+          `R$ ${costs.laborCosts.toFixed(2)}`
+        ]);
+        
+        yPos = createSimpleTable(pdf, laborHeaders, laborRows, yPos);
+      }
+
+      // Custos Fixos
+      if (formData.fixedCosts && formData.fixedCosts.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Custos Fixos:', 20, yPos);
+        yPos += 10;
+        
+        const fixedHeaders = ['Descrição', 'Valor Unit.', 'Qtd', 'Total'];
+        const fixedRows = formData.fixedCosts.map(cost => [
+          cost.description,
+          `R$ ${cost.unitValue.toFixed(2)}`,
+          cost.quantity.toString(),
+          `R$ ${(cost.unitValue * cost.quantity).toFixed(2)}`
+        ]);
+        fixedRows.push([
+          'SUBTOTAL CUSTOS FIXOS',
+          '',
+          '',
+          `R$ ${costs.fixedCosts.toFixed(2)}`
+        ]);
+        
+        yPos = createSimpleTable(pdf, fixedHeaders, fixedRows, yPos);
+      }
       
       // Resumo Financeiro Final
-      yPos = createSection(pdf, 'RESUMO FINANCEIRO', yPos);
+      yPos = createSection(pdf, 'RESUMO FINANCEIRO FINAL', yPos);
       
       const financialData = {
         totalCost: costs.totalCost,
         finalPrice: costs.finalPrice,
         profit: costs.finalPrice - costs.totalCost,
-        marginPercent: ((costs.finalPrice - costs.totalCost) / costs.totalCost) * 100,
+        marginPercent: costs.totalCost > 0 ? ((costs.finalPrice - costs.totalCost) / costs.totalCost) * 100 : 0,
         pricePerUnit: costs.pricePerUnit
       };
       
       yPos = createFinancialSummary(pdf, financialData, yPos);
+
+      // Preço Final Editável em destaque
+      yPos += 10;
+      pdf.setFillColor(72, 187, 120);
+      pdf.rect(20, yPos - 5, 170, 25, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PREÇO FINAL (EDITÁVEL)', 105, yPos + 5, { align: 'center' });
+      pdf.setFontSize(20);
+      pdf.text(`R$ ${costs.finalPrice.toFixed(2)}`, 105, yPos + 15, { align: 'center' });
+      pdf.setTextColor(0, 0, 0);
+      yPos += 30;
       
       // Rodapé profissional
       createFooter(
         pdf,
         'Este resumo de precificação foi gerado automaticamente pelo sistema IA.TEX',
-        `Template salvo permanentemente - Ref: ${formData.reference}`
+        `Template salvo permanentemente - Ref: ${formData.reference} - ${new Date().toLocaleDateString('pt-BR')}`
       );
       
       // Salvar e baixar o PDF
@@ -207,45 +321,118 @@ export default function Step8SummaryFixed() {
         }
       }
       
-      // Especificações técnicas
+      // Especificações técnicas básicas
       yPos = createSection(pdf, 'ESPECIFICAÇÕES TÉCNICAS', yPos);
       
       const techSpecs = [
         { label: 'Modelo', value: formData.modelName },
         { label: 'Referência', value: formData.reference, highlight: true },
-        { label: 'Tipo', value: formData.garmentType },
+        { label: 'Tipo de Peça', value: formData.garmentType },
+        { label: 'Modalidade', value: formData.pricingMode === 'single' ? 'Peça Única' : 'Múltiplas Peças' },
         { label: 'Total de Peças', value: totalQuantity.toString() },
-        { label: 'Peso Total', value: `${(totalWeight / 1000).toFixed(2)}kg` }
+        { label: 'Peso Total', value: `${(totalWeight / 1000).toFixed(2)}kg` },
+        { label: 'Descrição', value: formData.description || 'N/A' }
       ];
       
+      yPos = createInfoCard(pdf, 'Informações Básicas', techSpecs, yPos);
+
+      // Informações do Tecido - Expandidas
       if (selectedFabric) {
-        techSpecs.push(
-          { label: 'Tecido', value: selectedFabric.name },
-          { label: 'Consumo Total', value: `${fabricConsumption.toFixed(2)}m` },
-          { label: 'Consumo/Peça', value: `${consumptionPerPiece.toFixed(2)}m` }
-        );
+        yPos = createSection(pdf, 'ESPECIFICAÇÕES DO TECIDO', yPos);
+        
+        const fabricSpecs = [
+          { label: 'Nome do Tecido', value: selectedFabric.name },
+          { label: 'Tipo', value: selectedFabric.type },
+          { label: 'Composição', value: selectedFabric.composition || 'N/A' },
+          { label: 'Largura Útil', value: `${selectedFabric.usableWidth}cm` },
+          { label: 'Gramatura', value: `${selectedFabric.gramWeight}g/m²` },
+          { label: 'Cor', value: selectedFabric.color || 'N/A' },
+          { label: 'Fornecedor', value: selectedFabric.supplier || 'N/A' },
+          { label: 'Consumo por Peça', value: `${consumptionPerPiece.toFixed(3)}m` },
+          { label: 'Consumo Total', value: `${fabricConsumption.toFixed(3)}m` },
+          { label: 'Percentual Desperdício', value: `${formData.wastePercentage}%` },
+          { label: 'Preço por KG', value: selectedFabric.pricePerKg ? `R$ ${parseFloat(selectedFabric.pricePerKg.toString()).toFixed(2)}` : 'N/A' }
+        ];
+        
+        yPos = createInfoCard(pdf, 'Detalhes do Tecido', fabricSpecs, yPos);
       }
       
-      yPos = createInfoCard(pdf, 'Informações Técnicas', techSpecs, yPos);
+      // Tabela de tamanhos detalhada
+      yPos = createSection(pdf, 'GRADE COMPLETA DE TAMANHOS', yPos);
       
-      // Tabela de tamanhos
-      yPos = createSection(pdf, 'GRADE DE TAMANHOS', yPos);
+      const sizesHeaders = ['Tamanho', 'Quantidade', 'Peso Unit. (g)', 'Peso Total (g)', 'Custo Tecido/Peça'];
+      const sizesRows = formData.sizes.map(size => {
+        const fabricCostPerPiece = selectedFabric ? 
+          (size.weight / 1000) * parseFloat(selectedFabric.pricePerKg?.toString() || '0') * (1 + formData.wastePercentage / 100) : 0;
+        
+        return [
+          size.size,
+          `${size.quantity} pç`,
+          `${size.weight}g`,
+          `${(size.quantity * size.weight)}g`,
+          `R$ ${fabricCostPerPiece.toFixed(2)}`
+        ];
+      });
       
-      const sizesHeaders = ['Tamanho', 'Quantidade', 'Peso Unitário', 'Peso Total'];
-      const sizesRows = formData.sizes.map(size => [
-        size.size,
-        `${size.quantity} pç`,
-        `${size.weight}g`,
-        `${(size.quantity * size.weight)}g`
+      // Adicionar totais
+      const totalFabricCost = formData.sizes.reduce((total, size) => {
+        if (selectedFabric) {
+          const costPerPiece = (size.weight / 1000) * parseFloat(selectedFabric.pricePerKg?.toString() || '0') * (1 + formData.wastePercentage / 100);
+          return total + (costPerPiece * size.quantity);
+        }
+        return total;
+      }, 0);
+
+      sizesRows.push([
+        'TOTAL',
+        `${totalQuantity} pç`,
+        '-',
+        `${totalWeight}g`,
+        `R$ ${totalFabricCost.toFixed(2)}`
       ]);
       
       yPos = createSimpleTable(pdf, sizesHeaders, sizesRows, yPos);
+
+      // Informações de Produção
+      yPos = createSection(pdf, 'INFORMAÇÕES DE PRODUÇÃO', yPos);
+      
+      const productionInfo = [
+        { label: 'Custo Total de Produção', value: `R$ ${costs.totalCost.toFixed(2)}` },
+        { label: 'Preço de Venda', value: `R$ ${costs.finalPrice.toFixed(2)}` },
+        { label: 'Margem de Lucro', value: `${formData.profitMargin.toFixed(1)}%` },
+        { label: 'Lucro por Peça', value: `R$ ${((costs.finalPrice - costs.totalCost) / totalQuantity).toFixed(2)}` },
+        { label: 'Custo por Peça', value: `R$ ${(costs.totalCost / totalQuantity).toFixed(2)}` },
+        { label: 'Preço por Peça', value: `R$ ${costs.pricePerUnit.toFixed(2)}` }
+      ];
+      
+      yPos = createInfoCard(pdf, 'Análise Financeira', productionInfo, yPos);
+
+      // Observações Técnicas
+      yPos = createSection(pdf, 'OBSERVAÇÕES E INSTRUÇÕES', yPos);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      
+      const observations = [
+        '• Verificar a gramatura do tecido antes do corte',
+        '• Considerar encolhimento pós-lavagem na modelagem',
+        '• Manter margem de segurança para desperdício no corte',
+        '• Conferir medidas conforme tabela de tamanhos',
+        '• Seguir orientações específicas do fornecedor do tecido',
+        '• Documentar qualquer alteração durante a produção'
+      ];
+      
+      observations.forEach((obs, index) => {
+        pdf.text(obs, 20, yPos + (index * 8));
+      });
+      
+      yPos += observations.length * 8 + 10;
       
       // Rodapé
       createFooter(
         pdf,
-        'Esta ficha técnica foi gerada automaticamente pelo sistema IA.TEX',
-        `Ficha técnica do produto - Ref: ${formData.reference}`
+        'Esta ficha técnica foi gerada automaticamente pelo sistema IA.TEX - Use como referência para produção',
+        `Ficha técnica completa - Ref: ${formData.reference} - ${new Date().toLocaleDateString('pt-BR')}`
       );
       
       // Salvar e abrir
@@ -280,15 +467,15 @@ export default function Step8SummaryFixed() {
         modelName: formData.modelName,
         reference: formData.reference,
         garmentType: formData.garmentType,
-        description: formData.description,
-        imageUrl: formData.imageUrl,
+        description: formData.description || '',
+        imageUrl: formData.imageUrl || '',
         pricingMode: formData.pricingMode,
         fabricId: formData.fabricId,
-        fabricConsumption: consumptionPerPiece,
-        wastePercentage: formData.wastePercentage,
-        profitMargin: formData.profitMargin,
-        totalCost: costs.totalCost,
-        finalPrice: formData.finalPrice
+        fabricConsumption: consumptionPerPiece.toString(),
+        wastePercentage: formData.wastePercentage.toString(),
+        profitMargin: formData.profitMargin.toString(),
+        totalCost: costs.totalCost.toString(),
+        finalPrice: formData.finalPrice.toString()
       };
 
       const sizesData = formData.sizes.map(size => ({
@@ -332,25 +519,35 @@ export default function Step8SummaryFixed() {
         })) || []
       ];
 
+      const requestBody = {
+        template: templateData,
+        sizes: sizesData,
+        costs: costsData
+      };
+
+      console.log('Enviando dados para salvar:', requestBody);
+
       const response = await fetch('/api/pricing-templates', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          template: templateData,
-          sizes: sizesData,
-          costs: costsData
-        })
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
       });
 
+      const result = await response.json();
+      
       if (response.ok) {
-        const result = await response.json();
-        alert('Template salvo com sucesso!');
+        alert('Modelo salvo com sucesso!');
+        // Limpar dados após salvar
+        setSavedQuotationId(result.id);
       } else {
-        throw new Error('Erro ao salvar template');
+        console.error('Erro no servidor:', result);
+        alert(`Erro ao salvar modelo: ${result.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
-      console.error('Erro ao salvar template:', error);
-      alert('Erro ao salvar template. Tente novamente.');
+      console.error('Erro ao salvar modelo:', error);
+      alert('Erro ao salvar modelo. Verifique sua conexão e tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -401,6 +598,62 @@ export default function Step8SummaryFixed() {
         </CardContent>
       </Card>
 
+      {/* Controles de Preço e Margem */}
+      <Card className="bg-yellow-50 border-yellow-200">
+        <CardHeader>
+          <CardTitle className="text-yellow-800">Ajustar Valores Finais</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label className="text-sm font-medium mb-2">Preço Final (R$)</Label>
+              <div className="flex gap-2">
+                {editingFinalPrice ? (
+                  <>
+                    <Input
+                      type="number"
+                      value={tempFinalPrice}
+                      onChange={(e) => setTempFinalPrice(e.target.value)}
+                      step="0.01"
+                      className="flex-1"
+                    />
+                    <Button size="sm" onClick={handleFinalPriceSubmit}>
+                      ✓
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingFinalPrice(false)}>
+                      ✕
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 px-3 py-2 bg-white border rounded-md">
+                      R$ {costs.finalPrice.toFixed(2)}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setEditingFinalPrice(true)}>
+                      Editar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-2">Margem de Lucro (%)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={formData.profitMargin}
+                  onChange={(e) => handleProfitMarginChange(parseFloat(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="w-16 text-center font-medium">{formData.profitMargin.toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Ações Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Button 
@@ -438,7 +691,7 @@ export default function Step8SummaryFixed() {
           ) : (
             <>
               <Save className="mr-2 h-4 w-4" />
-              Salvar Template
+              Salvar Modelo
             </>
           )}
         </Button>

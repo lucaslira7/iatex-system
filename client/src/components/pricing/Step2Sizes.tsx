@@ -46,7 +46,7 @@ export default function Step2Sizes() {
         updatedSizes[existingIndex] = {
           ...updatedSizes[existingIndex],
           weight,
-          quantity: 1 // Manter 1 como padrão (não será usado para cálculo)
+          quantity: formData.pricingMode === 'multiple' ? updatedSizes[existingIndex].quantity || 1 : 1
         };
       }
     } else if (weight > 0) {
@@ -75,6 +75,24 @@ export default function Step2Sizes() {
       updateSizeWeight(customSize.trim(), 0);
       setCustomSize('');
     }
+  };
+
+  const updateSizeQuantity = (size: string, quantity: number) => {
+    const updatedSizes = [...formData.sizes];
+    const existingIndex = updatedSizes.findIndex(s => s.size === size);
+    
+    if (existingIndex >= 0) {
+      updatedSizes[existingIndex] = {
+        ...updatedSizes[existingIndex],
+        quantity: Math.max(0, quantity)
+      };
+      updateFormData('sizes', updatedSizes);
+    }
+  };
+
+  const getSizeQuantity = (size: string) => {
+    const sizeData = formData.sizes.find(s => s.size === size);
+    return sizeData?.quantity || 1;
   };
 
   return (
@@ -143,7 +161,7 @@ export default function Step2Sizes() {
                     {size}
                   </Badge>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div className={`grid gap-4 flex-1 ${formData.pricingMode === 'multiple' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
                     <div>
                       <Label htmlFor={`weight-${size}`}>Peso (g)</Label>
                       <Input
@@ -159,12 +177,38 @@ export default function Step2Sizes() {
                       </p>
                     </div>
                     
+                    {formData.pricingMode === 'multiple' && (
+                      <div>
+                        <Label htmlFor={`quantity-${size}`}>Quantidade</Label>
+                        <Input
+                          id={`quantity-${size}`}
+                          type="number"
+                          placeholder="Ex: 10"
+                          value={getSizeQuantity(size) || ''}
+                          onChange={(e) => updateSizeQuantity(size, parseInt(e.target.value) || 1)}
+                          className="mt-1"
+                          min="0"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Quantas peças deste tamanho
+                        </p>
+                      </div>
+                    )}
+                    
                     <div>
                       <Label>Custo do Tecido</Label>
                       <div className="mt-1 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
                         <span className="text-green-700 dark:text-green-300 font-medium text-lg">
                           {calculateFabricCost(getSizeWeight(size))}
                         </span>
+                        {formData.pricingMode === 'multiple' && getSizeQuantity(size) > 0 && (
+                          <div className="text-xs text-green-600 mt-1">
+                            Total: {new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL'
+                            }).format(parseFloat(calculateFabricCost(getSizeWeight(size)).replace(/[^\d,]/g, '').replace(',', '.')) * getSizeQuantity(size))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
