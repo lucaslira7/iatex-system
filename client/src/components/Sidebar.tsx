@@ -63,6 +63,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     { id: 'admin', icon: Shield, label: 'Administração', badge: 'NOVO' },
     { id: 'backup', icon: Settings, label: 'Backup & Export', badge: null },
     { id: 'notifications', icon: Bell, label: 'Notificações', badge: null },
+    { id: 'brand-settings', icon: Settings, label: 'Configurações da Marca', badge: 'NOVO' },
   ];
 
   return (
