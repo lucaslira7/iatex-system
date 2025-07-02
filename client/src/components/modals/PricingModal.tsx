@@ -12,19 +12,41 @@ import Step5Supplies from "@/components/pricing/Step5Supplies";
 import Step6Labor from "@/components/pricing/Step6Labor";
 import Step7FixedCosts from "@/components/pricing/Step7FixedCosts";
 import Step8Summary from "@/components/pricing/Step8Summary";
+import type { PricingTemplate } from "@shared/schema";
 
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTemplate?: PricingTemplate | null;
 }
 
-function PricingModalContent({ onClose }: { onClose: () => void }) {
-  const { currentStep, setCurrentStep, resetForm, formData } = usePricing();
+function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void; initialTemplate?: PricingTemplate | null }) {
+  const { currentStep, setCurrentStep, resetForm, formData, updateFormData } = usePricing();
 
   const handleClose = () => {
     resetForm();
     onClose();
   };
+
+  // Carregar dados do template inicial
+  useEffect(() => {
+    if (initialTemplate) {
+      // Carregar dados básicos do template
+      updateFormData('modelName', initialTemplate.modelName);
+      updateFormData('reference', initialTemplate.reference);
+      updateFormData('garmentType', initialTemplate.garmentType);
+      updateFormData('description', initialTemplate.description || '');
+      updateFormData('imageUrl', initialTemplate.imageUrl || '');
+      updateFormData('pricingMode', initialTemplate.pricingMode);
+      
+      // Valores padrão para começar
+      updateFormData('wastePercentage', 20);
+      updateFormData('profitMargin', 50);
+      
+      // TODO: Aqui deveríamos buscar os dados relacionados (tamanhos, custos, etc.)
+      // Por enquanto, o usuário precisará preencher essas informações novamente
+    }
+  }, [initialTemplate, updateFormData]);
 
   // Atalhos de teclado para navegação
   useEffect(() => {
@@ -203,12 +225,12 @@ function PricingModalContent({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
+export default function PricingModal({ isOpen, onClose, initialTemplate }: PricingModalProps) {
   if (!isOpen) return null;
 
   return (
     <PricingProvider>
-      <PricingModalContent onClose={onClose} />
+      <PricingModalContent onClose={onClose} initialTemplate={initialTemplate} />
     </PricingProvider>
   );
 }

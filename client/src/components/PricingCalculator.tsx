@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Calculator, Eye, Copy, Download } from "lucide-react";
+import { Plus, FileText, Calculator, Eye, Copy, Download, Edit } from "lucide-react";
 import PricingModal from "./modals/PricingModal";
 import TemplateViewModal from "./modals/TemplateViewModal";
 import TemplateSummaryModal from "./modals/TemplateSummaryModal";
@@ -13,6 +13,7 @@ export default function PricingCalculator() {
   const [selectedTemplate, setSelectedTemplate] = useState<PricingTemplate | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [templateToEdit, setTemplateToEdit] = useState<PricingTemplate | null>(null);
 
   // Buscar templates de precificação salvos
   const { data: templates = [], isLoading } = useQuery<PricingTemplate[]>({
@@ -37,9 +38,14 @@ export default function PricingCalculator() {
   };
 
   const handleCopyTemplate = (template: PricingTemplate) => {
-    // Aqui será implementada a lógica para copiar o template
-    // Por enquanto, abrir modal de nova precificação com dados preenchidos
-    console.log('Copying template:', template);
+    // Copiar template como base para nova precificação
+    setTemplateToEdit(template);
+    setIsModalOpen(true);
+  };
+
+  const handleEditTemplate = (template: PricingTemplate) => {
+    // Editar template existente
+    setTemplateToEdit(template);
     setIsModalOpen(true);
   };
 
@@ -52,6 +58,11 @@ export default function PricingCalculator() {
     setIsViewModalOpen(false);
     setIsSummaryModalOpen(false);
     setSelectedTemplate(null);
+  };
+
+  const closePricingModal = () => {
+    setIsModalOpen(false);
+    setTemplateToEdit(null);
   };
 
   return (
@@ -140,11 +151,10 @@ export default function PricingCalculator() {
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 grid grid-cols-3 gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewTemplate(template);
@@ -156,7 +166,17 @@ export default function PricingCalculator() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTemplate(template);
+                      }}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopyTemplate(template);
@@ -188,7 +208,8 @@ export default function PricingCalculator() {
 
       <PricingModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closePricingModal}
+        initialTemplate={templateToEdit}
       />
 
       <TemplateViewModal
@@ -196,6 +217,7 @@ export default function PricingCalculator() {
         isOpen={isViewModalOpen}
         onClose={closeModals}
         onCopy={handleCopyTemplate}
+        onEdit={handleEditTemplate}
         onShowSummary={handleShowSummary}
       />
 

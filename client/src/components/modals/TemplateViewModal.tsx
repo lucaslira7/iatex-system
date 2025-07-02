@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, FileText, X, Download } from "lucide-react";
+import { Copy, FileText, X, Download, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { PricingTemplate } from "@shared/schema";
 
@@ -10,6 +10,7 @@ interface TemplateViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCopy: (template: PricingTemplate) => void;
+  onEdit: (template: PricingTemplate) => void;
   onShowSummary: (template: PricingTemplate) => void;
 }
 
@@ -18,6 +19,7 @@ export default function TemplateViewModal({
   isOpen, 
   onClose,
   onCopy,
+  onEdit,
   onShowSummary
 }: TemplateViewModalProps) {
   const { toast } = useToast();
@@ -144,6 +146,15 @@ export default function TemplateViewModal({
             >
               <Copy className="h-4 w-4" />
               Copiar Template
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => onEdit(template)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Editar Template
             </Button>
             
             <Button 
