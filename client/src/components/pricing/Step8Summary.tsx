@@ -16,6 +16,8 @@ export default function Step8Summary() {
   const [isSaving, setIsSaving] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [savedQuotationId, setSavedQuotationId] = useState<number | null>(null);
+  const [editingFinalPrice, setEditingFinalPrice] = useState(false);
+  const [tempFinalPrice, setTempFinalPrice] = useState(formData.finalPrice.toString());
 
   // Fetch fabric details
   const { data: fabrics = [] } = useQuery<Fabric[]>({
@@ -99,6 +101,28 @@ export default function Step8Summary() {
 
   const costs = calculateCosts();
 
+  // Calcular consumo por peça automaticamente baseado no peso médio
+  const totalQuantity = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
+  const totalWeight = formData.sizes.reduce((sum, size) => sum + (size.weight * size.quantity), 0);
+  const avgWeightPerPiece = totalQuantity > 0 ? (totalWeight / totalQuantity) : 0;
+  
+  // Estimativa: 1 metro de tecido ≈ 300g para tecidos leves
+  const consumptionPerPiece = avgWeightPerPiece > 0 ? (avgWeightPerPiece / 300) : 0;
+
+  // Função para recalcular margem baseada no preço final editado
+  const handleFinalPriceChange = () => {
+    const newFinalPrice = parseFloat(tempFinalPrice) || 0;
+    if (newFinalPrice > 0 && costs.totalCost > 0) {
+      const newProfitAmount = newFinalPrice - costs.totalCost;
+      const newProfitMargin = (newProfitAmount / costs.totalCost) * 100;
+      
+      updateFormData('finalPrice', newFinalPrice);
+      updateFormData('profitMargin', Math.max(0, newProfitMargin));
+      updateFormData('fabricConsumption', consumptionPerPiece);
+    }
+    setEditingFinalPrice(false);
+  };
+
   const handleProfitMarginChange = (margin: number) => {
     updateFormData('profitMargin', Math.max(0, Math.min(100, margin)));
   };
@@ -109,12 +133,54 @@ export default function Step8Summary() {
 
   const handleExport = async () => {
     setIsExporting(true);
-    // Simulate export process
-    setTimeout(() => {
+    try {
+      // Simular geração do PDF
+      setTimeout(() => {
+        setIsExporting(false);
+        
+        // Criar um blob de exemplo do PDF (você pode substituir por geração real)
+        const pdfContent = `Ficha Técnica de Precificação - ${formData.modelName}`;
+        const blob = new Blob([pdfContent], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        
+        // Criar um link temporário e fazer download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Ficha_Tecnica_${formData.reference}_${formData.modelName}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Abrir o PDF em uma nova aba
+        window.open(url, '_blank');
+        
+        // Limpar o URL após um tempo
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        
+        console.log('PDF exportado e aberto automaticamente');
+      }, 2000);
+    } catch (error) {
       setIsExporting(false);
-      // Here you would implement actual export functionality
-      console.log('Exporting pricing data...', formData);
-    }, 2000);
+      console.error('Erro ao exportar PDF:', error);
+    }
+  };
+
+  const handleTechnicalSheet = () => {
+    // Abrir ficha técnica sem valores financeiros
+    const technicalData = {
+      ...formData,
+      // Remover valores financeiros
+      finalPrice: 0,
+      totalCost: 0,
+      profitMargin: 0,
+      creationCosts: [],
+      supplies: [],
+      labor: [],
+      fixedCosts: []
+    };
+    
+    console.log('Abrindo ficha técnica sem valores:', technicalData);
+    // Aqui você pode implementar a abertura da ficha técnica
   };
 
   const handleSave = async () => {
@@ -296,9 +362,44 @@ export default function Step8Summary() {
                 <span className="text-green-700">Lucro</span>
                 <span className="font-semibold text-green-900">R$ {costs.profitAmount.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span className="text-green-900">Preço Final</span>
-                <span className="text-green-900">R$ {costs.finalPrice.toFixed(2)}</span>
+              
+              {/* Campo editável para preço final */}
+              <div className="space-y-2">
+                <Label htmlFor="finalPrice">Preço Final (editável)</Label>
+                <div className="flex gap-2">
+                  {editingFinalPrice ? (
+                    <>
+                      <Input
+                        id="finalPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={tempFinalPrice}
+                        onChange={(e) => setTempFinalPrice(e.target.value)}
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleFinalPriceChange();
+                          if (e.key === 'Escape') setEditingFinalPrice(false);
+                        }}
+                        autoFocus
+                      />
+                      <Button onClick={handleFinalPriceChange} size="sm">✓</Button>
+                      <Button onClick={() => setEditingFinalPrice(false)} variant="outline" size="sm">✗</Button>
+                    </>
+                  ) : (
+                    <div 
+                      className="flex justify-between items-center text-lg font-bold cursor-pointer hover:bg-gray-50 p-2 rounded w-full"
+                      onClick={() => {
+                        setEditingFinalPrice(true);
+                        setTempFinalPrice(costs.finalPrice.toFixed(2));
+                      }}
+                    >
+                      <span className="text-green-900">Preço Final</span>
+                      <span className="text-green-900">R$ {costs.finalPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">Clique para editar e recalcular a margem automaticamente</p>
               </div>
               <div className="flex justify-between items-center text-sm text-green-600">
                 <span>Preço por Peça</span>
@@ -311,7 +412,7 @@ export default function Step8Summary() {
 
       {/* Ações */}
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Button
             variant="outline"
             onClick={handlePreviewPDF}
@@ -321,6 +422,15 @@ export default function Step8Summary() {
             <Eye className="h-4 w-4 mr-2" />
             Visualizar PDF
             <span className="ml-auto text-xs text-gray-500">Ctrl+P</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleTechnicalSheet}
+            className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
+            title="Ficha técnica sem valores financeiros"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Ficha Técnica
           </Button>
           <Button
             onClick={handleSave}
@@ -375,7 +485,7 @@ export default function Step8Summary() {
                   <p className="text-sm text-gray-600">Sistema de Gestão para Confecção</p>
                 </div>
               </div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">ORÇAMENTO DE PRECIFICAÇÃO</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">FICHA TÉCNICA DE PRECIFICAÇÃO</h2>
               <p className="text-gray-600">Data: {new Date().toLocaleDateString('pt-BR')}</p>
               
               {/* Botão de Download no cabeçalho */}
@@ -430,7 +540,7 @@ export default function Step8Summary() {
                     <p><strong>Composição:</strong> {selectedFabric.composition || 'N/A'}</p>
                   </div>
                   <div>
-                    <p><strong>Consumo por peça:</strong> {formData.fabricConsumption}m</p>
+                    <p><strong>Consumo por peça:</strong> {consumptionPerPiece.toFixed(2)}m</p>
                     <p><strong>Desperdício:</strong> {formData.wastePercentage}%</p>
                     <p><strong>Preço por metro:</strong> R$ {selectedFabric.pricePerMeter ? parseFloat(selectedFabric.pricePerMeter.toString()).toFixed(2) : '0.00'}</p>
                   </div>
@@ -525,8 +635,8 @@ export default function Step8Summary() {
 
             {/* Rodapé */}
             <div className="border-t pt-4 text-center text-sm text-gray-500">
-              <p>Este orçamento foi gerado automaticamente pelo sistema IA.TEX</p>
-              <p>Validade: 30 dias a partir da data de emissão</p>
+              <p>Esta ficha técnica de precificação foi gerada automaticamente pelo sistema IA.TEX</p>
+              <p>Template salvo permanentemente - Ref: {formData.reference}</p>
             </div>
           </div>
         </DialogContent>
