@@ -18,7 +18,7 @@ import OrderManagement from "@/components/OrderManagement";
 
 import AIAssistant from "@/components/AIAssistant";
 import UserPanels from "@/components/UserPanels";
-import OperationalPanel from "@/components/OperationalPanel";
+import OperationalPanelFixed from "@/components/OperationalPanelFixed";
 
 export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory' | 'reports' | 'calendar' | 'qrcodes' | 'ai-assistant' | 'user-panels' | 'operational';
 
@@ -62,7 +62,7 @@ export default function Home() {
       case 'user-panels':
         return <UserPanels />;
       case 'operational':
-        return <OperationalPanel />;
+        return <OperationalPanelFixed />;
       default:
         return <CustomizableDashboard onSectionChange={setActiveSection} />;
     }
