@@ -2,12 +2,17 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Calculator, Calendar } from "lucide-react";
+import { Plus, FileText, Calculator, Eye, Copy, Download } from "lucide-react";
 import PricingModal from "./modals/PricingModal";
+import TemplateViewModal from "./modals/TemplateViewModal";
+import TemplateSummaryModal from "./modals/TemplateSummaryModal";
 import type { PricingTemplate } from "@shared/schema";
 
 export default function PricingCalculator() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<PricingTemplate | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
   // Buscar templates de precificação salvos
   const { data: templates = [], isLoading } = useQuery<PricingTemplate[]>({
@@ -24,6 +29,29 @@ export default function PricingCalculator() {
       style: 'currency',
       currency: 'BRL'
     }).format(numPrice);
+  };
+
+  const handleViewTemplate = (template: PricingTemplate) => {
+    setSelectedTemplate(template);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCopyTemplate = (template: PricingTemplate) => {
+    // Aqui será implementada a lógica para copiar o template
+    // Por enquanto, abrir modal de nova precificação com dados preenchidos
+    console.log('Copying template:', template);
+    setIsModalOpen(true);
+  };
+
+  const handleShowSummary = (template: PricingTemplate) => {
+    setSelectedTemplate(template);
+    setIsSummaryModalOpen(true);
+  };
+
+  const closeModals = () => {
+    setIsViewModalOpen(false);
+    setIsSummaryModalOpen(false);
+    setSelectedTemplate(null);
   };
 
   return (
@@ -62,7 +90,11 @@ export default function PricingCalculator() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map((template) => (
-              <Card key={template.id} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={template.id} 
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => handleViewTemplate(template)}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="truncate">{template.modelName}</span>
@@ -72,6 +104,17 @@ export default function PricingCalculator() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {/* Imagem do modelo se existir */}
+                  {template.imageUrl && (
+                    <div className="mb-4">
+                      <img 
+                        src={template.imageUrl} 
+                        alt={template.modelName}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Tipo:</span>
@@ -98,15 +141,44 @@ export default function PricingCalculator() {
                   </div>
                   
                   <div className="mt-4 flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <FileText className="w-4 h-4 mr-1" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewTemplate(template);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
                       Ver
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Calculator className="w-4 h-4 mr-1" />
-                      Usar
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyTemplate(template);
+                      }}
+                    >
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copiar
                     </Button>
                   </div>
+                  
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShowSummary(template);
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    Resumo
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -117,6 +189,20 @@ export default function PricingCalculator() {
       <PricingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <TemplateViewModal
+        template={selectedTemplate}
+        isOpen={isViewModalOpen}
+        onClose={closeModals}
+        onCopy={handleCopyTemplate}
+        onShowSummary={handleShowSummary}
+      />
+
+      <TemplateSummaryModal
+        template={selectedTemplate}
+        isOpen={isSummaryModalOpen}
+        onClose={closeModals}
       />
     </>
   );
