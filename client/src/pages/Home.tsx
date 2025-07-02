@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
-import Dashboard from "@/components/Dashboard";
+import CustomizableDashboard from "@/components/CustomizableDashboard";
 import FabricManagement from "@/components/FabricManagement";
 import PricingCalculator from "@/components/PricingCalculator";
 import QuotationManagement from "@/components/QuotationManagement";
@@ -25,7 +25,7 @@ export default function Home() {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <Dashboard onSectionChange={setActiveSection} />;
+        return <CustomizableDashboard onSectionChange={setActiveSection} />;
       case 'fabrics':
         return <FabricManagement />;
       case 'quotations':
@@ -55,7 +55,7 @@ export default function Home() {
       case 'qrcodes':
         return <QRCodeGenerator />;
       default:
-        return <Dashboard onSectionChange={setActiveSection} />;
+        return <CustomizableDashboard onSectionChange={setActiveSection} />;
     }
   };
 

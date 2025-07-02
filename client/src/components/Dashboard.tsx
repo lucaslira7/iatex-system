@@ -1,16 +1,256 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scissors, ShoppingCart, TrendingUp, Factory, Plus, Calculator, Shirt, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { 
+  Scissors, ShoppingCart, TrendingUp, Factory, Plus, Calculator, 
+  Shirt, ChevronRight, Settings, Eye, EyeOff, GripVertical,
+  Package, Users, DollarSign, Clock, Target, Award, Zap,
+  BarChart3, PieChart, Activity, Gauge
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { ActiveSection } from "@/pages/Home";
+
+interface DashboardCard {
+  id: string;
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: any;
+  color: string;
+  visible: boolean;
+  order: number;
+  type: 'metric' | 'progress' | 'trend' | 'status';
+  changePercent?: number;
+  progressValue?: number;
+  target?: number;
+}
 
 interface DashboardProps {
   onSectionChange: (section: ActiveSection) => void;
 }
 
+const defaultCards: DashboardCard[] = [
+  {
+    id: 'total-fabrics',
+    title: 'Total de Tecidos',
+    value: 0,
+    subtitle: 'vs mês anterior',
+    icon: Scissors,
+    color: 'blue',
+    visible: true,
+    order: 0,
+    type: 'metric',
+    changePercent: 12
+  },
+  {
+    id: 'active-orders',
+    title: 'Pedidos Ativos',
+    value: 0,
+    subtitle: 'para hoje',
+    icon: ShoppingCart,
+    color: 'amber',
+    visible: true,
+    order: 1,
+    type: 'metric'
+  },
+  {
+    id: 'stock-value',
+    title: 'Estoque',
+    value: 'R$ 0K',
+    subtitle: 'tecidos',
+    icon: TrendingUp,
+    color: 'green',
+    visible: true,
+    order: 2,
+    type: 'metric'
+  },
+  {
+    id: 'production-efficiency',
+    title: 'Produção',
+    value: '89%',
+    subtitle: 'eficiência',
+    icon: Factory,
+    color: 'purple',
+    visible: true,
+    order: 3,
+    type: 'progress',
+    progressValue: 89,
+    target: 95
+  },
+  {
+    id: 'revenue-month',
+    title: 'Receita Mensal',
+    value: 'R$ 45.8K',
+    subtitle: 'meta: R$ 50K',
+    icon: DollarSign,
+    color: 'indigo',
+    visible: false,
+    order: 4,
+    type: 'metric',
+    changePercent: 8.5
+  },
+  {
+    id: 'employees',
+    title: 'Funcionários',
+    value: 12,
+    subtitle: 'ativos',
+    icon: Users,
+    color: 'pink',
+    visible: false,
+    order: 5,
+    type: 'metric'
+  },
+  {
+    id: 'models',
+    title: 'Modelos',
+    value: 25,
+    subtitle: 'ativos',
+    icon: Shirt,
+    color: 'orange',
+    visible: false,
+    order: 6,
+    type: 'metric'
+  },
+  {
+    id: 'avg-time',
+    title: 'Tempo Médio',
+    value: '8.5 dias',
+    subtitle: 'produção',
+    icon: Clock,
+    color: 'cyan',
+    visible: false,
+    order: 7,
+    type: 'metric'
+  }
+];
+
+const availableCards = [
+  { id: 'total-fabrics', title: 'Total de Tecidos', icon: Scissors, color: 'blue' },
+  { id: 'active-orders', title: 'Pedidos Ativos', icon: ShoppingCart, color: 'amber' },
+  { id: 'stock-value', title: 'Valor do Estoque', icon: TrendingUp, color: 'green' },
+  { id: 'production-efficiency', title: 'Eficiência Produção', icon: Factory, color: 'purple' },
+  { id: 'revenue-month', title: 'Receita Mensal', icon: DollarSign, color: 'indigo' },
+  { id: 'employees', title: 'Funcionários', icon: Users, color: 'pink' },
+  { id: 'models', title: 'Modelos Ativos', icon: Shirt, color: 'orange' },
+  { id: 'avg-time', title: 'Tempo Médio', icon: Clock, color: 'cyan' },
+  { id: 'quality-score', title: 'Score Qualidade', icon: Award, color: 'yellow' },
+  { id: 'cost-efficiency', title: 'Eficiência Custos', icon: Target, color: 'red' },
+  { id: 'profit-margin', title: 'Margem Lucro', icon: BarChart3, color: 'emerald' },
+  { id: 'customer-satisfaction', title: 'Satisfação Cliente', icon: Zap, color: 'violet' }
+];
+
 export default function Dashboard({ onSectionChange }: DashboardProps) {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["/api/dashboard/metrics"],
+  });
+
+  const [cards, setCards] = useState<DashboardCard[]>(defaultCards);
+  const [isCustomizing, setIsCustomizing] = useState(false);
+  const { toast } = useToast();
+
+  // Update card values with real metrics
+  const updateCardValues = (cards: DashboardCard[]) => {
+    return cards.map(card => {
+      switch (card.id) {
+        case 'total-fabrics':
+          return { ...card, value: metrics?.totalFabrics || 0 };
+        case 'active-orders':
+          return { ...card, value: metrics?.activeOrders || 0 };
+        case 'stock-value':
+          return { ...card, value: `R$ ${((metrics?.totalStockValue || 0) / 1000).toFixed(1)}K` };
+        default:
+          return card;
+      }
+    });
+  };
+
+  const visibleCards = updateCardValues(cards)
+    .filter(card => card.visible)
+    .sort((a, b) => a.order - b.order);
+
+  const getColorClasses = (color: string) => {
+    switch (color) {
+      case 'blue': return 'bg-blue-100 text-blue-600 border-blue-200';
+      case 'amber': return 'bg-amber-100 text-amber-600 border-amber-200';
+      case 'green': return 'bg-green-100 text-green-600 border-green-200';
+      case 'purple': return 'bg-purple-100 text-purple-600 border-purple-200';
+      case 'indigo': return 'bg-indigo-100 text-indigo-600 border-indigo-200';
+      case 'pink': return 'bg-pink-100 text-pink-600 border-pink-200';
+      case 'orange': return 'bg-orange-100 text-orange-600 border-orange-200';
+      case 'cyan': return 'bg-cyan-100 text-cyan-600 border-cyan-200';
+      case 'yellow': return 'bg-yellow-100 text-yellow-600 border-yellow-200';
+      case 'red': return 'bg-red-100 text-red-600 border-red-200';
+      case 'emerald': return 'bg-emerald-100 text-emerald-600 border-emerald-200';
+      case 'violet': return 'bg-violet-100 text-violet-600 border-violet-200';
+      default: return 'bg-gray-100 text-gray-600 border-gray-200';
+    }
+  };
+
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(visibleCards);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    const updatedCards = cards.map(card => {
+      const newIndex = items.findIndex(item => item.id === card.id);
+      if (newIndex !== -1) {
+        return { ...card, order: newIndex };
+      }
+      return card;
+    });
+
+    setCards(updatedCards);
+    toast({
+      title: "Dashboard Reorganizado",
+      description: "A ordem dos cards foi atualizada.",
+    });
+  };
+
+  const toggleCardVisibility = (cardId: string) => {
+    setCards(cards.map(card => 
+      card.id === cardId 
+        ? { ...card, visible: !card.visible }
+        : card
+    ));
+  };
+
+  const resetToDefault = () => {
+    setCards(defaultCards);
+    toast({
+      title: "Dashboard Restaurado",
+      description: "Layout padrão foi restaurado.",
+    });
+  };
+
+  const saveLayout = () => {
+    // Here you could save to localStorage or API
+    localStorage.setItem('dashboard-layout', JSON.stringify(cards));
+    toast({
+      title: "Layout Salvo",
+      description: "Sua configuração foi salva com sucesso.",
+    });
+  };
+
+  // Load saved layout on mount
+  useState(() => {
+    const saved = localStorage.getItem('dashboard-layout');
+    if (saved) {
+      try {
+        setCards(JSON.parse(saved));
+      } catch {
+        // If parsing fails, use default
+      }
+    }
   });
 
   if (isLoading) {
