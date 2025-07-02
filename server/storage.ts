@@ -10,6 +10,9 @@ import {
   modelCosts,
   costCategories,
   activityLog,
+  quotations,
+  quotationSizes,
+  quotationCosts,
   type User,
   type UpsertUser,
   type Fabric,
@@ -26,6 +29,12 @@ import {
   type ModelWeight,
   type ModelCost,
   type CostCategory,
+  type Quotation,
+  type InsertQuotation,
+  type QuotationSize,
+  type InsertQuotationSize,
+  type QuotationCost,
+  type InsertQuotationCost,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, count, sum } from "drizzle-orm";
@@ -82,6 +91,13 @@ export interface IStorage {
   
   // Activity logging
   logActivity(userId: string, module: string, action: string, description: string): Promise<void>;
+  
+  // Quotation operations
+  getQuotations(): Promise<Quotation[]>;
+  getQuotation(id: number): Promise<Quotation | undefined>;
+  createQuotation(quotation: InsertQuotation, sizes: InsertQuotationSize[], costs: InsertQuotationCost[]): Promise<Quotation>;
+  updateQuotation(id: number, quotation: Partial<InsertQuotation>): Promise<Quotation>;
+  deleteQuotation(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -309,6 +325,61 @@ export class DatabaseStorage implements IStorage {
       action,
       description,
     });
+  }
+
+  // Quotation operations
+  async getQuotations(): Promise<Quotation[]> {
+    return await db.select().from(quotations).orderBy(desc(quotations.createdAt));
+  }
+
+  async getQuotation(id: number): Promise<Quotation | undefined> {
+    const result = await db.select().from(quotations).where(eq(quotations.id, id));
+    return result[0];
+  }
+
+  async createQuotation(quotation: InsertQuotation, sizes: InsertQuotationSize[], costs: InsertQuotationCost[]): Promise<Quotation> {
+    return await db.transaction(async (tx) => {
+      // Insert main quotation
+      const [newQuotation] = await tx.insert(quotations).values({
+        ...quotation,
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      }).returning();
+
+      // Insert sizes
+      if (sizes.length > 0) {
+        await tx.insert(quotationSizes).values(
+          sizes.map(size => ({
+            ...size,
+            quotationId: newQuotation.id,
+          }))
+        );
+      }
+
+      // Insert costs
+      if (costs.length > 0) {
+        await tx.insert(quotationCosts).values(
+          costs.map(cost => ({
+            ...cost,
+            quotationId: newQuotation.id,
+          }))
+        );
+      }
+
+      return newQuotation;
+    });
+  }
+
+  async updateQuotation(id: number, quotation: Partial<InsertQuotation>): Promise<Quotation> {
+    const [updated] = await db
+      .update(quotations)
+      .set({ ...quotation, updatedAt: new Date() })
+      .where(eq(quotations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteQuotation(id: number): Promise<void> {
+    await db.delete(quotations).where(eq(quotations.id, id));
   }
 }
 

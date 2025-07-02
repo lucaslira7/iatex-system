@@ -118,12 +118,32 @@ export default function Step8Summary() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate save process
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/quotations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao salvar precificação');
+      }
+
+      const result = await response.json();
+      console.log('Precificação salva com sucesso:', result);
+      
+      // Fechar modal após salvar
+      // Note: precisaríamos de uma prop ou context para fechar o modal
+      alert('Precificação salva com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao salvar precificação:', error);
+      alert('Erro ao salvar precificação. Tente novamente.');
+    } finally {
       setIsSaving(false);
-      // Here you would implement actual save functionality
-      console.log('Saving pricing data...', formData);
-    }, 1500);
+    }
   };
 
   return (

@@ -196,6 +196,50 @@ export const activityLog = pgTable("activity_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Quotations/Precificações table
+export const quotations = pgTable("quotations", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  clientId: integer("client_id").references(() => clients.id),
+  modelName: varchar("model_name", { length: 255 }).notNull(),
+  reference: varchar("reference", { length: 100 }).notNull(),
+  description: text("description"),
+  garmentType: varchar("garment_type", { length: 100 }).notNull(),
+  pricingMode: varchar("pricing_mode", { length: 20 }).notNull(), // single, multiple
+  imageUrl: text("image_url"),
+  fabricId: integer("fabric_id").references(() => fabrics.id),
+  fabricConsumption: decimal("fabric_consumption", { precision: 10, scale: 3 }),
+  wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }),
+  profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
+  finalPrice: decimal("final_price", { precision: 10, scale: 2 }),
+  status: varchar("status", { length: 50 }).default("draft"), // draft, approved, sent
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quotation sizes table
+export const quotationSizes = pgTable("quotation_sizes", {
+  id: serial("id").primaryKey(),
+  quotationId: integer("quotation_id").references(() => quotations.id, { onDelete: "cascade" }),
+  size: varchar("size", { length: 20 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  weight: integer("weight").notNull(), // em gramas
+});
+
+// Quotation costs table (para custos de criação, insumos, mão de obra, custos fixos)
+export const quotationCosts = pgTable("quotation_costs", {
+  id: serial("id").primaryKey(),
+  quotationId: integer("quotation_id").references(() => quotations.id, { onDelete: "cascade" }),
+  category: varchar("category", { length: 50 }).notNull(), // creation, supplies, labor, fixed
+  description: varchar("description", { length: 255 }).notNull(),
+  unitValue: decimal("unit_value", { precision: 10, scale: 2 }),
+  quantity: decimal("quantity", { precision: 10, scale: 3 }),
+  wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }),
+  total: decimal("total", { precision: 10, scale: 2 }),
+});
+
 // Relations
 export const fabricsRelations = relations(fabrics, ({ one, many }) => ({
   supplier: one(suppliers, {
@@ -232,12 +276,42 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   productionBatches: many(productionBatches),
 }));
 
+export const quotationsRelations = relations(quotations, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [quotations.clientId],
+    references: [clients.id],
+  }),
+  fabric: one(fabrics, {
+    fields: [quotations.fabricId],
+    references: [fabrics.id],
+  }),
+  sizes: many(quotationSizes),
+  costs: many(quotationCosts),
+}));
+
+export const quotationSizesRelations = relations(quotationSizes, ({ one }) => ({
+  quotation: one(quotations, {
+    fields: [quotationSizes.quotationId],
+    references: [quotations.id],
+  }),
+}));
+
+export const quotationCostsRelations = relations(quotationCosts, ({ one }) => ({
+  quotation: one(quotations, {
+    fields: [quotationCosts.quotationId],
+    references: [quotations.id],
+  }),
+}));
+
 // Insert schemas
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true });
 export const insertFabricSchema = createInsertSchema(fabrics).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertModelSchema = createInsertSchema(models).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true, createdAt: true });
+export const insertQuotationSchema = createInsertSchema(quotations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertQuotationSizeSchema = createInsertSchema(quotationSizes).omit({ id: true });
+export const insertQuotationCostSchema = createInsertSchema(quotationCosts).omit({ id: true });
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
@@ -257,3 +331,9 @@ export type GarmentType = typeof garmentTypes.$inferSelect;
 export type ModelWeight = typeof modelWeights.$inferSelect;
 export type ModelCost = typeof modelCosts.$inferSelect;
 export type CostCategory = typeof costCategories.$inferSelect;
+export type Quotation = typeof quotations.$inferSelect;
+export type InsertQuotation = typeof insertQuotationSchema._type;
+export type QuotationSize = typeof quotationSizes.$inferSelect;
+export type InsertQuotationSize = typeof insertQuotationSizeSchema._type;
+export type QuotationCost = typeof quotationCosts.$inferSelect;
+export type InsertQuotationCost = typeof insertQuotationCostSchema._type;

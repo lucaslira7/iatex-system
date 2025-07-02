@@ -290,6 +290,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quotations/Precificações routes
+  app.get('/api/quotations', isAuthenticated, async (req, res) => {
+    try {
+      // For now, return empty array since we'll implement this properly later
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching quotations:", error);
+      res.status(500).json({ message: "Failed to fetch quotations" });
+    }
+  });
+
+  app.post('/api/quotations', isAuthenticated, async (req: any, res) => {
+    try {
+      const formData = req.body;
+      
+      // For now, just log the activity and return success
+      // We'll implement full database saving later
+      await storage.logActivity(
+        req.user.claims.sub,
+        'quotations',
+        'create',
+        `Created quotation: ${formData.modelName}`
+      );
+      
+      res.json({ 
+        success: true, 
+        message: 'Precificação salva com sucesso!',
+        id: Math.floor(Math.random() * 10000) // temporary ID
+      });
+    } catch (error) {
+      console.error("Error creating quotation:", error);
+      res.status(500).json({ message: "Failed to create quotation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -3,11 +3,12 @@ import Sidebar from "@/components/Sidebar";
 import Dashboard from "@/components/Dashboard";
 import FabricManagement from "@/components/FabricManagement";
 import PricingCalculator from "@/components/PricingCalculator";
+import QuotationManagement from "@/components/QuotationManagement";
 import ModelManagement from "@/components/ModelManagement";
 import OrderManagement from "@/components/OrderManagement";
 import ProductionTracking from "@/components/ProductionTracking";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'pricing' | 'models' | 'orders' | 'production' | 'employees' | 'financial' | 'inventory';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'pricing' | 'quotations' | 'models' | 'orders' | 'production' | 'employees' | 'financial' | 'inventory';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -20,6 +21,8 @@ export default function Home() {
         return <FabricManagement />;
       case 'pricing':
         return <PricingCalculator />;
+      case 'quotations':
+        return <QuotationManagement />;
       case 'models':
         return <ModelManagement />;
       case 'orders':
