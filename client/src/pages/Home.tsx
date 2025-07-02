@@ -7,6 +7,8 @@ import QuotationManagement from "@/components/QuotationManagement";
 import ModelManagement from "@/components/ModelManagement";
 import AdvancedSimulations from "@/components/AdvancedSimulations";
 import EmployeeManagement from "@/components/EmployeeManagement";
+import FinancialManagement from "@/components/FinancialManagement";
+import InventoryManagement from "@/components/InventoryManagement";
 import OrderManagement from "@/components/OrderManagement";
 import ProductionTracking from "@/components/ProductionTracking";
 
@@ -33,6 +35,10 @@ export default function Home() {
         return <ProductionTracking />;
       case 'employees':
         return <EmployeeManagement />;
+      case 'financial':
+        return <FinancialManagement />;
+      case 'inventory':
+        return <InventoryManagement />;
       default:
         return <Dashboard onSectionChange={setActiveSection} />;
     }

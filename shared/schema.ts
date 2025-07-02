@@ -397,6 +397,194 @@ export const pricingTemplateCostsRelations = relations(pricingTemplateCosts, ({ 
   }),
 }));
 
+// Financial Module Tables
+export const accounts = pgTable("accounts", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // 'bank', 'cash', 'credit_card'
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0.00"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accounts.id),
+  type: varchar("type", { length: 20 }).notNull(), // 'income', 'expense'
+  category: varchar("category", { length: 100 }).notNull(),
+  description: text("description"),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  dueDate: timestamp("due_date"),
+  paidDate: timestamp("paid_date"),
+  status: varchar("status", { length: 20 }).default("pending"), // 'pending', 'paid', 'overdue'
+  orderId: integer("order_id").references(() => orders.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const budgets = pgTable("budgets", {
+  id: serial("id").primaryKey(),
+  category: varchar("category", { length: 100 }).notNull(),
+  budgetAmount: decimal("budget_amount", { precision: 12, scale: 2 }).notNull(),
+  spentAmount: decimal("spent_amount", { precision: 12, scale: 2 }).default("0.00"),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Inventory/Supplies Module Tables
+export const suppliesCategories = pgTable("supplies_categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const supplies = pgTable("supplies", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  categoryId: integer("category_id").references(() => suppliesCategories.id),
+  supplierId: integer("supplier_id").references(() => suppliers.id),
+  sku: varchar("sku", { length: 100 }),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  currentStock: integer("current_stock").default(0),
+  minimumStock: integer("minimum_stock").default(0),
+  unit: varchar("unit", { length: 50 }).notNull(), // 'piece', 'meter', 'kg'
+  imageUrl: text("image_url"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const stockMovements = pgTable("stock_movements", {
+  id: serial("id").primaryKey(),
+  supplyId: integer("supply_id").references(() => supplies.id),
+  type: varchar("type", { length: 20 }).notNull(), // 'in', 'out', 'adjustment'
+  quantity: integer("quantity").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
+  totalValue: decimal("total_value", { precision: 12, scale: 2 }),
+  reason: varchar("reason", { length: 255 }),
+  orderId: integer("order_id").references(() => orders.id),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Production and Factory Management
+export const productionStages = pgTable("production_stages", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
+  order: integer("order").notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
+export const factoryProduction = pgTable("factory_production", {
+  id: serial("id").primaryKey(),
+  factoryId: integer("factory_id").references(() => factories.id),
+  orderId: integer("order_id").references(() => orders.id),
+  stageId: integer("stage_id").references(() => productionStages.id),
+  plannedQuantity: integer("planned_quantity").notNull(),
+  producedQuantity: integer("produced_quantity").default(0),
+  rejectedQuantity: integer("rejected_quantity").default(0),
+  wasteQuantity: integer("waste_quantity").default(0),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: varchar("status", { length: 50 }).default("pending"), // 'pending', 'in_progress', 'completed', 'paused'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Document Management
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 50 }).notNull(), // 'pattern', 'video', 'image', 'pdf'
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  modelId: integer("model_id").references(() => models.id),
+  orderId: integer("order_id").references(() => orders.id),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for new tables
+export const accountsRelations = relations(accounts, ({ many }) => ({
+  transactions: many(transactions),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  account: one(accounts, {
+    fields: [transactions.accountId],
+    references: [accounts.id],
+  }),
+  order: one(orders, {
+    fields: [transactions.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const suppliesCategoriesRelations = relations(suppliesCategories, ({ many }) => ({
+  supplies: many(supplies),
+}));
+
+export const suppliesRelations = relations(supplies, ({ one, many }) => ({
+  category: one(suppliesCategories, {
+    fields: [supplies.categoryId],
+    references: [suppliesCategories.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [supplies.supplierId],
+    references: [suppliers.id],
+  }),
+  movements: many(stockMovements),
+}));
+
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
+  supply: one(supplies, {
+    fields: [stockMovements.supplyId],
+    references: [supplies.id],
+  }),
+  order: one(orders, {
+    fields: [stockMovements.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const productionStagesRelations = relations(productionStages, ({ many }) => ({
+  productions: many(factoryProduction),
+}));
+
+export const factoryProductionRelations = relations(factoryProduction, ({ one }) => ({
+  factory: one(factories, {
+    fields: [factoryProduction.factoryId],
+    references: [factories.id],
+  }),
+  order: one(orders, {
+    fields: [factoryProduction.orderId],
+    references: [orders.id],
+  }),
+  stage: one(productionStages, {
+    fields: [factoryProduction.stageId],
+    references: [productionStages.id],
+  }),
+}));
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  model: one(models, {
+    fields: [documents.modelId],
+    references: [models.id],
+  }),
+  order: one(orders, {
+    fields: [documents.orderId],
+    references: [orders.id],
+  }),
+}));
+
 // Insert schemas
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true });
 export const insertFabricSchema = createInsertSchema(fabrics).omit({ id: true, createdAt: true, updatedAt: true });
@@ -447,3 +635,34 @@ export type PricingTemplateSize = typeof pricingTemplateSizes.$inferSelect;
 export type InsertPricingTemplateSize = typeof insertPricingTemplateSizeSchema._type;
 export type PricingTemplateCost = typeof pricingTemplateCosts.$inferSelect;
 export type InsertPricingTemplateCost = typeof insertPricingTemplateCostSchema._type;
+
+// Insert schemas for new tables
+export const insertAccountSchema = createInsertSchema(accounts).omit({ id: true, createdAt: true });
+export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
+export const insertBudgetSchema = createInsertSchema(budgets).omit({ id: true, createdAt: true });
+export const insertSuppliesCategorySchema = createInsertSchema(suppliesCategories).omit({ id: true, createdAt: true });
+export const insertSupplySchema = createInsertSchema(supplies).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({ id: true, createdAt: true });
+export const insertProductionStageSchema = createInsertSchema(productionStages).omit({ id: true });
+export const insertFactoryProductionSchema = createInsertSchema(factoryProduction).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDocumentSchema = createInsertSchema(documents).omit({ id: true, createdAt: true });
+
+// Types for new tables
+export type Account = typeof accounts.$inferSelect;
+export type InsertAccount = typeof insertAccountSchema._type;
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = typeof insertTransactionSchema._type;
+export type Budget = typeof budgets.$inferSelect;
+export type InsertBudget = typeof insertBudgetSchema._type;
+export type SuppliesCategory = typeof suppliesCategories.$inferSelect;
+export type InsertSuppliesCategory = typeof insertSuppliesCategorySchema._type;
+export type Supply = typeof supplies.$inferSelect;
+export type InsertSupply = typeof insertSupplySchema._type;
+export type StockMovement = typeof stockMovements.$inferSelect;
+export type InsertStockMovement = typeof insertStockMovementSchema._type;
+export type ProductionStage = typeof productionStages.$inferSelect;
+export type InsertProductionStage = typeof insertProductionStageSchema._type;
+export type FactoryProduction = typeof factoryProduction.$inferSelect;
+export type InsertFactoryProduction = typeof insertFactoryProductionSchema._type;
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = typeof insertDocumentSchema._type;
