@@ -277,7 +277,6 @@ export const modelsRelations = relations(models, ({ one, many }) => ({
   weights: many(modelWeights),
   costs: many(modelCosts),
   orders: many(orders),
-  pricingTemplates: many(pricingTemplates), // Nova relação com templates
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({

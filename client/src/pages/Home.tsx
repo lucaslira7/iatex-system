@@ -21,7 +21,7 @@ import BackupExport from "@/components/BackupExport";
 import NotificationCenter from "@/components/NotificationCenter";
 import BrandSettings from "@/components/BrandSettings";
 
-import AIAssistant from "@/components/AIAssistant";
+import AIAssistantImproved from "@/components/AIAssistantImproved";
 import UserPanels from "@/components/UserPanels";
 import OperationalPanelFixed from "@/components/OperationalPanelFixed";
 
@@ -74,7 +74,7 @@ export default function Home() {
       case 'qrcodes':
         return <QRCodeGenerator />;
       case 'ai-assistant':
-        return <AIAssistant />;
+        return <AIAssistantImproved />;
       case 'user-panels':
         return <UserPanels />;
       case 'operational':
@@ -126,7 +126,7 @@ export default function Home() {
               </button>
             </div>
             <div className="flex-1 p-4">
-              <AIAssistant />
+              <AIAssistantImproved />
             </div>
           </div>
         </div>
