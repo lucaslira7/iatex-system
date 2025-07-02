@@ -33,6 +33,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null },
     { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3 },
     { id: 'models', icon: Calculator, label: 'Modelos & Precificação', badge: null },
+    { id: 'simulations', icon: TrendingUp, label: 'Simulações Avançadas', badge: null },
     { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null },
     { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
     { id: 'production', icon: Factory, label: 'Produção', badge: null },

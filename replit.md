@@ -204,6 +204,62 @@ The system provides an integrated solution for small to medium-sized clothing ma
 - ✅ Deployment: Replit com Vite
 - ✅ UI Components: shadcn/ui + Radix UI
 
+## Funcionalidades Pendentes
+
+### 🧮 **Simulações Avançadas** (Prioridade Alta)
+- Comparar custo do modelo com diferentes tecidos
+- Previsão de aumento de preço
+- Simulador de markup reverso (definir preço final e descobrir custo máximo)
+- Projeções com base em dados históricos
+
+### 🏭 **Produção & Perdas Detalhado**
+- Cadastro de facções
+- Acompanhamento de produção semanal
+- Monitoramento de perdas
+- Metas de perda por lote
+- Score de facções
+
+### 💰 **Financeiro Completo**
+- Contas a pagar e receber
+- Geração de DRE e projeções financeiras
+- Integração com pedidos e condições de pagamento
+- Cálculo automático de impostos, taxas e pró-labore
+- Módulo de finanças pessoais
+
+### 📦 **Estoque Inteligente**
+- Estoque de insumos, aviamentos, embalagens
+- Previsão de compras com base em pedidos
+
+### 🤖 **Assistente com IA**
+- Sugestão de tecidos, margens e otimizações
+- Chat interno com IA para dúvidas de operação
+
+### 📅 **Calendário Integrado**
+- Visualização da produção por data
+- Integração futura com Google Calendar
+
+### 📎 **Central de Documentos**
+- Upload de moldes, vídeos, fotos por modelo
+
+### 🧾 **Emissão de Notas e Contratos**
+- Emissão de NF simplificada
+- Geração de contratos com assinatura digital
+
+### 📱 **Aba Funcionários**
+- Registro de produtividade por tarefa
+- Ranking por desempenho
+- Planejamento semanal de tarefas
+
+### 🧑‍💻 **Área do Cliente com Login**
+- Acompanhar pedidos, ver PDFs, baixar ficha técnica
+
+### 📊 **Relatórios Inteligentes**
+- Insights automáticos baseados no uso e vendas
+- Relatórios comparativos (lucro real vs planejado)
+
+### 🔁 **Duplicação de Modelos com Variações**
+- Criar versão com tecido novo, cor nova ou tamanho adicional
+
 ## Changelog
 
 - July 01, 2025. Initial setup
@@ -213,6 +269,7 @@ The system provides an integrated solution for small to medium-sized clothing ma
 - July 02, 2025. Comprehensive system improvements: fixed all bugs, implemented toast notifications, confirmation dialogs, smart caching, loading states, form validation, analytics dashboard, backup system, and delete functionality
 - July 02, 2025. Integrated pricing templates with models module - templates now appear in models section with full CRUD operations and statistics
 - July 02, 2025. Unified Pricing and Models into single integrated module "Modelos & Precificação" - eliminated redundancy, improved UX with unified interface, advanced search/filters, and seamless workflow from pricing to model management
+- July 02, 2025. Documented comprehensive roadmap with 12 major feature categories pending implementation
 
 ## User Preferences
 
