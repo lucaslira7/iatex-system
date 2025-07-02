@@ -49,11 +49,8 @@ export default function AIAssistant() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest('/api/ai/chat', {
-        method: 'POST',
-        body: JSON.stringify({ message, context: 'general' })
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/ai/chat', { message, context: 'general' });
+      return await response.json();
     },
     onSuccess: (data) => {
       const assistantMessage: Message = {
@@ -80,11 +77,8 @@ export default function AIAssistant() {
   // Get fabric suggestions mutation
   const getFabricSuggestionsMutation = useMutation({
     mutationFn: async (modelData: any) => {
-      const response = await apiRequest('/api/ai/fabric-suggestions', {
-        method: 'POST',
-        body: JSON.stringify(modelData)
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/ai/fabric-suggestions', modelData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/suggestions'] });
@@ -98,11 +92,8 @@ export default function AIAssistant() {
   // Optimize margins mutation
   const optimizeMarginsMutation = useMutation({
     mutationFn: async (pricingData: any) => {
-      const response = await apiRequest('/api/ai/optimize-margins', {
-        method: 'POST',
-        body: JSON.stringify(pricingData)
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/ai/optimize-margins', pricingData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/suggestions'] });
@@ -115,8 +106,8 @@ export default function AIAssistant() {
 
   useEffect(() => {
     // Load chat history on component mount
-    if (chatHistory.length > 0) {
-      setMessages(chatHistory);
+    if (Array.isArray(chatHistory) && chatHistory.length > 0) {
+      setMessages(chatHistory as Message[]);
     }
   }, [chatHistory]);
 

@@ -15,7 +15,7 @@ import IntelligentReports from "@/components/IntelligentReports";
 import ProductionCalendar from "@/components/ProductionCalendar";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import OrderManagement from "@/components/OrderManagement";
-import ProductionTracking from "@/components/ProductionTracking";
+
 import AIAssistant from "@/components/AIAssistant";
 import UserPanels from "@/components/UserPanels";
 import OperationalPanel from "@/components/OperationalPanel";
@@ -40,7 +40,7 @@ export default function Home() {
       case 'orders':
         return <OrderManagement />;
       case 'production':
-        return <ProductionTracking />;
+        return <AdvancedProduction />;
       case 'advanced-production':
         return <AdvancedProduction />;
       case 'documents':
