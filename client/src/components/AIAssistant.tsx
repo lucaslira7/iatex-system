@@ -37,12 +37,12 @@ export default function AIAssistant() {
   const queryClient = useQueryClient();
 
   // Fetch AI insights and suggestions
-  const { data: suggestions = [], isLoading: loadingSuggestions } = useQuery({
+  const { data: suggestions = [], isLoading: loadingSuggestions } = useQuery<any[]>({
     queryKey: ['/api/ai/suggestions'],
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  const { data: chatHistory = [] } = useQuery({
+  const { data: chatHistory = [] } = useQuery<any[]>({
     queryKey: ['/api/ai/chat-history']
   });
 
@@ -444,7 +444,7 @@ export default function AIAssistant() {
         </TabsContent>
       </Tabs>
 
-      <style jsx>{`
+      <style>{`
         .typing-indicator {
           display: flex;
           gap: 2px;

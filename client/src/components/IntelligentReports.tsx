@@ -317,8 +317,8 @@ export default function IntelligentReports() {
                             <p className="font-semibold">
                               {typeof value === 'number' ? 
                                 (key.includes('growth') || key.includes('margin') || key.includes('waste') ? `${value}%` : 
-                                 key.includes('pieces') ? `${value} peças` : value) 
-                                : value}
+                                 key.includes('pieces') ? `${value} peças` : String(value)) 
+                                : String(value)}
                             </p>
                           </div>
                         ))}

@@ -184,7 +184,7 @@ export async function analyzeFabricUsage(fabricData: any[]): Promise<any> {
 
   return {
     totalTypes: Object.keys(usage).length,
-    mostUsed: Object.entries(usage).sort(([,a], [,b]) => b - a).slice(0, 5),
+    mostUsed: Object.entries(usage).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 5),
     lowStock: fabricData.filter(f => parseFloat(f.currentStock || '0') < parseFloat(f.minimumStock || '10')),
     recommendations: await generateFabricRecommendations(usage)
   };

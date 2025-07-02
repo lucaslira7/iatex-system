@@ -101,24 +101,24 @@ export default function UserPanels() {
   const queryClient = useQueryClient();
 
   // Fetch user data and determine role
-  const { data: user } = useQuery({
+  const { data: user = {} } = useQuery<any>({
     queryKey: ['/api/auth/user']
   });
 
   // Fetch tasks based on user role
-  const { data: tasks = [], isLoading: loadingTasks } = useQuery({
+  const { data: tasks = [], isLoading: loadingTasks } = useQuery<any[]>({
     queryKey: ['/api/user-panels/tasks'],
     refetchInterval: 30000
   });
 
   // Fetch production batches for factories
-  const { data: productionBatches = [], isLoading: loadingBatches } = useQuery({
+  const { data: productionBatches = [], isLoading: loadingBatches } = useQuery<any[]>({
     queryKey: ['/api/user-panels/production'],
     refetchInterval: 30000
   });
 
   // Fetch supply requests
-  const { data: supplyRequests = [], isLoading: loadingSupplies } = useQuery({
+  const { data: supplyRequests = [], isLoading: loadingSupplies } = useQuery<any[]>({
     queryKey: ['/api/user-panels/supplies'],
     refetchInterval: 30000
   });
@@ -141,10 +141,8 @@ export default function UserPanels() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Task> }) => {
-      return apiRequest(`/api/user-panels/tasks/${taskId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates)
-      });
+      const response = await apiRequest('PATCH', `/api/user-panels/tasks/${taskId}`, updates);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-panels/tasks'] });
@@ -157,10 +155,8 @@ export default function UserPanels() {
 
   const updateProductionMutation = useMutation({
     mutationFn: async ({ batchId, updates }: { batchId: string; updates: Partial<ProductionBatch> }) => {
-      return apiRequest(`/api/user-panels/production/${batchId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates)
-      });
+      const response = await apiRequest('PATCH', `/api/user-panels/production/${batchId}`, updates);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-panels/production'] });
@@ -178,10 +174,8 @@ export default function UserPanels() {
       formData.append('taskId', taskId);
       formData.append('type', type);
       
-      return apiRequest('/api/user-panels/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const response = await apiRequest('POST', '/api/user-panels/upload', formData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-panels/tasks'] });

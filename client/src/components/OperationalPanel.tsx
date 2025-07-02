@@ -144,30 +144,30 @@ export default function OperationalPanel() {
   const queryClient = useQueryClient();
 
   // Fetch user data and determine role
-  const { data: user } = useQuery({
+  const { data: user = {} } = useQuery<any>({
     queryKey: ['/api/auth/user']
   });
 
   // Fetch kanban tasks
-  const { data: tasks = [], isLoading: loadingTasks } = useQuery({
+  const { data: tasks = [], isLoading: loadingTasks } = useQuery<any[]>({
     queryKey: ['/api/operational/tasks'],
     refetchInterval: 30000
   });
 
   // Fetch production orders
-  const { data: productionOrders = [], isLoading: loadingProduction } = useQuery({
+  const { data: productionOrders = [], isLoading: loadingProduction } = useQuery<any[]>({
     queryKey: ['/api/operational/production'],
     refetchInterval: 30000
   });
 
   // Fetch supply requests
-  const { data: supplyRequests = [], isLoading: loadingSupplies } = useQuery({
+  const { data: supplyRequests = [], isLoading: loadingSupplies } = useQuery<any[]>({
     queryKey: ['/api/operational/supplies'],
     refetchInterval: 30000
   });
 
   // Fetch daily goals
-  const { data: dailyGoals = [], isLoading: loadingGoals } = useQuery({
+  const { data: dailyGoals = [], isLoading: loadingGoals } = useQuery<any[]>({
     queryKey: ['/api/operational/goals'],
     refetchInterval: 30000
   });
