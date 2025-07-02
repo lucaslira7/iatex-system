@@ -16,7 +16,9 @@ import {
   Settings,
   BarChart3,
   Calendar,
-  QrCode
+  QrCode,
+  Bot,
+  UserCheck
 } from "lucide-react";
 import type { ActiveSection } from "@/pages/Home";
 
@@ -43,7 +45,9 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     { id: 'documents', icon: FileText, label: 'Central de Documentos', badge: null },
     { id: 'reports', icon: TrendingUp, label: 'Relatórios Inteligentes', badge: null },
     { id: 'calendar', icon: Package, label: 'Calendário Produção', badge: null },
-    { id: 'qrcodes', icon: Brain, label: 'QR Code & Etiquetas', badge: null },
+    { id: 'qrcodes', icon: QrCode, label: 'QR Code & Etiquetas', badge: null },
+    { id: 'ai-assistant', icon: Bot, label: 'Assistente IA', badge: 'NOVO' },
+    { id: 'user-panels', icon: UserCheck, label: 'Painéis de Usuário', badge: 'NOVO' },
   ];
 
   const managementItems = [

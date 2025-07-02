@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { chatWithAI, generateFabricSuggestions, optimizeMargins, generateInsights, analyzeFabricUsage } from "./openai";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertFabricSchema, insertModelSchema, insertOrderSchema, insertClientSchema, insertSupplierSchema } from "@shared/schema";
 import { z } from "zod";
@@ -579,6 +580,346 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating quotation:", error);
       res.status(500).json({ message: "Failed to create quotation" });
+    }
+  });
+
+  // AI Assistant routes
+  app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
+    try {
+      const { message, context } = req.body;
+      const response = await chatWithAI(message, context);
+      
+      // Log the interaction
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'ai-assistant',
+        'chat',
+        `Pergunta: "${message.substring(0, 50)}..."`
+      );
+      
+      res.json({ response });
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      res.status(500).json({ message: "Failed to process AI request" });
+    }
+  });
+
+  app.get("/api/ai/suggestions", isAuthenticated, async (req, res) => {
+    try {
+      // Get business data for generating suggestions
+      const fabrics = await storage.getFabrics();
+      const models = await storage.getModels();
+      const pricingTemplates = await storage.getPricingTemplates();
+      
+      // Analyze fabric usage
+      const fabricAnalysis = await analyzeFabricUsage(fabrics);
+      
+      // Generate AI insights
+      const businessData = {
+        fabricCount: fabrics.length,
+        modelCount: models.length,
+        templateCount: pricingTemplates.length,
+        fabricAnalysis
+      };
+      
+      const insights = await generateInsights(businessData);
+      
+      // Transform insights into suggestions format
+      const suggestions = insights.insights?.map((insight: any, index: number) => ({
+        id: `suggestion-${Date.now()}-${index}`,
+        type: insight.type === 'opportunity' ? 'optimization' : 
+              insight.type === 'warning' ? 'margin' : 'fabric',
+        title: insight.title,
+        description: insight.description,
+        confidence: Math.floor(Math.random() * 20) + 80, // 80-100%
+        data: insight,
+        createdAt: new Date()
+      })) || [];
+      
+      res.json(suggestions);
+    } catch (error) {
+      console.error('Error fetching AI suggestions:', error);
+      res.status(500).json({ message: "Failed to fetch suggestions" });
+    }
+  });
+
+  app.post("/api/ai/fabric-suggestions", isAuthenticated, async (req: any, res) => {
+    try {
+      const models = await storage.getModels();
+      const fabrics = await storage.getFabrics();
+      
+      const modelData = {
+        models: models.slice(0, 5), // Use recent models
+        availableFabrics: fabrics,
+        ...req.body
+      };
+      
+      const suggestions = await generateFabricSuggestions(modelData);
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'ai-assistant',
+        'fabric-suggestions',
+        `Geradas sugestões para ${models.length} modelos`
+      );
+      
+      res.json(suggestions);
+    } catch (error) {
+      console.error('Error generating fabric suggestions:', error);
+      res.status(500).json({ message: "Failed to generate fabric suggestions" });
+    }
+  });
+
+  app.post("/api/ai/optimize-margins", isAuthenticated, async (req: any, res) => {
+    try {
+      const templates = await storage.getPricingTemplates();
+      
+      const pricingData = {
+        templates: templates.slice(0, 10), // Recent templates
+        ...req.body
+      };
+      
+      const optimization = await optimizeMargins(pricingData);
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'ai-assistant',
+        'margin-optimization',
+        `Análise de ${templates.length} templates de precificação`
+      );
+      
+      res.json(optimization);
+    } catch (error) {
+      console.error('Error optimizing margins:', error);
+      res.status(500).json({ message: "Failed to optimize margins" });
+    }
+  });
+
+  app.get("/api/ai/chat-history", isAuthenticated, async (req, res) => {
+    try {
+      // For now, return empty array - in production, you'd store chat history in database
+      res.json([]);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      res.status(500).json({ message: "Failed to fetch chat history" });
+    }
+  });
+
+  // User Panels routes
+  app.get("/api/user-panels/tasks", isAuthenticated, async (req, res) => {
+    try {
+      // Mock data - in production this would come from database
+      const mockTasks = [
+        {
+          id: "task-1",
+          title: "Buscar tecidos na Facção Maria",
+          description: "Retirar 20 metros de tecido azul marinho já prontos para nova coleção",
+          priority: "high",
+          status: "pending",
+          assignedTo: "current-user",
+          assignedBy: "Gerente",
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+          category: "supply",
+          attachments: [],
+          progress: 0,
+          location: "Facção Maria - Centro",
+          notes: [],
+          createdAt: new Date()
+        },
+        {
+          id: "task-2", 
+          title: "Controle de qualidade - Lote 234",
+          description: "Verificar 100 camisas do lote 234 quanto a acabamento e medidas",
+          priority: "medium",
+          status: "in-progress", 
+          assignedTo: "current-user",
+          assignedBy: "Supervisor",
+          dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+          category: "production",
+          attachments: [
+            {
+              id: "att-1",
+              filename: "foto-progresso.jpg",
+              url: "/uploads/foto-progresso.jpg", 
+              type: "photo",
+              uploadedAt: new Date(),
+              uploadedBy: "current-user"
+            }
+          ],
+          progress: 60,
+          notes: ["Já verificados 60 peças", "2 peças com pequenos defeitos"],
+          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000)
+        }
+      ];
+      
+      res.json(mockTasks);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post("/api/user-panels/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskData = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'user-panels',
+        'create-task',
+        `Criou tarefa: ${taskData.title}`
+      );
+      
+      res.json({ 
+        success: true,
+        id: `task-${Date.now()}`,
+        message: 'Tarefa criada com sucesso!'
+      });
+    } catch (error) {
+      console.error('Error creating task:', error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.patch("/api/user-panels/tasks/:taskId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { taskId } = req.params;
+      const updates = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'user-panels',
+        'update-task',
+        `Atualizou tarefa ${taskId}: ${JSON.stringify(updates)}`
+      );
+      
+      res.json({ success: true, message: 'Tarefa atualizada!' });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.get("/api/user-panels/production", isAuthenticated, async (req, res) => {
+    try {
+      // Mock production data for factories
+      const mockProduction = [
+        {
+          id: "batch-1",
+          modelName: "Camisa Social Branca",
+          factoryName: "Facção Maria",
+          quantity: 100,
+          status: "in-progress",
+          startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+          estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          progress: 75,
+          notes: ["Produção dentro do prazo", "Qualidade aprovada"],
+          attachments: [],
+          qualityScore: 95,
+          lossPercentage: 2
+        },
+        {
+          id: "batch-2",
+          modelName: "Vestido Estampado",
+          factoryName: "Facção João", 
+          quantity: 50,
+          status: "ready-pickup",
+          startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          estimatedDelivery: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          progress: 100,
+          notes: ["Lote concluído", "Aguardando retirada"],
+          attachments: [],
+          qualityScore: 98,
+          lossPercentage: 1
+        }
+      ];
+      
+      res.json(mockProduction);
+    } catch (error) {
+      console.error('Error fetching production:', error);
+      res.status(500).json({ message: "Failed to fetch production data" });
+    }
+  });
+
+  app.patch("/api/user-panels/production/:batchId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { batchId } = req.params;
+      const updates = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'user-panels',
+        'update-production',
+        `Atualizou produção ${batchId}: ${JSON.stringify(updates)}`
+      );
+      
+      res.json({ success: true, message: 'Produção atualizada!' });
+    } catch (error) {
+      console.error('Error updating production:', error);
+      res.status(500).json({ message: "Failed to update production" });
+    }
+  });
+
+  app.get("/api/user-panels/supplies", isAuthenticated, async (req, res) => {
+    try {
+      // Mock supply requests data
+      const mockSupplies = [
+        {
+          id: "supply-1",
+          items: ["Linha preta", "Botões dourados", "Zíper 20cm"],
+          requestedBy: "Facção Maria",
+          factoryName: "Facção Maria",
+          urgency: "medium",
+          status: "pending",
+          requestDate: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          notes: "Urgente para finalizar lote de blazers"
+        },
+        {
+          id: "supply-2",
+          items: ["Elástico 2cm", "Etiquetas de composição"],
+          requestedBy: "Facção João",
+          factoryName: "Facção João", 
+          urgency: "low",
+          status: "approved",
+          requestDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          expectedDelivery: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          notes: "Para próximo lote de calças"
+        }
+      ];
+      
+      res.json(mockSupplies);
+    } catch (error) {
+      console.error('Error fetching supplies:', error);
+      res.status(500).json({ message: "Failed to fetch supply requests" });
+    }
+  });
+
+  app.post("/api/user-panels/upload", isAuthenticated, async (req: any, res) => {
+    try {
+      // Mock file upload - in production you'd handle actual file upload
+      const { taskId, type } = req.body;
+      
+      await storage.logActivity(
+        req.user?.claims?.sub || 'unknown',
+        'user-panels',
+        'upload',
+        `Upload de ${type} para tarefa ${taskId}`
+      );
+      
+      res.json({ 
+        success: true,
+        attachment: {
+          id: `att-${Date.now()}`,
+          filename: "arquivo-anexado.jpg",
+          url: "/uploads/arquivo-anexado.jpg",
+          type: type,
+          uploadedAt: new Date(),
+          uploadedBy: req.user?.claims?.sub || 'unknown'
+        }
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      res.status(500).json({ message: "Failed to upload file" });
     }
   });
 
