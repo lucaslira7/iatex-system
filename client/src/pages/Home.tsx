@@ -9,10 +9,12 @@ import AdvancedSimulations from "@/components/AdvancedSimulations";
 import EmployeeManagement from "@/components/EmployeeManagement";
 import FinancialManagement from "@/components/FinancialManagement";
 import InventoryManagement from "@/components/InventoryManagement";
+import AdvancedProduction from "@/components/AdvancedProduction";
+import DocumentCenter from "@/components/DocumentCenter";
 import OrderManagement from "@/components/OrderManagement";
 import ProductionTracking from "@/components/ProductionTracking";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'employees' | 'financial' | 'inventory';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -33,6 +35,10 @@ export default function Home() {
         return <OrderManagement />;
       case 'production':
         return <ProductionTracking />;
+      case 'advanced-production':
+        return <AdvancedProduction />;
+      case 'documents':
+        return <DocumentCenter />;
       case 'employees':
         return <EmployeeManagement />;
       case 'financial':

@@ -36,7 +36,8 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     { id: 'simulations', icon: TrendingUp, label: 'Simulações Avançadas', badge: null },
     { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null },
     { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12 },
-    { id: 'production', icon: Factory, label: 'Produção', badge: null },
+    { id: 'advanced-production', icon: Factory, label: 'Produção Avançada', badge: null },
+    { id: 'documents', icon: FileText, label: 'Central de Documentos', badge: null },
   ];
 
   const managementItems = [

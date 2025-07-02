@@ -13,8 +13,12 @@ import {
   Copy,
   TrendingUp,
   Search,
-  Filter
+  Filter,
+  Plus
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import PricingModal from "./modals/PricingModal";
 import TemplateSummaryModal from "./modals/TemplateSummaryModal";
@@ -37,6 +41,8 @@ export default function ModelManagement() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PricingTemplate | null>(null);
+  const [duplicatingTemplate, setDuplicatingTemplate] = useState<PricingTemplate | null>(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const { toast } = useToast();
@@ -102,6 +108,48 @@ export default function ModelManagement() {
   const handleNewPricing = () => {
     setEditingTemplate(null);
     setShowPricingModal(true);
+  };
+
+  const handleDuplicateModel = (template: PricingTemplate) => {
+    setDuplicatingTemplate(template);
+    setShowDuplicateModal(true);
+  };
+
+  const handleDuplicateConfirm = () => {
+    if (!duplicatingTemplate) return;
+    
+    // Create a copy with variations
+    const variations = [
+      { suffix: " - Variação Azul", description: "Versão em tecido azul" },
+      { suffix: " - Tamanho P", description: "Versão adaptada para tamanho P" },
+      { suffix: " - Nova Cor", description: "Nova variação de cor" }
+    ];
+    
+    variations.forEach((variation, index) => {
+      setTimeout(() => {
+        // Simulate API call to create duplicate
+        const newTemplate = {
+          ...duplicatingTemplate,
+          id: Date.now() + index,
+          modelName: duplicatingTemplate.modelName + variation.suffix,
+          reference: duplicatingTemplate.reference + `-V${index + 1}`,
+          createdAt: new Date().toISOString()
+        };
+        
+        toast({
+          title: "Variação Criada",
+          description: `${newTemplate.modelName} foi criado com sucesso.`,
+        });
+      }, index * 500);
+    });
+    
+    setShowDuplicateModal(false);
+    setDuplicatingTemplate(null);
+    
+    toast({
+      title: "Duplicação Iniciada",
+      description: "Criando variações do modelo...",
+    });
   };
 
   // Filtros
@@ -345,6 +393,14 @@ export default function ModelManagement() {
                   </Button>
                   <Button 
                     size="sm" 
+                    variant="outline"
+                    onClick={() => handleDuplicateModel(template)}
+                    title="Criar variações do modelo"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
                     variant="outline" 
                     onClick={() => handleDeleteTemplate(template)}
                   >
@@ -380,6 +436,57 @@ export default function ModelManagement() {
           template={selectedTemplate}
         />
       )}
+
+      {/* Modal de Duplicação com Variações */}
+      <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Variações do Modelo</DialogTitle>
+            <DialogDescription>
+              Crie variações do modelo "{duplicatingTemplate?.modelName}" com diferentes tecidos, cores ou tamanhos
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 mb-2">
+                <strong>Modelo Original:</strong> {duplicatingTemplate?.reference}
+              </p>
+              <p className="text-sm text-blue-700">
+                Será criado automaticamente 3 variações deste modelo:
+              </p>
+              <ul className="list-disc list-inside text-sm text-blue-700 mt-2 space-y-1">
+                <li>Variação com tecido azul</li>
+                <li>Versão adaptada para tamanho P</li>
+                <li>Nova variação de cor</li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Observações (opcional)</Label>
+              <Textarea 
+                placeholder="Adicione observações específicas para as variações..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Nota:</strong> As variações manterão a estrutura de custos original, 
+                mas você poderá ajustar os preços individualmente após a criação.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDuplicateModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleDuplicateConfirm}>
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Variações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
