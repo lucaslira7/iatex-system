@@ -19,7 +19,11 @@ import {
   QrCode,
   Bot,
   UserCheck,
-  CheckSquare
+  CheckSquare,
+  Building,
+  Shield,
+  Download,
+  Bell
 } from "lucide-react";
 import type { ActiveSection } from "@/pages/Home";
 
@@ -53,9 +57,13 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
   ];
 
   const managementItems = [
+    { id: 'clients', icon: Building, label: 'Clientes', badge: null },
     { id: 'employees', icon: Users, label: 'Funcionários', badge: null },
     { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null },
     { id: 'inventory', icon: Package, label: 'Estoque', badge: null },
+    { id: 'admin', icon: Shield, label: 'Administração', badge: 'NOVO' },
+    { id: 'backup', icon: Download, label: 'Backup & Export', badge: null },
+    { id: 'notifications', icon: Bell, label: 'Notificações', badge: null },
   ];
 
   return (

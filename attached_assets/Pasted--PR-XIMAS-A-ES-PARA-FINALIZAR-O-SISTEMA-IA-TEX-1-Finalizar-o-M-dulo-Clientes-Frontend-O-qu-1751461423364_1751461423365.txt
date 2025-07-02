@@ -1,0 +1,99 @@
+✅ PRÓXIMAS AÇÕES PARA FINALIZAR O SISTEMA IA.TEX
+🔧 1. Finalizar o Módulo Clientes (Frontend)
+✅ O que já existe: API /api/clients funcionando
+
+🚧 O que falta: Criar ClientManagement.tsx
+
+🛠 Ações:
+
+Criar interface de cadastro, edição e busca de clientes
+
+Mostrar histórico de pedidos e orçamentos por cliente
+
+Vincular aos módulos de Pedidos e Orçamentos
+
+⏱ Tempo estimado: 3–4h
+
+🛡️ 2. Implementar o Módulo Administração
+❌ Atualmente inexistente
+
+🎯 O que deve conter:
+
+Gestão de usuários (nome, e-mail, tipo: admin, funcionário, facção, cliente)
+
+Permissões (visualização por módulo)
+
+Opções do sistema: tema, backup, log, exportações
+
+⏱ Tempo estimado: 6h (backend + frontend)
+
+🌐 3. Desenvolver a Área do Cliente (Portal Externo)
+❌ Não implementado ainda
+
+🧠 Ideal para:
+
+O cliente logar e ver orçamentos, pedidos, fichas técnicas, status
+
+Permitir aprovar/rejeitar orçamentos
+
+🛠 Ações:
+
+Criar /client-login, /client-dashboard
+
+Criar base clientes_publicos com tokens seguros
+
+⏱ Tempo estimado: 1 dia (mínimo funcional)
+
+📥 4. Criar Interface para Backup & Exportações
+✅ Backend está 100% funcional com /api/backup/export
+
+🚧 Falta frontend:
+
+Tela com botão “Exportar Dados”
+
+Opções: JSON, Excel, PDF
+
+Possibilidade de escolher módulos
+
+⏱ Tempo estimado: 2h
+
+📢 5. Aprimorar o Sistema de Notificações
+🟡 Já implementado via use-toast.ts
+
+🛠 Melhorias:
+
+Criar central de notificações no topo (ícone 🔔)
+
+Marcar como lida
+
+Guardar histórico no banco (últimos 20 eventos)
+
+⏱ Tempo estimado: 2h
+
+📊 RESUMO DAS ENTREGAS FINAIS SUGERIDAS
+Módulo	Status Atual	Ação Imediata	Prioridade
+Clientes	Backend pronto	Criar interface	🔴 Alta
+Administração	Não iniciado	Backend + Frontend	🔴 Alta
+Área do Cliente	Não iniciado	Portal externo	🟠 Média
+Backup & Exportação	Backend pronto	Criar UI	🟡 Baixa
+Central de Notificação	Parcial	Exibir UI + guardar	🟡 Baixa
+
+✅ O SISTEMA HOJE
+17 módulos prontos e funcionais
+
+3 pendências para considerar completo e comercial
+
+1 dia de trabalho pode deixar 100% finalizado
+
+⚙️ COMO PROSSEGUIR AGORA
+Posso gerar para você:
+
+🔧 Código do módulo Clientes (ClientManagement.tsx)
+
+🛠 Esqueleto inicial de Administração com rotas e permissões
+
+🌐 Estrutura base para a Área do Cliente (com login externo)
+
+📥 Tela de exportação de dados com seleção de módulos
+
+🔔 Componente NotificationCenter.tsx com histórico

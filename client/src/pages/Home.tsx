@@ -15,12 +15,16 @@ import IntelligentReports from "@/components/IntelligentReports";
 import ProductionCalendar from "@/components/ProductionCalendar";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import OrderManagement from "@/components/OrderManagement";
+import ClientManagement from "@/components/ClientManagement";
+import AdminPanel from "@/components/AdminPanel";
+import BackupExport from "@/components/BackupExport";
+import NotificationCenter from "@/components/NotificationCenter";
 
 import AIAssistant from "@/components/AIAssistant";
 import UserPanels from "@/components/UserPanels";
 import OperationalPanelFixed from "@/components/OperationalPanelFixed";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'employees' | 'financial' | 'inventory' | 'reports' | 'calendar' | 'qrcodes' | 'ai-assistant' | 'user-panels' | 'operational';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'clients' | 'employees' | 'financial' | 'inventory' | 'admin' | 'backup' | 'notifications' | 'reports' | 'calendar' | 'qrcodes' | 'ai-assistant' | 'user-panels' | 'operational';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -45,12 +49,20 @@ export default function Home() {
         return <AdvancedProduction />;
       case 'documents':
         return <DocumentCenter />;
+      case 'clients':
+        return <ClientManagement />;
       case 'employees':
         return <EmployeeManagement />;
       case 'financial':
         return <FinancialManagement />;
       case 'inventory':
         return <InventoryManagement />;
+      case 'admin':
+        return <AdminPanel />;
+      case 'backup':
+        return <BackupExport />;
+      case 'notifications':
+        return <NotificationCenter />;
       case 'reports':
         return <IntelligentReports />;
       case 'calendar':
