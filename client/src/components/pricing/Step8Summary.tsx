@@ -329,12 +329,12 @@ export default function Step8Summary() {
                   <div>
                     <p><strong>Tecido:</strong> {selectedFabric.name}</p>
                     <p><strong>Tipo:</strong> {selectedFabric.type}</p>
-                    <p><strong>Cor:</strong> {selectedFabric.color}</p>
+                    <p><strong>Composição:</strong> {selectedFabric.composition || 'N/A'}</p>
                   </div>
                   <div>
                     <p><strong>Consumo por peça:</strong> {formData.fabricConsumption}m</p>
                     <p><strong>Desperdício:</strong> {formData.wastePercentage}%</p>
-                    <p><strong>Preço por metro:</strong> R$ {selectedFabric.pricePerMeter.toFixed(2)}</p>
+                    <p><strong>Preço por metro:</strong> R$ {selectedFabric.pricePerMeter ? parseFloat(selectedFabric.pricePerMeter.toString()).toFixed(2) : '0.00'}</p>
                   </div>
                 </div>
               </div>
