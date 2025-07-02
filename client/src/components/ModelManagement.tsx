@@ -306,7 +306,11 @@ export default function ModelManagement() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={template.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer" 
+              onClick={() => handleViewTemplate(template)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -358,7 +362,10 @@ export default function ModelManagement() {
                     size="sm" 
                     variant="outline" 
                     className="flex-1"
-                    onClick={() => handleViewTemplate(template)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewTemplate(template);
+                    }}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Ver
@@ -367,7 +374,10 @@ export default function ModelManagement() {
                     size="sm" 
                     variant="outline" 
                     className="flex-1"
-                    onClick={() => handleEditTemplate(template)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditTemplate(template);
+                    }}
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     Editar
@@ -375,14 +385,20 @@ export default function ModelManagement() {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => handleCopyTemplate(template)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyTemplate(template);
+                    }}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => handleDuplicateModel(template)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicateModel(template);
+                    }}
                     title="Criar variações do modelo"
                   >
                     <Plus className="h-4 w-4" />
@@ -390,7 +406,10 @@ export default function ModelManagement() {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    onClick={() => handleDeleteTemplate(template)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTemplate(template);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
