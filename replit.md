@@ -133,6 +133,7 @@ The system provides an integrated solution for small to medium-sized clothing ma
 Changelog:
 - July 01, 2025. Initial setup
 - July 01, 2025. Fixed fabric image upload system - removed 500 character limit from code and database, images now display correctly in fabric cards
+- July 02, 2025. Implemented complete pricing system with templates, PDF generation, and technical sheets - all templates are saved and displayed, PDFs are named correctly as "Resumo_REF_DATE" and "Ficha_REF_DATE"
 
 ## User Preferences
 

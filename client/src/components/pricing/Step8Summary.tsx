@@ -163,10 +163,10 @@ export default function Step8Summary() {
       pdf.text(titleText, (pageWidth - titleWidth) / 2, 70);
       
       // Data no canto direito
-      const currentDate = new Date().toLocaleDateString('pt-BR');
+      const todayDate = new Date().toLocaleDateString('pt-BR');
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Data: ${currentDate}`, pageWidth - 60, 70);
+      pdf.text(`Data: ${todayDate}`, pageWidth - 60, 70);
       
       // Botão Download visual (cópia exata)
       pdf.setFillColor(34, 197, 94);
@@ -417,9 +417,10 @@ export default function Step8Summary() {
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       
+      const fileDate = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Ficha_Tecnica_${formData.reference}_${formData.modelName}.pdf`;
+      link.download = `Resumo_${formData.reference}_${fileDate}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -462,10 +463,10 @@ export default function Step8Summary() {
       pdf.text(titleText, (pageWidth - titleWidth) / 2, 70);
       
       // Data
-      const currentDate = new Date().toLocaleDateString('pt-BR');
+      const todayDateSheet = new Date().toLocaleDateString('pt-BR');
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Data: ${currentDate}`, pageWidth - 60, 70);
+      pdf.text(`Data: ${todayDateSheet}`, pageWidth - 60, 70);
       
       yPos = 90;
       
@@ -636,9 +637,10 @@ export default function Step8Summary() {
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       
+      const sheetFileDate = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Ficha_Tecnica_Produto_${formData.reference}_${formData.modelName}.pdf`;
+      link.download = `Ficha_${formData.reference}_${sheetFileDate}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
