@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
-import CustomizableDashboard from "@/components/CustomizableDashboard";
+import CustomizableDashboardFixed from "@/components/CustomizableDashboardFixed";
 import FabricManagement from "@/components/FabricManagement";
 import PricingCalculator from "@/components/PricingCalculator";
 import QuotationManagement from "@/components/QuotationManagement";
@@ -28,7 +28,7 @@ export default function Home() {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <CustomizableDashboard onSectionChange={setActiveSection} />;
+        return <CustomizableDashboardFixed onSectionChange={setActiveSection} />;
       case 'fabrics':
         return <FabricManagement />;
       case 'quotations':
@@ -64,7 +64,7 @@ export default function Home() {
       case 'operational':
         return <OperationalPanelFixed />;
       default:
-        return <CustomizableDashboard onSectionChange={setActiveSection} />;
+        return <CustomizableDashboardFixed onSectionChange={setActiveSection} />;
     }
   };
 
