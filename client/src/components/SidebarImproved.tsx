@@ -140,10 +140,8 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
               </Badge>
             )}
             {showFavoriteButton && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              <div
+                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-100 rounded flex items-center justify-center"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleFavorite(item.id);
@@ -154,7 +152,7 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
                 ) : (
                   <StarOff className="h-3 w-3" />
                 )}
-              </Button>
+              </div>
             )}
           </div>
         </button>
