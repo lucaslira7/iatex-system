@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Save, Calculator, TrendingUp, Eye, X, FileText, ExternalLink } from 'lucide-react';
+import { Download, Save, Calculator, TrendingUp, Eye, X, FileText, ExternalLink, Info } from 'lucide-react';
 import { usePricing } from '@/context/PricingContext';
 import type { Fabric } from '@shared/schema';
 import {
