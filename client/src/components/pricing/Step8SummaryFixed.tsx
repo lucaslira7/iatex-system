@@ -29,113 +29,70 @@ export default function Step8SummaryFixed() {
 
   const selectedFabric = fabrics.find(f => f.id === formData.fabricId);
 
-  // Cálculos de custos corrigidos
+  // Cálculos baseados na etapa 9 - mesma lógica detalhada
   const totalPieces = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
   
+  // Função para calcular custos detalhados por tamanho (mesma da etapa 9)
+  const calculateCostsBySize = () => {
+    const pricePerKg = parseFloat(selectedFabric?.pricePerKg?.toString() || '0');
+    const wasteMultiplier = 1 + (formData.wastePercentage / 100);
+    
+    // Custos fixos (rateados)
+    const totalCreationCosts = formData.creationCosts?.reduce((sum, cost) => 
+      sum + (cost.unitValue * cost.quantity), 0) || 0;
+    const creationCostPerPiece = totalCreationCosts / totalPieces;
+    
+    // Custos por peça
+    const supplyCostPerPiece = formData.supplies?.reduce((sum, supply) => 
+      sum + (supply.unitValue * supply.quantity * (1 + supply.wastePercentage / 100)), 0) || 0;
+    const laborCostPerPiece = formData.labor?.reduce((sum, labor) => 
+      sum + (labor.unitValue * labor.quantity), 0) || 0;
+    const fixedCostPerPiece = formData.fixedCosts?.reduce((sum, fixed) => 
+      sum + (fixed.unitValue * fixed.quantity), 0) || 0;
+    
+    return formData.sizes.map(size => {
+      const fabricCost = (size.weight / 1000) * pricePerKg * wasteMultiplier;
+      const totalCostPerPiece = fabricCost + creationCostPerPiece + supplyCostPerPiece + laborCostPerPiece + fixedCostPerPiece;
+      
+      return {
+        size: size.size,
+        quantity: size.quantity,
+        weight: size.weight,
+        fabricCost,
+        creationCost: creationCostPerPiece,
+        supplyCost: supplyCostPerPiece,
+        laborCost: laborCostPerPiece,
+        fixedCost: fixedCostPerPiece,
+        totalCostPerPiece,
+        totalCostForSize: totalCostPerPiece * size.quantity
+      };
+    });
+  };
+  
+  const costsBySize = calculateCostsBySize();
+  
+  // Calcular totais gerais baseados nos custos detalhados
   const costs = {
-    creationCosts: formData.creationCosts?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
-    suppliesCosts: formData.supplies?.reduce((total: number, cost: any) => {
-      const withWaste = cost.unitValue * cost.quantity * (1 + (cost.wastePercentage || 0) / 100);
-      if (formData.pricingMode === 'single') {
-        return total + withWaste;
-      } else {
-        return total + (withWaste * totalPieces);
-      }
-    }, 0) || 0,
-    
-    laborCosts: formData.labor?.reduce((total: number, cost: any) => {
-      const costPerPiece = cost.unitValue * cost.quantity;
-      if (formData.pricingMode === 'single') {
-        return total + costPerPiece;
-      } else {
-        return total + (costPerPiece * totalPieces);
-      }
-    }, 0) || 0,
-    
-    fixedCosts: formData.fixedCosts?.reduce((total: number, cost: any) => {
-      const costPerPiece = cost.unitValue * cost.quantity;
-      if (formData.pricingMode === 'single') {
-        return total + costPerPiece;
-      } else {
-        return total + (costPerPiece * totalPieces);
-      }
-    }, 0) || 0,
-    
-    // Calcular custo do tecido baseado no peso por tamanho
-    get fabricTotalCost() {
-      if (!selectedFabric || formData.sizes.length === 0) return 0;
-      
-      const pricePerKg = parseFloat(selectedFabric.pricePerKg?.toString() || '0');
-      const wasteMultiplier = 1 + (formData.wastePercentage / 100);
-      
-      return formData.sizes.reduce((total, size) => {
-        const costPerPiece = (size.weight / 1000) * pricePerKg * wasteMultiplier;
-        return total + (costPerPiece * size.quantity);
-      }, 0);
-    },
+    creationCosts: formData.creationCosts?.reduce((sum, cost) => sum + (cost.unitValue * cost.quantity), 0) || 0,
+    suppliesCosts: (formData.supplies?.reduce((sum, supply) => sum + (supply.unitValue * supply.quantity * (1 + supply.wastePercentage / 100)), 0) || 0) * totalPieces,
+    laborCosts: (formData.labor?.reduce((sum, labor) => sum + (labor.unitValue * labor.quantity), 0) || 0) * totalPieces,
+    fixedCosts: (formData.fixedCosts?.reduce((sum, fixed) => sum + (fixed.unitValue * fixed.quantity), 0) || 0) * totalPieces,
+    fabricTotalCost: costsBySize.reduce((sum, item) => sum + item.totalCostForSize, 0),
     
     get totalCost() {
-      if (formData.pricingMode === 'multiple') {
-        // Para múltiplas peças: soma custos fixos (criação) + custos variáveis por peça
-        const perPieceCosts = this.suppliesCosts + this.laborCosts + this.fixedCosts + this.fabricTotalCost;
-        return this.creationCosts + perPieceCosts;
-      } else {
-        return this.creationCosts + this.suppliesCosts + this.laborCosts + this.fixedCosts + this.fabricTotalCost;
-      }
+      return this.creationCosts + this.suppliesCosts + this.laborCosts + this.fixedCosts + this.fabricTotalCost;
+    },
+    
+    get averageCostPerPiece() {
+      return totalPieces > 0 ? this.totalCost / totalPieces : 0;
     },
     
     get finalPrice() {
       return formData.finalPrice;
     },
     
-    get pricePerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.totalCost; // Para peça única, o custo total é o custo por unidade
-      }
-      return totalPieces > 0 ? this.totalCost / totalPieces : 0;
-    },
-    
-    get finalPricePerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.finalPrice; // Para peça única, o preço final é o preço por unidade
-      }
+    get averagePricePerPiece() {
       return totalPieces > 0 ? this.finalPrice / totalPieces : 0;
-    },
-    
-    // Custos divididos por categoria (valores totais e por peça)
-    get creationCostPerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.creationCosts; // Para peça única, não dividir
-      }
-      return totalPieces > 0 ? this.creationCosts / totalPieces : 0;
-    },
-    
-    get suppliesCostPerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.suppliesCosts; // Para peça única, não dividir
-      }
-      return totalPieces > 0 ? this.suppliesCosts / totalPieces : 0;
-    },
-    
-    get laborCostPerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.laborCosts; // Para peça única, não dividir
-      }
-      return totalPieces > 0 ? this.laborCosts / totalPieces : 0;
-    },
-    
-    get fixedCostPerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.fixedCosts; // Para peça única, não dividir
-      }
-      return totalPieces > 0 ? this.fixedCosts / totalPieces : 0;
-    },
-    
-    get fabricCostPerUnit() {
-      if (formData.pricingMode === 'single') {
-        return this.fabricTotalCost; // Para peça única, não dividir
-      }
-      return totalPieces > 0 ? this.fabricTotalCost / totalPieces : 0;
     }
   };
 
@@ -397,7 +354,7 @@ export default function Step8SummaryFixed() {
               <div className="text-sm text-gray-600">Margem de Lucro</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">R$ {costs.pricePerUnit.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-orange-600">R$ {costs.averageCostPerPiece.toFixed(2)}</div>
               <div className="text-sm text-gray-600">Preço por Unidade</div>
             </div>
           </div>
@@ -434,6 +391,140 @@ export default function Step8SummaryFixed() {
               >
                 Usar Preço Sugerido
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Custos Detalhados por Tamanho - Baseado na Etapa 9 */}
+        <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Calculator className="h-5 w-5" />
+              Custos Detalhados por Tamanho (da Etapa 9)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {costsBySize.map((item, index) => (
+                <div key={index} className="p-4 bg-white rounded-lg border border-orange-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg">{item.size}</span>
+                      <span className="text-sm text-gray-600">({item.quantity} peças)</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-red-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.totalCostPerPiece)}
+                      </div>
+                      <div className="text-sm text-gray-500">por peça</div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tecido:</span>
+                      <span className="font-medium text-green-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.fabricCost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Criação:</span>
+                      <span className="font-medium text-blue-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.creationCost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Insumos:</span>
+                      <span className="font-medium text-orange-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.supplyCost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Mão de obra:</span>
+                      <span className="font-medium text-purple-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.laborCost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Fixos:</span>
+                      <span className="font-medium text-gray-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.fixedCost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Peso:</span>
+                      <span className="font-medium">{item.weight}g</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 pt-2 border-t border-orange-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Custo Total ({item.quantity} peças):</span>
+                      <span className="font-bold text-red-600">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(item.totalCostForSize)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Resumo médio */}
+            <div className="mt-6 p-4 bg-orange-100 rounded-lg border-2 border-orange-300">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-lg font-bold text-orange-700">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(costs.averageCostPerPiece)}
+                  </div>
+                  <div className="text-sm text-gray-600">Custo Médio/Peça</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-blue-700">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(costs.averagePricePerPiece)}
+                  </div>
+                  <div className="text-sm text-gray-600">Preço Médio/Peça</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-green-700">{totalPieces}</div>
+                  <div className="text-sm text-gray-600">Total de Peças</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-purple-700">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(costs.averagePricePerPiece - costs.averageCostPerPiece)}
+                  </div>
+                  <div className="text-sm text-gray-600">Lucro Médio/Peça</div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -637,32 +728,32 @@ export default function Step8SummaryFixed() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-2 bg-white rounded border">
                     <span className="text-sm font-medium">Criação (rateio)</span>
-                    <span className="font-bold text-blue-600">R$ {costs.creationCostPerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-blue-600">R$ {(costs.creationCosts / totalPieces).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-white rounded border">
                     <span className="text-sm font-medium">Tecido por peça</span>
-                    <span className="font-bold text-green-600">R$ {costs.fabricCostPerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-green-600">R$ {(costs.fabricTotalCost / totalPieces).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-white rounded border">
                     <span className="text-sm font-medium">Aviamentos por peça</span>
-                    <span className="font-bold text-orange-600">R$ {costs.suppliesCostPerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-orange-600">R$ {(costs.suppliesCosts / totalPieces).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-white rounded border">
                     <span className="text-sm font-medium">Mão de obra por peça</span>
-                    <span className="font-bold text-purple-600">R$ {costs.laborCostPerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-purple-600">R$ {(costs.laborCosts / totalPieces).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-white rounded border">
                     <span className="text-sm font-medium">Fixos por peça</span>
-                    <span className="font-bold text-gray-600">R$ {costs.fixedCostPerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-gray-600">R$ {(costs.fixedCosts / totalPieces).toFixed(2)}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between items-center p-3 bg-red-50 rounded border-2 border-red-200">
                     <span className="font-bold text-red-700">CUSTO POR PEÇA:</span>
-                    <span className="font-bold text-xl text-red-700">R$ {costs.pricePerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-xl text-red-700">R$ {costs.averageCostPerPiece.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded border-2 border-green-200">
                     <span className="font-bold text-green-700">PREÇO POR PEÇA:</span>
-                    <span className="font-bold text-xl text-green-700">R$ {costs.finalPricePerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-xl text-green-700">R$ {costs.averagePricePerPiece.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -675,8 +766,8 @@ export default function Step8SummaryFixed() {
                 {formData.sizes.map((size) => {
                   const fabricCostPerGram = selectedFabric ? Number(selectedFabric.pricePerMeter || 0) / Number(selectedFabric.gramWeight || 1) : 0;
                   const fabricCostWithWaste = (size.weight * fabricCostPerGram) * (1 + formData.wastePercentage / 100);
-                  const sizeUnitCost = costs.pricePerUnit + (fabricCostWithWaste - costs.fabricCostPerUnit);
-                  const sizeFinalPrice = costs.finalPricePerUnit + (fabricCostWithWaste - costs.fabricCostPerUnit);
+                  const sizeUnitCost = costs.averageCostPerPiece + (fabricCostWithWaste - (costs.fabricTotalCost / totalPieces));
+                  const sizeFinalPrice = costs.averagePricePerPiece + (fabricCostWithWaste - (costs.fabricTotalCost / totalPieces));
                   
                   return (
                     <div key={size.size} className="p-3 bg-white rounded border text-center">
