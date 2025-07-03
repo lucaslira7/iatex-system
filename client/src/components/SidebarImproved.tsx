@@ -26,7 +26,8 @@ import {
   Bell,
   Settings,
   Star,
-  StarOff
+  StarOff,
+  Receipt
 } from "lucide-react";
 import { ActiveSection } from "../pages/Home";
 import { useAuth } from "../hooks/useAuth";
@@ -84,6 +85,7 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
     
     // Ferramentas & Relatórios
     { id: 'documents', icon: FolderOpen, label: 'Central de Documentos', badge: null, section: 'tools' },
+    { id: 'commercial-docs', icon: Receipt, label: 'Documentos Comerciais', badge: null, section: 'tools' },
     { id: 'reports', icon: PieChart, label: 'Relatórios Inteligentes', badge: null, section: 'tools' },
     { id: 'calendar', icon: Calendar, label: 'Calendário de Produção', badge: null, section: 'tools' },
     { id: 'qr-generator', icon: QrCode, label: 'QR Code & Etiquetas', badge: null, section: 'tools' },
