@@ -35,7 +35,7 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
         updateFormData('pricingMode', initialTemplate.pricingMode);
       });
     } else if (initialTemplate && !initialTemplate.id) {
-      // Template para cópia - carregar apenas dados básicos
+      // Template para cópia - carregar todos os dados disponíveis
       updateFormData('modelName', initialTemplate.modelName || '');
       updateFormData('reference', initialTemplate.reference || '');
       updateFormData('garmentType', initialTemplate.garmentType || '');
@@ -43,6 +43,11 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
       updateFormData('imageUrl', initialTemplate.imageUrl || '');
       updateFormData('pricingMode', initialTemplate.pricingMode || 'single');
       updateFormData('fabricId', initialTemplate.fabricId || null);
+      updateFormData('fabricConsumption', parseFloat(initialTemplate.fabricConsumption as any) || 0);
+      updateFormData('wastePercentage', parseFloat(initialTemplate.wastePercentage as any) || 20);
+      updateFormData('profitMargin', parseFloat(initialTemplate.profitMargin as any) || 40);
+      updateFormData('totalCost', parseFloat(initialTemplate.totalCost as any) || 0);
+      updateFormData('finalPrice', parseFloat(initialTemplate.finalPrice as any) || 0);
       updateFormData('fabricConsumption', typeof initialTemplate.fabricConsumption === 'string' ? parseFloat(initialTemplate.fabricConsumption) : (initialTemplate.fabricConsumption || 0));
       updateFormData('wastePercentage', typeof initialTemplate.wastePercentage === 'string' ? parseFloat(initialTemplate.wastePercentage) : (initialTemplate.wastePercentage || 20));
       updateFormData('profitMargin', typeof initialTemplate.profitMargin === 'string' ? parseFloat(initialTemplate.profitMargin) : (initialTemplate.profitMargin || 50));

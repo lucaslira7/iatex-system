@@ -98,31 +98,52 @@ export default function Step8SummaryFixed() {
     },
     
     get pricePerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.totalCost; // Para peça única, o custo total é o custo por unidade
+      }
       return totalPieces > 0 ? this.totalCost / totalPieces : 0;
     },
     
     get finalPricePerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.finalPrice; // Para peça única, o preço final é o preço por unidade
+      }
       return totalPieces > 0 ? this.finalPrice / totalPieces : 0;
     },
     
     // Custos divididos por categoria (valores totais e por peça)
     get creationCostPerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.creationCosts; // Para peça única, não dividir
+      }
       return totalPieces > 0 ? this.creationCosts / totalPieces : 0;
     },
     
     get suppliesCostPerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.suppliesCosts; // Para peça única, não dividir
+      }
       return totalPieces > 0 ? this.suppliesCosts / totalPieces : 0;
     },
     
     get laborCostPerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.laborCosts; // Para peça única, não dividir
+      }
       return totalPieces > 0 ? this.laborCosts / totalPieces : 0;
     },
     
     get fixedCostPerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.fixedCosts; // Para peça única, não dividir
+      }
       return totalPieces > 0 ? this.fixedCosts / totalPieces : 0;
     },
     
     get fabricCostPerUnit() {
+      if (formData.pricingMode === 'single') {
+        return this.fabricTotalCost; // Para peça única, não dividir
+      }
       return totalPieces > 0 ? this.fabricTotalCost / totalPieces : 0;
     }
   };
@@ -130,10 +151,21 @@ export default function Step8SummaryFixed() {
   // Calcular totais
   const totalWeight = formData.sizes.reduce((sum, size) => sum + (size.quantity * size.weight), 0);
   const consumptionPerPiece = totalWeight > 0 ? formData.fabricConsumption / totalPieces : 0;
+  
+  // Calcular preço sugerido com margem padrão
+  const suggestedPrice = costs.totalCost * 1.4; // 40% de margem
+  const suggestedMargin = 40;
 
   useEffect(() => {
     updateFormData('totalCost', costs.totalCost);
-  }, [costs.totalCost, updateFormData]);
+    
+    // Se finalPrice ainda for 0, usar o preço sugerido
+    if (formData.finalPrice === 0 && costs.totalCost > 0) {
+      updateFormData('finalPrice', suggestedPrice);
+      updateFormData('profitMargin', suggestedMargin);
+      setTempFinalPrice(suggestedPrice.toFixed(2));
+    }
+  }, [costs.totalCost, updateFormData, formData.finalPrice, suggestedPrice]);
 
   const handleFinalPriceSubmit = () => {
     const newFinalPrice = parseFloat(tempFinalPrice) || 0;
@@ -381,66 +413,100 @@ export default function Step8SummaryFixed() {
         </CardContent>
       </Card>
 
-      {/* Seção de Preço Final Editável */}
-      <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-700">
-            <Calculator className="h-5 w-5" />
-            Preço Final (editável)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
+      {/* Seção de Preço Sugerido e Final */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Preço Sugerido */}
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <TrendingUp className="h-5 w-5" />
+              Preço Sugerido
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 mb-2">
+                R$ {suggestedPrice.toFixed(2)}
+              </div>
+              <div className="text-sm text-gray-600 mb-3">
+                Margem de {suggestedMargin}% aplicada
+              </div>
+              <Button 
+                onClick={() => {
+                  updateFormData('finalPrice', suggestedPrice);
+                  updateFormData('profitMargin', suggestedMargin);
+                  setTempFinalPrice(suggestedPrice.toFixed(2));
+                }}
+                variant="outline" 
+                size="sm"
+                className="text-green-700 border-green-300 hover:bg-green-50"
+              >
+                Usar Preço Sugerido
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preço Final Editável */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Calculator className="h-5 w-5" />
+              Preço Final
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
               {editingFinalPrice ? (
-                <div className="flex items-center gap-3">
-                  <Label htmlFor="finalPrice" className="text-sm font-medium">
-                    Novo Preço:
-                  </Label>
+                <div className="space-y-3">
                   <Input
-                    id="finalPrice"
                     type="number"
                     value={tempFinalPrice}
                     onChange={(e) => setTempFinalPrice(e.target.value)}
-                    className="w-32"
+                    className="text-center text-xl font-bold"
                     step="0.01"
                     min="0"
                     autoFocus
+                    placeholder="Digite o preço"
                   />
-                  <Button onClick={handleFinalPriceSubmit} size="sm">
-                    Confirmar
-                  </Button>
-                  <Button 
-                    onClick={() => setEditingFinalPrice(false)} 
-                    variant="outline" 
-                    size="sm"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={handleFinalPriceSubmit} size="sm">
+                      Confirmar
+                    </Button>
+                    <Button 
+                      onClick={() => setEditingFinalPrice(false)} 
+                      variant="outline" 
+                      size="sm"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-green-600">
+                <div className="space-y-3">
+                  <div className="text-2xl font-bold text-blue-600">
                     R$ {formData.finalPrice.toFixed(2)}
                   </div>
+                  <div className="text-sm text-gray-600">
+                    Margem: {formData.profitMargin.toFixed(1)}% | Lucro: R$ {(formData.finalPrice - costs.totalCost).toFixed(2)}
+                  </div>
                   <Button 
-                    onClick={() => setEditingFinalPrice(true)}
+                    onClick={() => {
+                      setEditingFinalPrice(true);
+                      setTempFinalPrice(formData.finalPrice.toFixed(2));
+                    }}
                     variant="outline" 
                     size="sm"
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Editar
+                    Editar Preço
                   </Button>
                 </div>
               )}
             </div>
-            <div className="text-right text-sm text-gray-600">
-              <div className="font-medium">Margem: {formData.profitMargin.toFixed(1)}%</div>
-              <div className="font-medium">Lucro: R$ {(formData.finalPrice - costs.totalCost).toFixed(2)}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Breakdown de Custos para Peça Única */}
       {formData.pricingMode === 'single' && (

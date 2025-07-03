@@ -41,8 +41,8 @@ const PricingOptimized: React.FC<PricingOptimizedProps> = ({ currentStep }) => {
     switch (currentStep) {
       case 0: return Step0PricingMode;
       case 1: return Step1GarmentType;
-      case 2: return Step2Sizes;
-      case 3: return Step3Fabric;
+      case 2: return Step3Fabric;        // Tecido vem antes dos tamanhos
+      case 3: return Step2Sizes;         // Tamanhos vem depois do tecido
       case 4: return Step4CreationCosts;
       case 5: return Step5Supplies;
       case 6: return Step6Labor;
