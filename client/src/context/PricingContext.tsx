@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { usePricingCache } from '@/hooks/usePricingCache';
 import { usePricingPreloader } from '@/hooks/usePricingPreloader';
-import { useTemplateCache } from '@/hooks/useTemplateCache';
+import { cachedRequest } from '@/utils/simpleCache';
 
 export interface PricingFormData {
   // Etapa 0 - Modalidade de Precificação
@@ -143,7 +143,6 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState(0);
   const { saveToCache, getFromCache, clearCache } = usePricingCache();
   const { preloadStepData } = usePricingPreloader();
-  const { getTemplateData } = useTemplateCache();
 
   const updateFormData = useCallback((field: string, value: any) => {
     setFormData(prev => {
@@ -208,10 +207,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
 
   const loadTemplateData = async (templateId: number) => {
     try {
-      const response = await fetch(`/api/pricing-templates/${templateId}/details`);
-      if (!response.ok) throw new Error('Failed to fetch template details');
-      
-      const data = await response.json();
+      const data = await cachedRequest(`/api/pricing-templates/${templateId}/details`);
       const { template, sizes, costs } = data;
       
       // Converter tamanhos do template

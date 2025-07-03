@@ -38,7 +38,7 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
       setIsLoadingTemplate(true);
       // Carregar todos os dados do template usando a nova função (apenas se tem ID válido)
       loadTemplateData(initialTemplate.id).then(() => {
-        setLoadedTemplateId(initialTemplate.id);
+        setLoadedTemplateId(initialTemplate.id!);
       }).catch(error => {
         console.error('Erro ao carregar dados do template:', error);
         // Fallback para dados básicos apenas
