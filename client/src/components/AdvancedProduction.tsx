@@ -12,10 +12,11 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Factory, Plus, Calendar as CalendarIcon, AlertTriangle, TrendingUp, TrendingDown, Clock, Target, Award, BarChart3, CheckCircle2, XCircle, Pause } from "lucide-react";
+import { Factory, Plus, Calendar as CalendarIcon, AlertTriangle, TrendingUp, TrendingDown, Clock, Target, Award, BarChart3, CheckCircle2, XCircle, Pause, FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { generateProductionSheet, type ProductionSheetData } from '@/lib/documentGenerator';
 
 interface ProductionStage {
   id: number;

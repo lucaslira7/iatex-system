@@ -15,8 +15,12 @@ import {
   Plus,
   Calendar,
   User,
-  Package
+  Package,
+  Receipt,
+  Send
 } from 'lucide-react';
+import { generateQuotation, generateCommercialProposal, type DocumentData } from '@/lib/documentGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 interface Quotation {
   id: number;
@@ -34,6 +38,7 @@ interface Quotation {
 export default function QuotationManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { toast } = useToast();
 
   // Fetch quotations
   const { data: quotations = [], isLoading } = useQuery<Quotation[]>({
@@ -79,9 +84,105 @@ export default function QuotationManagement() {
     }
   };
 
-  const handleDownload = (quotation: Quotation) => {
-    // Implementar download do PDF
-    console.log('Baixar PDF:', quotation);
+  const generateQuotationPDF = async (quotation: Quotation) => {
+    try {
+      const documentData: DocumentData = {
+        companyName: 'IA.TEX',
+        companyCNPJ: '00.000.000/0001-00',
+        companyAddress: 'Endereço da Empresa',
+        companyPhone: '(11) 99999-9999',
+        companyEmail: 'contato@iatex.com.br',
+        clientName: quotation.clientName || 'Cliente',
+        documentNumber: `ORC-${quotation.id.toString().padStart(4, '0')}`,
+        documentDate: new Date(),
+        validUntil: new Date(quotation.validUntil),
+        items: [{
+          code: quotation.reference,
+          description: quotation.modelName,
+          quantity: 1,
+          unitPrice: quotation.finalPrice,
+          total: quotation.finalPrice
+        }],
+        subtotal: quotation.finalPrice,
+        total: quotation.finalPrice,
+        paymentTerms: 'A combinar',
+        deliveryTerms: 'Conforme negociação'
+      };
+
+      const pdf = generateQuotation(documentData);
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Orcamento_${quotation.reference}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}.pdf`;
+      link.click();
+      
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      toast({
+        title: "Orçamento gerado!",
+        description: "PDF criado e sendo baixado.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao gerar orçamento",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateProposalPDF = async (quotation: Quotation) => {
+    try {
+      const documentData: DocumentData = {
+        companyName: 'IA.TEX',
+        companyCNPJ: '00.000.000/0001-00',
+        companyAddress: 'Endereço da Empresa',
+        companyPhone: '(11) 99999-9999',
+        companyEmail: 'contato@iatex.com.br',
+        clientName: quotation.clientName || 'Cliente',
+        documentNumber: `PROP-${quotation.id.toString().padStart(4, '0')}`,
+        documentDate: new Date(),
+        validUntil: new Date(quotation.validUntil),
+        items: [{
+          code: quotation.reference,
+          description: quotation.modelName,
+          quantity: 1,
+          unitPrice: quotation.finalPrice,
+          total: quotation.finalPrice
+        }],
+        subtotal: quotation.finalPrice,
+        total: quotation.finalPrice,
+        paymentTerms: 'Condições especiais conforme negociação',
+        deliveryTerms: 'Prazo de entrega: 15 dias úteis',
+        observations: 'Proposta válida conforme especificações técnicas anexas.'
+      };
+
+      const pdf = generateCommercialProposal(documentData);
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Proposta_${quotation.reference}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}.pdf`;
+      link.click();
+      
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      toast({
+        title: "Proposta comercial gerada!",
+        description: "PDF criado e sendo baixado.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao gerar proposta",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -262,38 +363,56 @@ export default function QuotationManagement() {
                     R$ {quotation.finalPrice?.toFixed(2) || '0,00'}
                   </div>
 
-                  <div className="flex space-x-2 pt-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleView(quotation)}
-                      className="flex-1"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Ver
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(quotation)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(quotation)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(quotation)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-2 pt-3">
+                    {/* Primeira linha - Ações principais */}
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleView(quotation)}
+                        className="flex-1"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(quotation)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(quotation)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Segunda linha - Documentos comerciais */}
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => generateQuotationPDF(quotation)}
+                        className="flex-1 text-blue-600 hover:text-blue-700"
+                      >
+                        <Receipt className="h-4 w-4 mr-1" />
+                        Orçamento
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => generateProposalPDF(quotation)}
+                        className="flex-1 text-green-600 hover:text-green-700"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Proposta
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
