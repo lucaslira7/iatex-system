@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PricingProvider, usePricing } from "@/context/PricingContext";
 import PricingOptimized from "@/components/pricing/PricingOptimized";
 import type { PricingTemplate } from "@shared/schema";
@@ -14,6 +14,8 @@ interface PricingModalProps {
 
 function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void; initialTemplate?: PricingTemplate | Partial<PricingTemplate> | null }) {
   const { currentStep, setCurrentStep, resetForm, formData, updateFormData, loadTemplateData } = usePricing();
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
+  const [loadedTemplateId, setLoadedTemplateId] = useState<number | null>(null);
 
   const handleClose = () => {
     resetForm();
@@ -22,12 +24,22 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
 
   // Carregar dados do template inicial
   useEffect(() => {
+    if (!initialTemplate) return;
+    
+    // Evitar carregamentos múltiplos do mesmo template
+    if (initialTemplate.id && initialTemplate.id === loadedTemplateId) return;
+    if (isLoadingTemplate) return;
+    
     // Sempre resetar o formulário primeiro para evitar contaminação de dados
     resetForm();
+    setLoadedTemplateId(null);
     
-    if (initialTemplate && initialTemplate.id) {
+    if (initialTemplate.id) {
+      setIsLoadingTemplate(true);
       // Carregar todos os dados do template usando a nova função (apenas se tem ID válido)
-      loadTemplateData(initialTemplate.id).catch(error => {
+      loadTemplateData(initialTemplate.id).then(() => {
+        setLoadedTemplateId(initialTemplate.id);
+      }).catch(error => {
         console.error('Erro ao carregar dados do template:', error);
         // Fallback para dados básicos apenas
         updateFormData('modelName', initialTemplate.modelName);
@@ -36,8 +48,10 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
         updateFormData('description', initialTemplate.description || '');
         updateFormData('imageUrl', initialTemplate.imageUrl || '');
         updateFormData('pricingMode', initialTemplate.pricingMode);
+      }).finally(() => {
+        setIsLoadingTemplate(false);
       });
-    } else if (initialTemplate && !initialTemplate.id) {
+    } else {
       // Template para cópia - carregar todos os dados disponíveis
       updateFormData('modelName', initialTemplate.modelName || '');
       updateFormData('reference', initialTemplate.reference || '');
@@ -76,7 +90,7 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
       updateFormData('totalCost', typeof initialTemplate.totalCost === 'string' ? parseFloat(initialTemplate.totalCost) : (initialTemplate.totalCost || 0));
       updateFormData('finalPrice', typeof initialTemplate.finalPrice === 'string' ? parseFloat(initialTemplate.finalPrice) : (initialTemplate.finalPrice || 0));
     }
-  }, [initialTemplate, loadTemplateData, updateFormData]);
+  }, [initialTemplate?.id]); // Usar apenas ID como dependência
 
   // Atalhos de teclado para navegação
   useEffect(() => {

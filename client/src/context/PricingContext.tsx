@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { usePricingCache } from '@/hooks/usePricingCache';
 import { usePricingPreloader } from '@/hooks/usePricingPreloader';
+import { useTemplateCache } from '@/hooks/useTemplateCache';
 
 export interface PricingFormData {
   // Etapa 0 - Modalidade de Precificação
@@ -142,6 +143,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState(0);
   const { saveToCache, getFromCache, clearCache } = usePricingCache();
   const { preloadStepData } = usePricingPreloader();
+  const { getTemplateData } = useTemplateCache();
 
   const updateFormData = useCallback((field: string, value: any) => {
     setFormData(prev => {
