@@ -172,28 +172,148 @@ export default function Step1ModelInfoFixed() {
           </CardContent>
         </Card>
 
-        {/* Resumo de custos */}
+        {/* Resumo completo de custos por tamanho */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calculator className="h-5 w-5" />
-              Resumo de Custos do Tecido
+              Resumo Completo de Custos por Tamanho
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label className="text-sm font-medium">Preço do Tecido:</Label>
-                <p className="text-lg font-semibold">{selectedFabric ? 
-                  new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(parseFloat(selectedFabric.pricePerKg?.toString() || '0')) + '/kg' 
-                  : 'Não selecionado'}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Custo Médio do Tecido:</Label>
-                <p className="text-lg font-semibold text-green-600">{calculateAverageFabricCost()}</p>
+            <div className="space-y-4">
+              {formData.sizes.map((size) => {
+                // Custo do tecido
+                const pricePerKg = parseFloat(selectedFabric?.pricePerKg?.toString() || '0');
+                const wasteMultiplier = 1 + (formData.wastePercentage / 100);
+                const fabricCost = (size.weight / 1000) * pricePerKg * wasteMultiplier;
+                
+                // Custos de criação (rateado)
+                const totalCreationCosts = formData.creationCosts?.reduce((sum, cost) => 
+                  sum + (cost.unitValue * cost.quantity), 0) || 0;
+                const creationCostPerPiece = totalCreationCosts / totalPieces;
+                
+                // Custos de insumos por peça
+                const supplyCostPerPiece = formData.supplies?.reduce((sum, supply) => 
+                  sum + (supply.unitValue * supply.quantity * (1 + supply.wastePercentage / 100)), 0) || 0;
+                
+                // Custos de mão de obra por peça
+                const laborCostPerPiece = formData.labor?.reduce((sum, labor) => 
+                  sum + (labor.unitValue * labor.quantity), 0) || 0;
+                
+                // Custos fixos por peça
+                const fixedCostPerPiece = formData.fixedCosts?.reduce((sum, fixed) => 
+                  sum + (fixed.unitValue * fixed.quantity), 0) || 0;
+                
+                // Custo total por peça
+                const totalCostPerPiece = fabricCost + creationCostPerPiece + supplyCostPerPiece + laborCostPerPiece + fixedCostPerPiece;
+                
+                return (
+                  <div key={size.size} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <Badge variant="outline" className="text-lg font-bold">
+                        {size.size}
+                      </Badge>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-red-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(totalCostPerPiece)}
+                        </div>
+                        <div className="text-sm text-gray-500">custo total</div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">Tecido:</span>
+                        <div className="font-medium text-green-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(fabricCost)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Criação:</span>
+                        <div className="font-medium text-blue-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(creationCostPerPiece)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Insumos:</span>
+                        <div className="font-medium text-orange-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(supplyCostPerPiece)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Mão de obra:</span>
+                        <div className="font-medium text-purple-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(laborCostPerPiece)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Fixos:</span>
+                        <div className="font-medium text-gray-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(fixedCostPerPiece)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Quantidade:</span>
+                        <div className="font-medium">{size.quantity} peças</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Custos médios */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+              <h4 className="font-bold text-blue-700 mb-3">Custos Médios por Peça</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Tecido Médio:</span>
+                  <div className="font-bold text-green-600">{calculateAverageFabricCost()}</div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Criação Média:</span>
+                  <div className="font-bold text-blue-600">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format((formData.creationCosts?.reduce((sum, cost) => 
+                      sum + (cost.unitValue * cost.quantity), 0) || 0) / totalPieces)}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total Médio:</span>
+                  <div className="font-bold text-red-600">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(
+                      parseFloat(calculateAverageFabricCost().replace('R$', '').replace(',', '.')) +
+                      ((formData.creationCosts?.reduce((sum, cost) => sum + (cost.unitValue * cost.quantity), 0) || 0) / totalPieces) +
+                      (formData.supplies?.reduce((sum, supply) => sum + (supply.unitValue * supply.quantity * (1 + supply.wastePercentage / 100)), 0) || 0) +
+                      (formData.labor?.reduce((sum, labor) => sum + (labor.unitValue * labor.quantity), 0) || 0) +
+                      (formData.fixedCosts?.reduce((sum, fixed) => sum + (fixed.unitValue * fixed.quantity), 0) || 0)
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
