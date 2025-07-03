@@ -133,7 +133,7 @@ function PricingModalContent({ onClose, initialTemplate }: {
       </DialogHeader>
 
       <div className="space-y-6">
-        <PricingOptimized />
+        <PricingOptimized currentStep={currentStep} />
         
         <div className="flex justify-between pt-4 border-t">
           <Button 
