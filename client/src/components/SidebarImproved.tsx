@@ -39,6 +39,7 @@ interface SidebarProps {
 export default function SidebarImproved({ activeSection, onSectionChange }: SidebarProps) {
   const { user } = useAuth();
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
@@ -161,7 +162,7 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
   };
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 lg:w-64`}>
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center gap-3">

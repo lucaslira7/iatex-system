@@ -328,16 +328,16 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
   }
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard IA.TEX</h1>
-          <p className="text-gray-600 mt-2">Visão geral do sistema de gestão têxtil</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard IA.TEX</h1>
+          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Visão geral do sistema de gestão têxtil</p>
         </div>
         
-        <div className="flex items-center gap-4">
-          <Badge variant="secondary" className="text-sm">
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <Badge variant="secondary" className="text-xs sm:text-sm">
             {visibleCards.length} de {cards.length} cards visíveis
           </Badge>
           
@@ -410,8 +410,8 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
           </Dialog>
         </div>
       </div>
-      {/* Customizable KPI Cards - SEM DRAG & DROP */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Customizable KPI Cards - Mobile Responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {visibleCards.map((card) => {
           const IconComponent = card.icon;
           
@@ -421,11 +421,11 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
               className="relative kpi-card transition-all cursor-pointer hover:shadow-lg"
               onClick={() => setSelectedCard(card)}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                    <p className="text-gray-900 card-value font-semibold text-[28px] truncate">{card.value}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">{card.title}</p>
+                    <p className="text-gray-900 card-value font-semibold text-xl sm:text-[28px] truncate">{card.value}</p>
                     {card.change && (
                       <div className="flex items-center gap-1 mt-1">
                         {getTrendIcon(card.trend)}
@@ -436,7 +436,7 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
                     )}
                   </div>
                   <div className={`kpi-icon ${getColorClasses(card.color)}`}>
-                    <IconComponent className="h-6 w-6" />
+                    <IconComponent className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
                 </div>
                 
@@ -452,39 +452,39 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
         })}
       </div>
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('fabrics')}>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg mb-2">Gestão de Tecidos</h3>
-                <p className="text-gray-600 text-sm">Gerencie estoque, cadastre novos tecidos e controle fornecedores</p>
+                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Gestão de Tecidos</h3>
+                <p className="text-gray-600 text-xs sm:text-sm">Gerencie estoque, cadastre novos tecidos e controle fornecedores</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('models')}>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg mb-2">Modelos & Precificação</h3>
-                <p className="text-gray-600 text-sm">Crie templates, calcule preços e gerencie catálogo de modelos</p>
+                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Modelos & Precificação</h3>
+                <p className="text-gray-600 text-xs sm:text-sm">Crie templates, calcule preços e gerencie catálogo de modelos</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('operational')}>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg mb-2">Painel Operacional</h3>
-                <p className="text-gray-600 text-sm">Gerencie tarefas, produção e acompanhe metas diárias</p>
+                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Painel Operacional</h3>
+                <p className="text-gray-600 text-xs sm:text-sm">Gerencie tarefas, produção e acompanhe metas diárias</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
