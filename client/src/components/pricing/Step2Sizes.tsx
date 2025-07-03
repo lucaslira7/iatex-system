@@ -62,7 +62,12 @@ export default function Step2Sizes() {
 
   const getSizeWeight = (size: string) => {
     const sizeData = formData.sizes.find(s => s.size === size);
-    return sizeData?.weight || 0;
+    return sizeData?.weight === 0 ? '' : (sizeData?.weight || '');
+  };
+
+  const getSizeWeightNumber = (size: string): number => {
+    const sizeData = formData.sizes.find(s => s.size === size);
+    return typeof sizeData?.weight === 'number' ? sizeData.weight : 0;
   };
 
   const removeSize = (size: string) => {
@@ -92,7 +97,12 @@ export default function Step2Sizes() {
 
   const getSizeQuantity = (size: string) => {
     const sizeData = formData.sizes.find(s => s.size === size);
-    return sizeData?.quantity || 1;
+    return sizeData?.quantity === 0 ? '' : (sizeData?.quantity || '');
+  };
+
+  const getSizeQuantityNumber = (size: string): number => {
+    const sizeData = formData.sizes.find(s => s.size === size);
+    return typeof sizeData?.quantity === 'number' ? sizeData.quantity : 0;
   };
 
   return (
@@ -169,7 +179,10 @@ export default function Step2Sizes() {
                         type="number"
                         placeholder="Ex: 250"
                         value={getSizeWeight(size) || ''}
-                        onChange={(e) => updateSizeWeight(size, parseInt(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          updateSizeWeight(size, value);
+                        }}
                         className="mt-1"
                       />
                       <p className="text-xs text-gray-500 mt-1">
@@ -185,7 +198,10 @@ export default function Step2Sizes() {
                           type="number"
                           placeholder="Ex: 10"
                           value={getSizeQuantity(size) || ''}
-                          onChange={(e) => updateSizeQuantity(size, e.target.value === '' ? 0 : parseInt(e.target.value) || 1)}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            updateSizeQuantity(size, value);
+                          }}
                           className="mt-1"
                           min="0"
                         />
@@ -199,14 +215,14 @@ export default function Step2Sizes() {
                       <Label>Custo do Tecido</Label>
                       <div className="mt-1 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
                         <span className="text-green-700 dark:text-green-300 font-medium text-lg">
-                          {calculateFabricCost(getSizeWeight(size))}
+                          {calculateFabricCost(getSizeWeightNumber(size))}
                         </span>
-                        {formData.pricingMode === 'multiple' && getSizeQuantity(size) > 0 && (
+                        {formData.pricingMode === 'multiple' && getSizeQuantityNumber(size) > 0 && (
                           <div className="text-xs text-green-600 mt-1">
                             Total: {new Intl.NumberFormat('pt-BR', {
                               style: 'currency',
                               currency: 'BRL'
-                            }).format(parseFloat(calculateFabricCost(getSizeWeight(size)).replace(/[^\d,]/g, '').replace(',', '.')) * getSizeQuantity(size))}
+                            }).format(parseFloat(calculateFabricCost(getSizeWeightNumber(size)).replace(/[^\d,]/g, '').replace(',', '.')) * getSizeQuantityNumber(size))}
                           </div>
                         )}
                       </div>
@@ -214,7 +230,7 @@ export default function Step2Sizes() {
                   </div>
                 </div>
                 
-                {getSizeWeight(size) > 0 && (
+                {getSizeWeightNumber(size) > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
