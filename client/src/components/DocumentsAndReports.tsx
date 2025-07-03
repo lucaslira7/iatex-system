@@ -577,6 +577,45 @@ export default function DocumentsAndReports() {
 
         {/* Aba Documentos Comerciais */}
         <TabsContent value="commercial" className="space-y-4">
+          {/* Manual do Sistema */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-blue-800 mb-2">📋 Manual Completo do Sistema IA.TEX</h3>
+                  <p className="text-blue-700 mb-4">
+                    Guia completo com todas as integrações e fluxos de trabalho desde o cadastro de tecidos até a entrega das peças.
+                    Inclui passo a passo detalhado de todos os 15 módulos e suas integrações.
+                  </p>
+                  <div className="flex items-center space-x-4 text-sm text-blue-600">
+                    <span>✓ Fluxo completo de trabalho</span>
+                    <span>✓ Integrações entre módulos</span>
+                    <span>✓ Documentos gerados</span>
+                    <span>✓ Passo a passo operacional</span>
+                  </div>
+                </div>
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => {
+                    // Download do manual
+                    const link = document.createElement('a');
+                    link.href = '/MANUAL_COMPLETO_IATEX.md';
+                    link.download = 'Manual_Completo_IA.TEX.md';
+                    link.click();
+                    
+                    toast({
+                      title: "Manual baixado!",
+                      description: "O manual completo foi baixado com sucesso.",
+                    });
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar Manual Completo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {documentTypes.map(type => (
               <Card key={type.id} className="hover:shadow-lg transition-shadow">
