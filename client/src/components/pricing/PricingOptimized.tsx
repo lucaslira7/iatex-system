@@ -12,9 +12,7 @@ const Step4CreationCosts = lazy(() => import('./Step4CreationCosts'));
 const Step5Supplies = lazy(() => import('./Step5Supplies'));
 const Step6Labor = lazy(() => import('./Step6Labor'));
 const Step7FixedCosts = lazy(() => import('./Step7FixedCosts'));
-const Step3BasicInfo = lazy(() => import('./Step3BasicInfo'));
 const Step8SummaryFixed = lazy(() => import('./Step8SummaryFixed'));
-const Step9DetailedInfo = lazy(() => import('./Step9DetailedInfo'));
 
 // Skeleton personalizado para steps
 const StepSkeleton = () => (
@@ -45,15 +43,13 @@ const PricingOptimized: React.FC<PricingOptimizedProps> = ({ currentStep }) => {
       case 0: return Step0PricingMode;
       case 1: return Step1GarmentType;
       case 2: return Step2Sizes;
-      case 3: return Step3BasicInfo;       // Resumo básico das informações
-      case 4: return Step3Fabric;          // Seleção do tecido
-      case 5: return Step1ModelInfoFixed;  // Informações do modelo
-      case 6: return Step4CreationCosts;   // Custos de criação
-      case 7: return Step5Supplies;        // Insumos
-      case 8: return Step6Labor;           // Mão de obra
-      case 9: return Step7FixedCosts;      // Custos fixos
-      case 10: return Step8SummaryFixed;   // Resumo final
-      case 11: return Step9DetailedInfo;   // Informações detalhadas
+      case 3: return Step1ModelInfoFixed;  // Informações do modelo (movido para cima)
+      case 4: return Step3Fabric;          // Seleção do tecido 
+      case 5: return Step4CreationCosts;   // Custos de criação
+      case 6: return Step5Supplies;        // Insumos
+      case 7: return Step6Labor;           // Mão de obra
+      case 8: return Step7FixedCosts;      // Custos fixos
+      case 9: return Step8SummaryFixed;    // Resumo final
       default: return Step0PricingMode;
     }
   }, [currentStep]);

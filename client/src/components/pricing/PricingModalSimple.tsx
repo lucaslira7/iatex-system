@@ -119,7 +119,7 @@ function PricingModalContent({ onClose, initialTemplate }: {
       <DialogHeader className="pb-4">
         <div className="flex items-center justify-between">
           <DialogTitle className="text-xl font-semibold">
-            Precificação ({currentStep + 1}/12)
+            Precificação ({currentStep + 1}/10)
           </DialogTitle>
           <Button 
             variant="ghost" 
@@ -147,8 +147,8 @@ function PricingModalContent({ onClose, initialTemplate }: {
           </Button>
           
           <Button 
-            onClick={() => setCurrentStep(Math.min(11, currentStep + 1))}
-            disabled={currentStep === 11}
+            onClick={() => setCurrentStep(Math.min(9, currentStep + 1))}
+            disabled={currentStep === 9}
             className="flex items-center gap-2"
           >
             Próximo
