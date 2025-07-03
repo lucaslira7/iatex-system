@@ -125,8 +125,8 @@ export default function Step3Fabric() {
             step="1"
             min="0"
             max="50"
-            value={formData.wastePercentage ?? ''}
-            onChange={(e) => updateFormData('wastePercentage', e.target.value === '' ? '' : parseFloat(e.target.value) || '')}
+            value={formData.wastePercentage === 0 ? '' : (formData.wastePercentage || '')}
+            onChange={(e) => updateFormData('wastePercentage', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
             placeholder="10"
             className="pr-10"
           />

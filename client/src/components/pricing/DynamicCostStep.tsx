@@ -186,7 +186,7 @@ export default function DynamicCostStep({
                 type="number"
                 step="0.01"
                 min="0"
-                value={newItem.unitValue || ''}
+                value={newItem.unitValue === 0 ? '' : (newItem.unitValue || '')}
                 onChange={(e) => setNewItem({ ...newItem, unitValue: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
               />
@@ -197,7 +197,7 @@ export default function DynamicCostStep({
                 id="quantity"
                 type="number"
                 min="1"
-                value={newItem.quantity}
+                value={newItem.quantity === 0 ? '' : (newItem.quantity || '')}
                 onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value === '' ? 1 : parseInt(e.target.value) || 1 })}
               />
             </div>
@@ -210,8 +210,8 @@ export default function DynamicCostStep({
                 type="number"
                 min="0"
                 max="100"
-                value={newItem.wastePercentage || ''}
-                onChange={(e) => setNewItem({ ...newItem, wastePercentage: parseFloat(e.target.value) || 0 })}
+                value={newItem.wastePercentage === 0 ? '' : (newItem.wastePercentage || '')}
+                onChange={(e) => setNewItem({ ...newItem, wastePercentage: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                 placeholder="0"
               />
             </div>

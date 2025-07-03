@@ -38,8 +38,18 @@ export default function Step8SummaryFixed() {
       const withWaste = cost.unitValue * cost.quantity * (1 + cost.wastePercentage / 100);
       return total + withWaste;
     }, 0) || 0,
-    laborCosts: formData.labor?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
-    fixedCosts: formData.fixedCosts?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
+    
+    // Mão de obra: multiplica pelo total de peças se for modo múltiplo
+    laborCosts: formData.labor?.reduce((total: number, cost: any) => {
+      const costPerPiece = cost.unitValue * cost.quantity;
+      return total + (formData.pricingMode === 'multiple' ? costPerPiece * totalPieces : costPerPiece);
+    }, 0) || 0,
+    
+    // Custos fixos: multiplica pelo total de peças se for modo múltiplo
+    fixedCosts: formData.fixedCosts?.reduce((total: number, cost: any) => {
+      const costPerPiece = cost.unitValue * cost.quantity;
+      return total + (formData.pricingMode === 'multiple' ? costPerPiece * totalPieces : costPerPiece);
+    }, 0) || 0,
     
     // Calcular custo do tecido total
     get fabricTotalCost() {
@@ -264,11 +274,28 @@ export default function Step8SummaryFixed() {
         })) || []
       ];
 
+      // Enviar dados no formato que a API espera
       const requestBody = {
-        template: templateData,
+        modelName: formData.modelName,
+        reference: formData.reference,
+        garmentType: formData.garmentType,
+        description: formData.description || '',
+        imageUrl: formData.imageUrl || '',
+        pricingMode: formData.pricingMode,
+        fabricId: formData.fabricId,
+        fabricConsumption: consumptionPerPiece.toString(),
+        wastePercentage: formData.wastePercentage.toString(),
+        profitMargin: formData.profitMargin.toString(),
+        totalCost: costs.totalCost.toString(),
+        finalPrice: formData.finalPrice.toString(),
         sizes: sizesData,
-        costs: costsData
+        creationCosts: formData.creationCosts || [],
+        supplies: formData.supplies || [],
+        labor: formData.labor || [],
+        fixedCosts: formData.fixedCosts || []
       };
+
+      console.log('Enviando dados para salvar:', requestBody);
 
       const response = await fetch('/api/pricing-templates', {
         method: 'POST',
