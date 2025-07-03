@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 // Lazy load dos componentes de step pesados
 const Step0PricingMode = lazy(() => import('./Step0PricingMode'));
 const Step1GarmentType = lazy(() => import('./Step1GarmentType'));
+const Step1ModelInfoFixed = lazy(() => import('./Step1ModelInfoFixed'));
 const Step2Sizes = lazy(() => import('./Step2Sizes'));
 const Step3Fabric = lazy(() => import('./Step3Fabric'));
 const Step4CreationCosts = lazy(() => import('./Step4CreationCosts'));
@@ -41,13 +42,14 @@ const PricingOptimized: React.FC<PricingOptimizedProps> = ({ currentStep }) => {
     switch (currentStep) {
       case 0: return Step0PricingMode;
       case 1: return Step1GarmentType;
-      case 2: return Step3Fabric;        // Tecido vem antes dos tamanhos
-      case 3: return Step2Sizes;         // Tamanhos vem depois do tecido
-      case 4: return Step4CreationCosts;
-      case 5: return Step5Supplies;
-      case 6: return Step6Labor;
-      case 7: return Step7FixedCosts;
-      case 8: return Step8SummaryFixed;
+      case 2: return Step1ModelInfoFixed;  // Informações detalhadas do modelo
+      case 3: return Step3Fabric;          // Tecido vem antes dos tamanhos
+      case 4: return Step2Sizes;           // Tamanhos vem depois do tecido
+      case 5: return Step4CreationCosts;
+      case 6: return Step5Supplies;
+      case 7: return Step6Labor;
+      case 8: return Step7FixedCosts;
+      case 9: return Step8SummaryFixed;
       default: return Step0PricingMode;
     }
   }, [currentStep]);

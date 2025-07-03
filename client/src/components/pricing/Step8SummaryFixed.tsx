@@ -29,7 +29,7 @@ export default function Step8SummaryFixed() {
 
   const selectedFabric = fabrics.find(f => f.id === formData.fabricId);
 
-  // Cálculos de custos para múltiplas peças
+  // Cálculos de custos corrigidos
   const totalPieces = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
   
   const costs = {
@@ -43,7 +43,6 @@ export default function Step8SummaryFixed() {
       }
     }, 0) || 0,
     
-    // Mão de obra: multiplica pelo total de peças se for modo múltiplo
     laborCosts: formData.labor?.reduce((total: number, cost: any) => {
       const costPerPiece = cost.unitValue * cost.quantity;
       if (formData.pricingMode === 'single') {
@@ -53,7 +52,6 @@ export default function Step8SummaryFixed() {
       }
     }, 0) || 0,
     
-    // Custos fixos: multiplica pelo total de peças se for modo múltiplo
     fixedCosts: formData.fixedCosts?.reduce((total: number, cost: any) => {
       const costPerPiece = cost.unitValue * cost.quantity;
       if (formData.pricingMode === 'single') {
@@ -63,24 +61,17 @@ export default function Step8SummaryFixed() {
       }
     }, 0) || 0,
     
-    // Calcular custo do tecido total
+    // Calcular custo do tecido baseado no peso por tamanho
     get fabricTotalCost() {
-      if (!selectedFabric) return 0;
+      if (!selectedFabric || formData.sizes.length === 0) return 0;
       
-      // Custo por metro do tecido
-      const fabricCostPerMeter = Number(selectedFabric.pricePerMeter || 0);
+      const pricePerKg = parseFloat(selectedFabric.pricePerKg?.toString() || '0');
+      const wasteMultiplier = 1 + (formData.wastePercentage / 100);
       
-      // Consumo total considerando desperdício
-      const totalConsumption = formData.fabricConsumption * (1 + formData.wastePercentage / 100);
-      
-      if (formData.pricingMode === 'single') {
-        // Para peça única: consumo total × preço por metro
-        return totalConsumption * fabricCostPerMeter;
-      } else {
-        // Para múltiplas peças: consumo por peça × quantidade × preço por metro
-        const totalPieces = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
-        return totalConsumption * totalPieces * fabricCostPerMeter;
-      }
+      return formData.sizes.reduce((total, size) => {
+        const costPerPiece = (size.weight / 1000) * pricePerKg * wasteMultiplier;
+        return total + (costPerPiece * size.quantity);
+      }, 0);
     },
     
     get totalCost() {
@@ -171,7 +162,7 @@ export default function Step8SummaryFixed() {
     const newFinalPrice = parseFloat(tempFinalPrice) || 0;
     if (newFinalPrice > 0 && costs.totalCost > 0) {
       const newProfitAmount = newFinalPrice - costs.totalCost;
-      const newProfitMargin = (newProfitAmount / newFinalPrice) * 100;
+      const newProfitMargin = (newProfitAmount / costs.totalCost) * 100; // Margem sobre o custo (markup)
       
       updateFormData('finalPrice', newFinalPrice);
       updateFormData('profitMargin', Math.max(0, newProfitMargin));
@@ -488,7 +479,10 @@ export default function Step8SummaryFixed() {
                     R$ {formData.finalPrice.toFixed(2)}
                   </div>
                   <div className="text-sm text-gray-600">
-                    Margem: {formData.profitMargin.toFixed(1)}% | Lucro: R$ {(formData.finalPrice - costs.totalCost).toFixed(2)}
+                    Markup: {formData.profitMargin.toFixed(1)}% | Lucro: R$ {(formData.finalPrice - costs.totalCost).toFixed(2)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Margem sobre vendas: {costs.totalCost > 0 ? (((formData.finalPrice - costs.totalCost) / formData.finalPrice) * 100).toFixed(1) : 0}%
                   </div>
                   <Button 
                     onClick={() => {
@@ -819,33 +813,40 @@ export default function Step8SummaryFixed() {
         </Button>
       </div>
 
-      {/* Informações do Modelo */}
-      <Card>
+      {/* Card Explicativo dos Cálculos */}
+      <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200">
         <CardHeader>
-          <CardTitle>Informações do Modelo</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-amber-700 text-lg">
+            <Info className="h-5 w-5" />
+            Como Funcionam os Cálculos
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <strong>Nome:</strong> {formData.modelName}
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-800">Markup (Margem sobre Custo):</h4>
+              <p className="text-gray-700">
+                <strong>Fórmula:</strong> (Preço de Venda - Custo) ÷ Custo × 100%
+              </p>
+              <p className="text-gray-600">
+                Se o custo é R$ 10 e o preço R$ 14, o markup é 40%
+              </p>
             </div>
-            <div>
-              <strong>Referência:</strong> {formData.reference}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-800">Margem de Lucro (sobre Vendas):</h4>
+              <p className="text-gray-700">
+                <strong>Fórmula:</strong> (Preço de Venda - Custo) ÷ Preço de Venda × 100%
+              </p>
+              <p className="text-gray-600">
+                Se o custo é R$ 10 e o preço R$ 14, a margem é 28,6%
+              </p>
             </div>
-            <div>
-              <strong>Tipo:</strong> {formData.garmentType}
-            </div>
-            <div>
-              <strong>Total de Peças:</strong> {totalPieces}
-            </div>
-            <div>
-              <strong>Peso Total:</strong> {(totalWeight / 1000).toFixed(2)}kg
-            </div>
-            {selectedFabric && (
-              <div>
-                <strong>Tecido:</strong> {selectedFabric.name}
-              </div>
-            )}
+          </div>
+          <div className="p-3 bg-white rounded border-l-4 border-amber-400">
+            <p className="text-sm text-gray-700">
+              <strong>💡 Dica:</strong> Digite qualquer preço final desejado no campo "Preço Final" e o sistema 
+              calculará automaticamente tanto o <strong>markup</strong> quanto a <strong>margem de lucro</strong> para você.
+            </p>
           </div>
         </CardContent>
       </Card>
