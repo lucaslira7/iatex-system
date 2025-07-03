@@ -638,7 +638,7 @@ export default function Step8SummaryFixed() {
               <strong>Tipo:</strong> {formData.garmentType}
             </div>
             <div>
-              <strong>Total de Peças:</strong> {totalQuantity}
+              <strong>Total de Peças:</strong> {totalPieces}
             </div>
             <div>
               <strong>Peso Total:</strong> {(totalWeight / 1000).toFixed(2)}kg

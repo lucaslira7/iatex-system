@@ -42,10 +42,13 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
   const [cards, setCards] = useState<DashboardCard[]>([]);
   const { toast } = useToast();
 
-  // Fetch dashboard metrics
+  // Fetch dashboard metrics com cache otimizado
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['/api/dashboard/metrics'],
-    refetchInterval: 30000
+    staleTime: 60 * 1000, // 1 minuto
+    gcTime: 3 * 60 * 1000, // 3 minutos em cache
+    refetchInterval: 2 * 60 * 1000, // Refetch a cada 2 minutos
+    refetchOnWindowFocus: false,
   });
 
   // Initialize default cards

@@ -16,6 +16,22 @@ import { pwaManager } from "@/utils/pwa";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Preload system data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Pré-carrega dados do sistema que são usados frequentemente
+      queryClient.prefetchQuery({
+        queryKey: ['/api/garment-types'],
+        staleTime: 10 * 60 * 1000, // 10 minutos
+      });
+      
+      queryClient.prefetchQuery({
+        queryKey: ['/api/cost-categories'],
+        staleTime: 10 * 60 * 1000,
+      });
+    }
+  }, [isAuthenticated]);
+
   return (
     <Switch>
       <Route path="/landing" component={LandingPage} />

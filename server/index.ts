@@ -1,25 +1,52 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import compression from "compression";
 
 const app = express();
-app.use(express.json({ limit: '50mb' })); // Aumentar limite para aceitar imagens base64
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+// Aplicar compressão gzip para todas as respostas
+app.use(compression({
+  level: 6, // Nível médio de compressão (balance entre velocidade e tamanho)
+  threshold: 1024, // Comprimir apenas respostas > 1KB
+  filter: (req: Request, res: Response) => {
+    // Não comprimir imagens que já estão comprimidas
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+app.use(express.json({ limit: '10mb' })); // Reduzido de 50mb para 10mb
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Servir arquivos PWA
 app.use(express.static('public'));
 
-// Headers PWA
+// Headers PWA e Cache
 app.use((req, res, next) => {
   // Service Worker precisa ser servido com Content-Type correto
   if (req.path === '/sw.js') {
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache'); // SW sempre fresh
   }
   
   // Manifest.json
   if (req.path === '/manifest.json') {
     res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache por 1 dia
+  }
+  
+  // Cache para recursos estáticos
+  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache por 1 ano
+  }
+  
+  // Cache para APIs específicas (dados menos dinâmicos)
+  if (req.path.match(/\/api\/(garment-types|cost-categories|suppliers)/)) {
+    res.setHeader('Cache-Control', 'public, max-age=300'); // Cache por 5 minutos
   }
   
   next();

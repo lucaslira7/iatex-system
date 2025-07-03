@@ -48,6 +48,7 @@ import {
   type PricingTemplateCost,
   type InsertPricingTemplateCost,
 } from "@shared/schema";
+import { CacheManager } from "./cache";
 import { db } from "./db";
 import { eq, desc, sql, and, count, sum } from "drizzle-orm";
 
@@ -142,12 +143,22 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Fabric operations
+  // Fabric operations (otimizado com cache)
   async getFabrics(): Promise<Fabric[]> {
-    return await db
+    const cacheKey = 'fabrics';
+    const cached = CacheManager.getStaticData(cacheKey);
+    
+    if (cached) {
+      return cached;
+    }
+
+    const result = await db
       .select()
       .from(fabrics)
       .orderBy(desc(fabrics.createdAt));
+    
+    CacheManager.setStaticData(cacheKey, result);
+    return result;
   }
 
   async getFabric(id: number): Promise<Fabric | undefined> {
@@ -160,6 +171,7 @@ export class DatabaseStorage implements IStorage {
       .insert(fabrics)
       .values(fabric)
       .returning();
+    CacheManager.invalidateRelated('fabrics');
     return newFabric;
   }
 
@@ -169,23 +181,33 @@ export class DatabaseStorage implements IStorage {
       .set({ ...fabric, updatedAt: new Date() })
       .where(eq(fabrics.id, id))
       .returning();
+    CacheManager.invalidateRelated('fabrics');
     return updatedFabric;
   }
 
   async deleteFabric(id: number): Promise<void> {
     await db.delete(fabrics).where(eq(fabrics.id, id));
+    CacheManager.invalidateRelated('fabrics');
   }
 
-  // Model operations
+  // Model operations (otimizado com cache)
   async getModels(): Promise<Model[]> {
+    const cacheKey = 'models';
+    const cached = CacheManager.getStaticData(cacheKey);
+    
+    if (cached) {
+      return cached;
+    }
+
     const result = await db.query.models.findMany({
       with: {
         fabric: true,
         garmentType: true,
-        pricingTemplates: true, // Incluir templates de precificação relacionados
       },
       orderBy: (models, { desc }) => [desc(models.createdAt)],
     });
+    
+    CacheManager.setStaticData(cacheKey, result);
     return result;
   }
 
@@ -308,24 +330,28 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(costCategories);
   }
 
-  // Dashboard metrics
+  // Dashboard metrics (otimizado com cache)
   async getDashboardMetrics() {
-    const [fabricCount] = await db.select({ count: count() }).from(fabrics);
-    const [lowStockCount] = await db
-      .select({ count: count() })
-      .from(fabrics)
-      .where(sql`${fabrics.currentStock} < 20`);
+    const cacheKey = 'dashboard-metrics';
+    const cached = CacheManager.getMetrics(cacheKey);
     
+    if (cached) {
+      return cached;
+    }
+
+    // Consulta otimizada em uma única query quando possível
+    const [fabricMetrics] = await db
+      .select({
+        totalCount: count(),
+        lowStockCount: sql<number>`COUNT(CASE WHEN ${fabrics.currentStock} < 20 THEN 1 END)`,
+        stockValue: sql<number>`COALESCE(SUM(${fabrics.currentStock} * ${fabrics.pricePerMeter}), 0)`
+      })
+      .from(fabrics);
+
     const [activeOrderCount] = await db
       .select({ count: count() })
       .from(orders)
       .where(eq(orders.status, "approved"));
-
-    const [stockValue] = await db
-      .select({ 
-        total: sql<number>`COALESCE(SUM(${fabrics.currentStock} * ${fabrics.pricePerMeter}), 0)` 
-      })
-      .from(fabrics);
 
     const recentActivities = await db
       .select()
@@ -333,13 +359,17 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(activityLog.createdAt))
       .limit(10);
 
-    return {
-      totalFabrics: fabricCount.count,
-      lowStockFabrics: lowStockCount.count,
+    const result = {
+      totalFabrics: fabricMetrics.totalCount,
+      lowStockFabrics: fabricMetrics.lowStockCount,
       activeOrders: activeOrderCount.count,
-      totalStockValue: stockValue.total || 0,
+      totalStockValue: fabricMetrics.stockValue || 0,
       recentActivities,
     };
+
+    // Cache o resultado
+    CacheManager.setMetrics(cacheKey, result);
+    return result;
   }
 
   // Activity logging
