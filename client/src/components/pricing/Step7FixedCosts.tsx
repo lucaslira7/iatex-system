@@ -3,46 +3,53 @@ import DynamicCostStep from './DynamicCostStep';
 
 const FIXED_COSTS_SUGGESTIONS = [
   {
-    description: 'Energia elétrica (rateio)',
+    description: 'Energia elétrica (rateio por peça)',
     unitValue: 0.25,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor do gasto mensal/peças produzidas'
   },
   {
-    description: 'Aluguel (rateio)',
+    description: 'Aluguel (rateio por peça)',
     unitValue: 0.50,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor do aluguel mensal/peças produzidas'
   },
   {
-    description: 'Manutenção equipamentos',
+    description: 'Manutenção equipamentos (rateio)',
     unitValue: 0.15,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor gasto mensal com manutenção/peças produzidas'
   },
   {
-    description: 'Despesas administrativas',
+    description: 'Despesas administrativas (rateio)',
     unitValue: 0.30,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Despesas mensais administrativas/peças produzidas'
   },
   {
-    description: 'Tributos e impostos',
+    description: 'Tributos e impostos (rateio)',
     unitValue: 0.40,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Impostos mensais/peças produzidas'
   },
   {
-    description: 'Depreciação equipamentos',
+    description: 'Depreciação equipamentos (rateio)',
     unitValue: 0.20,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Depreciação mensal/peças produzidas'
   },
   {
-    description: 'Seguro produção',
+    description: 'Seguro produção (rateio)',
     unitValue: 0.10,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Seguro mensal/peças produzidas'
   },
   {
     description: 'Materiais de limpeza',

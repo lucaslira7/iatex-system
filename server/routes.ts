@@ -327,12 +327,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl: formData.imageUrl || null,
         pricingMode: formData.pricingMode,
         fabricId: formData.fabricId,
-        fabricConsumption: formData.fabricConsumption.toString(),
-        fabricCost: formData.fabricCost?.toString() || '0',
-        wastePercentage: formData.wastePercentage.toString(),
-        profitMargin: formData.profitMargin.toString(),
-        totalCost: formData.totalCost.toString(),
-        finalPrice: formData.finalPrice.toString(),
+        fabricConsumption: formData.fabricConsumption ? formData.fabricConsumption.toString() : '0',
+        fabricCost: formData.fabricCost ? formData.fabricCost.toString() : '0',
+        wastePercentage: formData.wastePercentage ? formData.wastePercentage.toString() : '0',
+        profitMargin: formData.profitMargin ? formData.profitMargin.toString() : '0',
+        totalCost: formData.totalCost ? formData.totalCost.toString() : '0',
+        finalPrice: formData.finalPrice ? formData.finalPrice.toString() : '0',
       };
 
       // Converter tamanhos

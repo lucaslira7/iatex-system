@@ -29,7 +29,9 @@ export default function Step8SummaryFixed() {
 
   const selectedFabric = fabrics.find(f => f.id === formData.fabricId);
 
-  // Cálculos de custos
+  // Cálculos de custos para múltiplas peças
+  const totalPieces = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
+  
   const costs = {
     creationCosts: formData.creationCosts?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
     suppliesCosts: formData.supplies?.reduce((total: number, cost: any) => {
@@ -38,22 +40,63 @@ export default function Step8SummaryFixed() {
     }, 0) || 0,
     laborCosts: formData.labor?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
     fixedCosts: formData.fixedCosts?.reduce((total: number, cost: any) => total + (cost.unitValue * cost.quantity), 0) || 0,
-    get totalCost() {
-      return this.creationCosts + this.suppliesCosts + this.laborCosts + this.fixedCosts;
+    
+    // Calcular custo do tecido total
+    get fabricTotalCost() {
+      return formData.sizes.reduce((total, size) => {
+        const fabricCostPerGram = selectedFabric ? Number(selectedFabric.pricePerMeter || 0) / Number(selectedFabric.gramWeight || 1) : 0;
+        const fabricCostWithWaste = (size.weight * fabricCostPerGram) * (1 + formData.wastePercentage / 100);
+        return total + (fabricCostWithWaste * size.quantity);
+      }, 0);
     },
+    
+    get totalCost() {
+      if (formData.pricingMode === 'multiple') {
+        // Para múltiplas peças: soma custos fixos (criação) + custos variáveis por peça
+        const perPieceCosts = this.suppliesCosts + this.laborCosts + this.fixedCosts + this.fabricTotalCost;
+        return this.creationCosts + perPieceCosts;
+      } else {
+        return this.creationCosts + this.suppliesCosts + this.laborCosts + this.fixedCosts + this.fabricTotalCost;
+      }
+    },
+    
     get finalPrice() {
       return formData.finalPrice;
     },
+    
     get pricePerUnit() {
-      const totalQuantity = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
-      return totalQuantity > 0 ? this.finalPrice / totalQuantity : 0;
+      return totalPieces > 0 ? this.totalCost / totalPieces : 0;
+    },
+    
+    get finalPricePerUnit() {
+      return totalPieces > 0 ? this.finalPrice / totalPieces : 0;
+    },
+    
+    // Custos divididos por categoria (valores totais e por peça)
+    get creationCostPerUnit() {
+      return totalPieces > 0 ? this.creationCosts / totalPieces : 0;
+    },
+    
+    get suppliesCostPerUnit() {
+      return totalPieces > 0 ? this.suppliesCosts / totalPieces : 0;
+    },
+    
+    get laborCostPerUnit() {
+      return totalPieces > 0 ? this.laborCosts / totalPieces : 0;
+    },
+    
+    get fixedCostPerUnit() {
+      return totalPieces > 0 ? this.fixedCosts / totalPieces : 0;
+    },
+    
+    get fabricCostPerUnit() {
+      return totalPieces > 0 ? this.fabricTotalCost / totalPieces : 0;
     }
   };
 
   // Calcular totais
-  const totalQuantity = formData.sizes.reduce((sum, size) => sum + size.quantity, 0);
   const totalWeight = formData.sizes.reduce((sum, size) => sum + (size.quantity * size.weight), 0);
-  const consumptionPerPiece = totalWeight > 0 ? formData.fabricConsumption / totalQuantity : 0;
+  const consumptionPerPiece = totalWeight > 0 ? formData.fabricConsumption / totalPieces : 0;
 
   useEffect(() => {
     updateFormData('totalCost', costs.totalCost);
@@ -348,6 +391,115 @@ export default function Step8SummaryFixed() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Breakdown de Custos Destrinchado */}
+      {formData.pricingMode === 'multiple' && totalPieces > 0 && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardHeader>
+            <CardTitle className="text-yellow-800 flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Resumo Destrinchado - Múltiplas Peças ({totalPieces} peças)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Valores Totais */}
+              <div>
+                <h4 className="font-semibold text-lg mb-4 text-yellow-800">📊 Valores Totais</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Custos de Criação</span>
+                    <span className="font-bold text-blue-600">R$ {costs.creationCosts.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Tecido Total</span>
+                    <span className="font-bold text-green-600">R$ {costs.fabricTotalCost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Aviamentos Total</span>
+                    <span className="font-bold text-orange-600">R$ {costs.suppliesCosts.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Mão de Obra Total</span>
+                    <span className="font-bold text-purple-600">R$ {costs.laborCosts.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Custos Fixos Total</span>
+                    <span className="font-bold text-gray-600">R$ {costs.fixedCosts.toFixed(2)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex justify-between items-center p-3 bg-red-50 rounded border-2 border-red-200">
+                    <span className="font-bold text-red-700">CUSTO TOTAL:</span>
+                    <span className="font-bold text-xl text-red-700">R$ {costs.totalCost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-green-50 rounded border-2 border-green-200">
+                    <span className="font-bold text-green-700">PREÇO FINAL:</span>
+                    <span className="font-bold text-xl text-green-700">R$ {costs.finalPrice.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Valores Por Peça */}
+              <div>
+                <h4 className="font-semibold text-lg mb-4 text-yellow-800">🔢 Valores Por Peça</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Criação (rateio)</span>
+                    <span className="font-bold text-blue-600">R$ {costs.creationCostPerUnit.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Tecido por peça</span>
+                    <span className="font-bold text-green-600">R$ {costs.fabricCostPerUnit.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Aviamentos por peça</span>
+                    <span className="font-bold text-orange-600">R$ {costs.suppliesCostPerUnit.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Mão de obra por peça</span>
+                    <span className="font-bold text-purple-600">R$ {costs.laborCostPerUnit.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-white rounded border">
+                    <span className="text-sm font-medium">Fixos por peça</span>
+                    <span className="font-bold text-gray-600">R$ {costs.fixedCostPerUnit.toFixed(2)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex justify-between items-center p-3 bg-red-50 rounded border-2 border-red-200">
+                    <span className="font-bold text-red-700">CUSTO POR PEÇA:</span>
+                    <span className="font-bold text-xl text-red-700">R$ {costs.pricePerUnit.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-green-50 rounded border-2 border-green-200">
+                    <span className="font-bold text-green-700">PREÇO POR PEÇA:</span>
+                    <span className="font-bold text-xl text-green-700">R$ {costs.finalPricePerUnit.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Breakdown por Tamanho */}
+            <div className="mt-6">
+              <h4 className="font-semibold text-lg mb-4 text-yellow-800">👕 Preço por Tamanho</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {formData.sizes.map((size) => {
+                  const fabricCostPerGram = selectedFabric ? Number(selectedFabric.pricePerMeter || 0) / Number(selectedFabric.gramWeight || 1) : 0;
+                  const fabricCostWithWaste = (size.weight * fabricCostPerGram) * (1 + formData.wastePercentage / 100);
+                  const sizeUnitCost = costs.pricePerUnit + (fabricCostWithWaste - costs.fabricCostPerUnit);
+                  const sizeFinalPrice = costs.finalPricePerUnit + (fabricCostWithWaste - costs.fabricCostPerUnit);
+                  
+                  return (
+                    <div key={size.size} className="p-3 bg-white rounded border text-center">
+                      <div className="font-bold text-lg text-blue-600">{size.size}</div>
+                      <div className="text-sm text-gray-600">{size.quantity} peças</div>
+                      <div className="text-sm font-medium text-red-600">Custo: R$ {sizeUnitCost.toFixed(2)}</div>
+                      <div className="text-sm font-bold text-green-600">Preço: R$ {sizeFinalPrice.toFixed(2)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Breakdown de Custos Detalhado */}
       <Card>

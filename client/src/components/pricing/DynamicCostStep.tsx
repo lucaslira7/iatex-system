@@ -24,12 +24,14 @@ interface DynamicCostStepProps {
     unitValue: number;
     quantity: number;
     wastePercentage: number;
+    helper?: string;
   }>;
   singleSuggestions?: Array<{
     description: string;
     unitValue: number;
     quantity: number;
     wastePercentage: number;
+    helper?: string;
   }>;
   icon: React.ReactNode;
 }
@@ -142,6 +144,7 @@ export default function DynamicCostStep({
                   key={index}
                   onClick={() => addSuggestion(suggestion)}
                   className="text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors"
+                  title={suggestion.helper || ''}
                 >
                   <div className="font-medium text-sm">{suggestion.description}</div>
                   <div className="text-xs text-gray-500">
@@ -150,6 +153,11 @@ export default function DynamicCostStep({
                     <div className="font-medium text-green-600">
                       Total: R$ {displayTotal.toFixed(2)}
                     </div>
+                    {suggestion.helper && (
+                      <div className="text-xs text-blue-600 mt-1 italic">
+                        💡 {suggestion.helper}
+                      </div>
+                    )}
                   </div>
                 </button>
               );
@@ -179,7 +187,7 @@ export default function DynamicCostStep({
                 step="0.01"
                 min="0"
                 value={newItem.unitValue || ''}
-                onChange={(e) => setNewItem({ ...newItem, unitValue: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setNewItem({ ...newItem, unitValue: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
               />
             </div>
@@ -190,7 +198,7 @@ export default function DynamicCostStep({
                 type="number"
                 min="1"
                 value={newItem.quantity}
-                onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value === '' ? 1 : parseInt(e.target.value) || 1 })}
               />
             </div>
           </div>

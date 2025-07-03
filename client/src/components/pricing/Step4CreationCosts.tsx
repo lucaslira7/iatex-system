@@ -1,43 +1,49 @@
 import { PenTool } from 'lucide-react';
 import DynamicCostStep from './DynamicCostStep';
 
-// Sugestões para múltiplas peças (valores normais)
+// Sugestões para múltiplas peças (VALORES TOTAIS que serão divididos entre as peças)
 const CREATION_SUGGESTIONS = [
   {
-    description: 'Modelagem',
+    description: 'Modelagem (valor total)',
     unitValue: 150.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Custo total único que será dividido entre todas as peças'
   },
   {
-    description: 'Piloto (Prova)',
+    description: 'Piloto/Prova (valor total)',
     unitValue: 80.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Custo total único que será dividido entre todas as peças'
   },
   {
-    description: 'Graduação de Tamanhos',
+    description: 'Graduação de Tamanhos (valor total)',
     unitValue: 100.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Custo total único que será dividido entre todas as peças'
   },
   {
-    description: 'Consultoria Técnica',
+    description: 'Consultoria Técnica (valor total)',
     unitValue: 200.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Custo total único que será dividido entre todas as peças'
   },
   {
-    description: 'Design/Arte',
+    description: 'Design/Arte (valor total)',
     unitValue: 120.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Custo total único que será dividido entre todas as peças'
   },
   {
-    description: 'Ficha Técnica',
+    description: 'Ficha Técnica (valor total)',
     unitValue: 50.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Custo total único que será dividido entre todas as peças'
   },
 ];
 

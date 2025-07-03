@@ -185,7 +185,7 @@ export default function Step2Sizes() {
                           type="number"
                           placeholder="Ex: 10"
                           value={getSizeQuantity(size) || ''}
-                          onChange={(e) => updateSizeQuantity(size, parseInt(e.target.value) || 1)}
+                          onChange={(e) => updateSizeQuantity(size, e.target.value === '' ? 0 : parseInt(e.target.value) || 1)}
                           className="mt-1"
                           min="0"
                         />
@@ -267,7 +267,7 @@ export default function Step2Sizes() {
                         type="number"
                         placeholder="Ex: 250"
                         value={sizeData.weight || ''}
-                        onChange={(e) => updateSizeWeight(sizeData.size, parseInt(e.target.value) || 0)}
+                        onChange={(e) => updateSizeWeight(sizeData.size, e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                         className="mt-1"
                       />
                     </div>

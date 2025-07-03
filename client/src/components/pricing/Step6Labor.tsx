@@ -3,46 +3,53 @@ import DynamicCostStep from './DynamicCostStep';
 
 const LABOR_SUGGESTIONS = [
   {
-    description: 'Costura principal',
+    description: 'Costura principal (valor por peça)',
     unitValue: 3.20,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça costurada'
   },
   {
-    description: 'Overloque',
+    description: 'Overloque (valor por peça)',
     unitValue: 2.50,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça overlocada'
   },
   {
-    description: 'Acabamento/Revisão',
+    description: 'Acabamento/Revisão (valor por peça)',
     unitValue: 1.50,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça acabada'
   },
   {
-    description: 'Aplicação de etiquetas',
+    description: 'Aplicação de etiquetas (valor por peça)',
     unitValue: 0.80,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça etiquetada'
   },
   {
-    description: 'Corte',
+    description: 'Corte (valor por peça)',
     unitValue: 1.20,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça cortada'
   },
   {
-    description: 'Passadoria',
+    description: 'Passadoria (valor por peça)',
     unitValue: 1.00,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça passada'
   },
   {
-    description: 'Embalagem',
+    description: 'Embalagem (valor por peça)',
     unitValue: 0.50,
     quantity: 1,
     wastePercentage: 0,
+    helper: 'Valor pago por peça embalada'
   },
   {
     description: 'Controle de Qualidade',
