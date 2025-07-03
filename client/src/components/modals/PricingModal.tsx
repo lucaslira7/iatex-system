@@ -22,6 +22,9 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
 
   // Carregar dados do template inicial
   useEffect(() => {
+    // Sempre resetar o formulário primeiro para evitar contaminação de dados
+    resetForm();
+    
     if (initialTemplate && initialTemplate.id) {
       // Carregar todos os dados do template usando a nova função (apenas se tem ID válido)
       loadTemplateData(initialTemplate.id).catch(error => {
@@ -48,6 +51,25 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
       updateFormData('profitMargin', parseFloat(initialTemplate.profitMargin as any) || 40);
       updateFormData('totalCost', parseFloat(initialTemplate.totalCost as any) || 0);
       updateFormData('finalPrice', parseFloat(initialTemplate.finalPrice as any) || 0);
+      
+      // Carregar tamanhos se disponíveis
+      if ((initialTemplate as any).sizes && Array.isArray((initialTemplate as any).sizes)) {
+        updateFormData('sizes', (initialTemplate as any).sizes);
+      }
+      
+      // Carregar custos por categoria se disponíveis
+      if ((initialTemplate as any).costs && Array.isArray((initialTemplate as any).costs)) {
+        const costs = (initialTemplate as any).costs;
+        const creationCosts = costs.filter((c: any) => c.category === 'creation');
+        const supplies = costs.filter((c: any) => c.category === 'supplies');
+        const labor = costs.filter((c: any) => c.category === 'labor');
+        const fixedCosts = costs.filter((c: any) => c.category === 'fixed');
+        
+        if (creationCosts.length > 0) updateFormData('creationCosts', creationCosts);
+        if (supplies.length > 0) updateFormData('supplies', supplies);
+        if (labor.length > 0) updateFormData('labor', labor);
+        if (fixedCosts.length > 0) updateFormData('fixedCosts', fixedCosts);
+      }
       updateFormData('fabricConsumption', typeof initialTemplate.fabricConsumption === 'string' ? parseFloat(initialTemplate.fabricConsumption) : (initialTemplate.fabricConsumption || 0));
       updateFormData('wastePercentage', typeof initialTemplate.wastePercentage === 'string' ? parseFloat(initialTemplate.wastePercentage) : (initialTemplate.wastePercentage || 20));
       updateFormData('profitMargin', typeof initialTemplate.profitMargin === 'string' ? parseFloat(initialTemplate.profitMargin) : (initialTemplate.profitMargin || 50));

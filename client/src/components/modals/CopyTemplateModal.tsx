@@ -11,9 +11,10 @@ interface CopyTemplateModalProps {
   onClose: () => void;
   template: PricingTemplate | null;
   onConfirm: (newName: string, newReference: string) => void;
+  isLoading?: boolean;
 }
 
-export function CopyTemplateModal({ isOpen, onClose, template, onConfirm }: CopyTemplateModalProps) {
+export function CopyTemplateModal({ isOpen, onClose, template, onConfirm, isLoading = false }: CopyTemplateModalProps) {
   const [newName, setNewName] = useState('');
   const [newReference, setNewReference] = useState('');
 
@@ -150,11 +151,11 @@ export function CopyTemplateModal({ isOpen, onClose, template, onConfirm }: Copy
             </Button>
             <Button 
               onClick={handleConfirm}
-              disabled={!newName.trim() || !newReference.trim()}
+              disabled={!newName.trim() || !newReference.trim() || isLoading}
               className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
               <Copy className="h-4 w-4 mr-2" />
-              Criar Cópia
+              {isLoading ? "Carregando..." : "Criar Cópia"}
             </Button>
           </div>
         </div>

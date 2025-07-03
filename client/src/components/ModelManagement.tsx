@@ -34,6 +34,7 @@ export default function ModelManagement() {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [copyingTemplate, setCopyingTemplate] = useState<PricingTemplate | null>(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [isCopyingTemplate, setIsCopyingTemplate] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const { toast } = useToast();
@@ -87,30 +88,66 @@ export default function ModelManagement() {
     setShowCopyModal(true);
   };
 
-  const handleConfirmCopy = (newName: string, newReference: string) => {
+  const handleConfirmCopy = async (newName: string, newReference: string) => {
     if (copyingTemplate) {
-      // Criar template para cópia com dados essenciais apenas (sem ID, createdAt, updatedAt)
-      const templateForCopy = {
-        modelName: newName,
-        reference: newReference,
-        garmentType: copyingTemplate.garmentType,
-        description: copyingTemplate.description,
-        imageUrl: copyingTemplate.imageUrl,
-        pricingMode: copyingTemplate.pricingMode,
-        fabricId: copyingTemplate.fabricId,
-        fabricConsumption: copyingTemplate.fabricConsumption,
-        wastePercentage: copyingTemplate.wastePercentage,
-        profitMargin: copyingTemplate.profitMargin,
-        totalCost: copyingTemplate.totalCost,
-        finalPrice: copyingTemplate.finalPrice
-      };
-      
-      setEditingTemplate(templateForCopy);
-      setShowPricingModal(true);
-      toast({
-        title: "Template copiado",
-        description: "Template carregado para edição com novo nome e referência",
-      });
+      setIsCopyingTemplate(true);
+      try {
+        // Carregar dados completos do template original
+        const response = await fetch(`/api/pricing-templates/${copyingTemplate.id}/details`);
+        if (!response.ok) throw new Error('Failed to fetch template details');
+        
+        const data = await response.json();
+        const { template, sizes, costs } = data;
+        
+        // Criar template para cópia com TODOS os dados
+        const templateForCopy = {
+          // Novos dados
+          modelName: newName,
+          reference: newReference,
+          // Dados básicos do template original
+          garmentType: template.garmentType,
+          description: template.description,
+          imageUrl: template.imageUrl,
+          pricingMode: template.pricingMode,
+          fabricId: template.fabricId,
+          fabricConsumption: template.fabricConsumption,
+          wastePercentage: template.wastePercentage,
+          profitMargin: template.profitMargin,
+          totalCost: template.totalCost,
+          finalPrice: template.finalPrice,
+          // Dados detalhados
+          sizes: sizes.map((size: any) => ({
+            size: size.size,
+            quantity: parseInt(size.quantity),
+            weight: parseFloat(size.weight)
+          })),
+          costs: costs.map((cost: any) => ({
+            category: cost.category,
+            description: cost.description,
+            unitValue: parseFloat(cost.unitValue),
+            quantity: parseFloat(cost.quantity),
+            wastePercentage: parseFloat(cost.wastePercentage || 0),
+            total: parseFloat(cost.total)
+          }))
+        };
+        
+        setEditingTemplate(templateForCopy);
+        setShowCopyModal(false);
+        setShowPricingModal(true);
+        toast({
+          title: "Template copiado",
+          description: "Template carregado com todos os dados para edição",
+        });
+      } catch (error) {
+        console.error('Erro ao copiar template:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar dados do template para cópia",
+          variant: "destructive",
+        });
+      } finally {
+        setIsCopyingTemplate(false);
+      }
     }
   };
 
@@ -522,6 +559,7 @@ export default function ModelManagement() {
         onClose={() => setShowCopyModal(false)}
         template={copyingTemplate}
         onConfirm={handleConfirmCopy}
+        isLoading={isCopyingTemplate}
       />
     </main>
   );
