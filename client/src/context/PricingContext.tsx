@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { usePricingCache } from '@/hooks/usePricingCache';
+import { usePricingPreloader } from '@/hooks/usePricingPreloader';
 
 export interface PricingFormData {
   // Etapa 0 - Modalidade de Precificação
@@ -138,8 +140,10 @@ const PricingContext = createContext<PricingContextType | undefined>(undefined);
 export function PricingProvider({ children }: { children: ReactNode }) {
   const [formData, setFormData] = useState<PricingFormData>(defaultFormData);
   const [currentStep, setCurrentStep] = useState(0);
+  const { saveToCache, getFromCache, clearCache } = usePricingCache();
+  const { preloadStepData } = usePricingPreloader();
 
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = useCallback((field: string, value: any) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       
@@ -148,17 +152,25 @@ export function PricingProvider({ children }: { children: ReactNode }) {
         updated.reference = generateReference(value, prev.reference);
       }
       
-      // Auto-save to localStorage
-      localStorage.setItem('ia-tex-pricing-data', JSON.stringify(updated));
+      // Cache inteligente apenas para campos importantes
+      if (['fabricId', 'garmentType', 'sizes', 'pricingMode'].includes(field)) {
+        saveToCache(updated, `step_${currentStep}`);
+      }
+      
       return updated;
     });
-  };
+  }, [currentStep, saveToCache]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData(defaultFormData);
-    setCurrentStep(1);
-    localStorage.removeItem('ia-tex-pricing-data');
-  };
+    setCurrentStep(0);
+    clearCache(); // Limpa cache otimizado
+  }, [clearCache]);
+
+  // Pré-carrega dados quando step muda
+  useEffect(() => {
+    preloadStepData(currentStep);
+  }, [currentStep, preloadStepData]);
 
   const saveToLocalStorage = () => {
     localStorage.setItem('ia-tex-pricing-data', JSON.stringify(formData));

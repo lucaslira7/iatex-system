@@ -3,15 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, X } from "lucide-react";
 import { useEffect } from "react";
 import { PricingProvider, usePricing } from "@/context/PricingContext";
-import Step0PricingMode from "@/components/pricing/Step0PricingMode";
-import Step1GarmentType from "@/components/pricing/Step1GarmentType";
-import Step2Sizes from "@/components/pricing/Step2Sizes";
-import Step3Fabric from "@/components/pricing/Step3Fabric";
-import Step4CreationCosts from "@/components/pricing/Step4CreationCosts";
-import Step5Supplies from "@/components/pricing/Step5Supplies";
-import Step6Labor from "@/components/pricing/Step6Labor";
-import Step7FixedCosts from "@/components/pricing/Step7FixedCosts";
-import Step8SummaryFixed from "@/components/pricing/Step8SummaryFixed";
+import PricingOptimized from "@/components/pricing/PricingOptimized";
 import type { PricingTemplate } from "@shared/schema";
 
 interface PricingModalProps {
@@ -124,28 +116,7 @@ function PricingModalContent({ onClose, initialTemplate }: { onClose: () => void
   };
 
   const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return <Step0PricingMode />;
-      case 1:
-        return <Step1GarmentType />;
-      case 2:
-        return <Step3Fabric />;
-      case 3:
-        return <Step2Sizes />;
-      case 4:
-        return <Step4CreationCosts />;
-      case 5:
-        return <Step5Supplies />;
-      case 6:
-        return <Step6Labor />;
-      case 7:
-        return <Step7FixedCosts />;
-      case 8:
-        return <Step8SummaryFixed />;
-      default:
-        return <Step0PricingMode />;
-    }
+    return <PricingOptimized currentStep={currentStep} />;
   };
 
   return (
