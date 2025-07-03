@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import PricingModal from "./modals/PricingModal";
+import PricingModalSimple from "./pricing/PricingModalSimple";
 import TemplateSummaryModal from "./modals/TemplateSummaryModal";
 import { CopyTemplateModal } from "./modals/CopyTemplateModal";
 import type { PricingTemplate } from "@shared/schema";
@@ -480,7 +480,7 @@ export default function ModelManagement() {
 
       {/* Modals */}
       {showPricingModal && (
-        <PricingModal
+        <PricingModalSimple
           isOpen={showPricingModal}
           onClose={() => {
             setShowPricingModal(false);
