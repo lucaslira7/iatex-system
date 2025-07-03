@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import SidebarImproved from "@/components/SidebarImproved";
-import MobileNavigationOptimized from "@/components/MobileNavigationOptimized";
+import MobileNavigation from "@/components/MobileNavigation";
 import CustomizableDashboardFixed from "@/components/CustomizableDashboardFixed";
 import FabricManagement from "@/components/FabricManagement";
 import PricingCalculator from "@/components/PricingCalculator";
@@ -103,13 +103,11 @@ export default function Home() {
         <SidebarImproved 
           activeSection={activeSection} 
           onSectionChange={setActiveSection}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
         />
       </div>
       
       {/* Mobile Navigation */}
-      <MobileNavigationOptimized 
+      <MobileNavigation 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
         isDarkMode={isDarkMode}

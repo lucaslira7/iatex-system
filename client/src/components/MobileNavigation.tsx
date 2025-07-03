@@ -56,7 +56,11 @@ export default function MobileNavigation({ activeSection, onSectionChange, isDar
   return (
     <>
       {/* Bottom Navigation - Principais */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 md:hidden">
+      <div className={`fixed bottom-0 left-0 right-0 border-t z-40 md:hidden ${
+        isDarkMode 
+          ? 'bg-gray-900 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
         <div className="grid grid-cols-5 h-16">
           {mainMenuItems.map((item) => {
             const IconComponent = item.icon;
@@ -68,8 +72,12 @@ export default function MobileNavigation({ activeSection, onSectionChange, isDar
                 onClick={() => onSectionChange(item.id as ActiveSection)}
                 className={`flex flex-col items-center justify-center h-full text-xs font-medium transition-colors ${
                   isActive 
-                    ? 'text-blue-600 bg-blue-50' 
-                    : 'text-gray-600 hover:text-blue-600'
+                    ? isDarkMode
+                      ? 'text-blue-400 bg-blue-900/20'
+                      : 'text-blue-600 bg-blue-50' 
+                    : isDarkMode
+                      ? 'text-gray-400 hover:text-gray-200'
+                      : 'text-gray-600 hover:text-blue-600'
                 }`}
               >
                 <IconComponent className="h-5 w-5 mb-1" />
@@ -83,9 +91,25 @@ export default function MobileNavigation({ activeSection, onSectionChange, isDar
       {/* Menu Button */}
       <button
         onClick={() => setShowMenu(true)}
-        className="fixed top-4 left-4 z-50 bg-white rounded-lg p-2 shadow-lg border border-gray-200 md:hidden"
+        className={`fixed top-4 left-4 z-50 rounded-lg p-2 shadow-lg border md:hidden ${
+          isDarkMode
+            ? 'bg-gray-800 border-gray-600 text-gray-200'
+            : 'bg-white border-gray-200 text-gray-900'
+        }`}
       >
         <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Dark Mode Toggle - Mobile */}
+      <button
+        onClick={onToggleDarkMode}
+        className={`fixed top-4 right-4 z-50 rounded-lg p-2 shadow-lg border md:hidden ${
+          isDarkMode
+            ? 'bg-gray-800 border-gray-600 text-gray-200'
+            : 'bg-white border-gray-200 text-gray-900'
+        }`}
+      >
+        {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </button>
 
       {/* Full Menu Overlay */}
