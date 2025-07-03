@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { 
   Gauge, Scissors, BarChart3, ShoppingCart, Factory, 
-  Menu, X, Users, Package, Bot, Settings 
+  Menu, X, Users, Package, Bot, Settings, TrendingUp,
+  FolderOpen, CheckSquare, Building, Shield, Download,
+  UserCheck, Sun, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActiveSection } from "../pages/Home";
@@ -9,9 +11,11 @@ import { ActiveSection } from "../pages/Home";
 interface MobileNavigationProps {
   activeSection: ActiveSection;
   onSectionChange: (section: ActiveSection) => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
-export default function MobileNavigation({ activeSection, onSectionChange }: MobileNavigationProps) {
+export default function MobileNavigation({ activeSection, onSectionChange, isDarkMode, onToggleDarkMode }: MobileNavigationProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   const mainMenuItems = [
@@ -19,20 +23,34 @@ export default function MobileNavigation({ activeSection, onSectionChange }: Mob
     { id: 'fabrics', label: 'Tecidos', icon: Scissors },
     { id: 'models', label: 'Modelos', icon: BarChart3 },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
-    { id: 'production', label: 'Produção', icon: Factory },
+    { id: 'financial', label: 'Financeiro', icon: TrendingUp },
   ];
 
   const allMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Gauge },
-    { id: 'fabrics', label: 'Tecidos', icon: Scissors },
-    { id: 'models', label: 'Modelos & Preços', icon: BarChart3 },
-    { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
-    { id: 'production', label: 'Produção', icon: Factory },
-    { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'inventory', label: 'Estoque', icon: Package },
-    { id: 'financial', label: 'Financeiro', icon: Package },
-    { id: 'ai-assistant', label: 'Assistente IA', icon: Bot },
-    { id: 'brand-settings', label: 'Configurações', icon: Settings },
+    // Principais
+    { id: 'dashboard', label: 'Dashboard', icon: Gauge, section: 'main' },
+    { id: 'financial', label: 'Financeiro', icon: TrendingUp, section: 'main' },
+    
+    // Produção & Materiais
+    { id: 'fabrics', label: 'Tecidos', icon: Scissors, section: 'production' },
+    { id: 'models', label: 'Modelos & Precificação', icon: BarChart3, section: 'production' },
+    { id: 'orders', label: 'Pedidos', icon: ShoppingCart, section: 'production' },
+    { id: 'production', label: 'Produção Avançada', icon: Factory, section: 'production' },
+    { id: 'inventory', label: 'Estoque Inteligente', icon: Package, section: 'production' },
+    
+    // Análise & Documentos
+    { id: 'documents-reports', label: 'Documentos & Relatórios', icon: FolderOpen, section: 'tools' },
+    { id: 'analytics-simulations', label: 'Analytics & Simulações', icon: BarChart3, section: 'tools' },
+    { id: 'operations-schedule', label: 'Operações & Cronograma', icon: CheckSquare, section: 'tools' },
+    
+    // Gestão
+    { id: 'clients', label: 'Gestão de Clientes', icon: Building, section: 'management' },
+    { id: 'team-users', label: 'Equipe & Usuários', icon: UserCheck, section: 'management' },
+    { id: 'admin-complete', label: 'Administração Completa', icon: Shield, section: 'management' },
+    
+    // Assistentes
+    { id: 'ai-assistant', label: 'Assistente IA', icon: Bot, section: 'tools' },
+    { id: 'backup', label: 'Backup & Exportação', icon: Download, section: 'management' },
   ];
 
   return (

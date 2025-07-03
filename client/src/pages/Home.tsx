@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SidebarImproved from "@/components/SidebarImproved";
-import MobileNavigation from "@/components/MobileNavigation";
+import MobileNavigationOptimized from "@/components/MobileNavigationOptimized";
 import CustomizableDashboardFixed from "@/components/CustomizableDashboardFixed";
 import FabricManagement from "@/components/FabricManagement";
 import PricingCalculator from "@/components/PricingCalculator";
@@ -33,6 +33,29 @@ export type ActiveSection = 'dashboard' | 'fabrics' | 'models' | 'orders' | 'pro
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
   const [showAIChat, setShowAIChat] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Carregar preferência de modo escuro do localStorage
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode) {
+      setIsDarkMode(JSON.parse(savedDarkMode));
+    }
+  }, []);
+
+  // Aplicar modo escuro ao documento
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -72,27 +95,45 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className={`flex h-screen transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <SidebarImproved activeSection={activeSection} onSectionChange={setActiveSection} />
+        <SidebarImproved 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+        />
       </div>
       
       {/* Mobile Navigation */}
-      <MobileNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
+      <MobileNavigationOptimized 
+        activeSection={activeSection} 
+        onSectionChange={setActiveSection}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-3 sm:p-6 overflow-y-auto pb-20 md:pb-6">
+        <div className={`p-3 sm:p-6 overflow-y-auto pb-20 md:pb-6 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-100' : 'text-gray-900'
+        }`}>
           {renderContent()}
         </div>
       </div>
 
-      {/* Botão Flutuante da IA */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
+      {/* Botão Flutuante da IA - Repositionado para não interferir com navegação mobile */}
+      <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 md:bottom-6">
         <button
           onClick={() => setShowAIChat(!showAIChat)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 sm:p-4 shadow-lg transition-all duration-200 hover:scale-105"
+          className={`rounded-full p-3 sm:p-4 shadow-lg transition-all duration-200 hover:scale-105 ${
+            isDarkMode
+              ? 'bg-blue-700 hover:bg-blue-800 text-white'
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
           title="Assistente IA"
         >
           <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
