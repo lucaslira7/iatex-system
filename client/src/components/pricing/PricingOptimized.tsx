@@ -40,16 +40,16 @@ const PricingOptimized: React.FC<PricingOptimizedProps> = ({ currentStep }) => {
   // Memoizar qual componente deve ser renderizado
   const CurrentStepComponent = useMemo(() => {
     switch (currentStep) {
-      case 0: return Step0PricingMode;
-      case 1: return Step1GarmentType;
-      case 2: return Step2Sizes;
-      case 3: return Step1ModelInfoFixed;  // Informações do modelo (movido para cima)
-      case 4: return Step3Fabric;          // Seleção do tecido 
-      case 5: return Step4CreationCosts;   // Custos de criação
-      case 6: return Step5Supplies;        // Insumos
-      case 7: return Step6Labor;           // Mão de obra
-      case 8: return Step7FixedCosts;      // Custos fixos
-      case 9: return Step8SummaryFixed;    // Resumo final
+      case 0: return Step0PricingMode;     // 1. Modo de precificação
+      case 1: return Step1GarmentType;     // 2. Tipo de peça
+      case 2: return Step2Sizes;           // 2. Tamanhos e pesos (adicionado de volta)
+      case 3: return Step3Fabric;          // 5. Seleção do tecido
+      case 4: return Step4CreationCosts;   // 6. Custos de criação  
+      case 5: return Step5Supplies;        // 7. Insumos
+      case 6: return Step6Labor;           // 8. Mão de obra
+      case 7: return Step7FixedCosts;      // 9. Custos fixos
+      case 8: return Step1ModelInfoFixed;  // 4. Informações detalhadas do modelo
+      case 9: return Step8SummaryFixed;    // 10. Resumo final
       default: return Step0PricingMode;
     }
   }, [currentStep]);
