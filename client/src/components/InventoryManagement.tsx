@@ -198,9 +198,9 @@ export default function InventoryManagement() {
   const filteredSupplies = supplies.filter(supply => {
     const matchesSearch = supply.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          supply.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !filterCategory || supply.categoryId.toString() === filterCategory;
+    const matchesCategory = filterCategory === "all" || !filterCategory || supply.categoryId.toString() === filterCategory;
     const isLowStock = supply.currentStock <= supply.minimumStock;
-    const matchesStatus = !filterStatus || 
+    const matchesStatus = filterStatus === "all" || !filterStatus || 
                          (filterStatus === "low_stock" && isLowStock) ||
                          (filterStatus === "normal" && !isLowStock) ||
                          (filterStatus === "inactive" && !supply.isActive);
@@ -604,7 +604,7 @@ export default function InventoryManagement() {
                     <SelectValue placeholder="Filtrar por categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as categorias</SelectItem>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
                     {categories.map(category => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
@@ -617,7 +617,7 @@ export default function InventoryManagement() {
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="normal">Normal</SelectItem>
                     <SelectItem value="low_stock">Estoque Baixo</SelectItem>
                   </SelectContent>
