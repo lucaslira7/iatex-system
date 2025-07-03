@@ -42,13 +42,13 @@ const PricingOptimized: React.FC<PricingOptimizedProps> = ({ currentStep }) => {
     switch (currentStep) {
       case 0: return Step0PricingMode;     // 1. Modo de precificação
       case 1: return Step1GarmentType;     // 2. Tipo de peça
-      case 2: return Step2Sizes;           // 2. Tamanhos e pesos (adicionado de volta)
-      case 3: return Step3Fabric;          // 5. Seleção do tecido
-      case 4: return Step4CreationCosts;   // 6. Custos de criação  
-      case 5: return Step5Supplies;        // 7. Insumos
-      case 6: return Step6Labor;           // 8. Mão de obra
-      case 7: return Step7FixedCosts;      // 9. Custos fixos
-      case 8: return Step1ModelInfoFixed;  // 4. Informações detalhadas do modelo
+      case 2: return Step3Fabric;          // 3. Seleção do tecido
+      case 3: return Step2Sizes;           // 4. Tamanhos e pesos
+      case 4: return Step4CreationCosts;   // 5. Custos de criação  
+      case 5: return Step5Supplies;        // 6. Insumos
+      case 6: return Step6Labor;           // 7. Mão de obra
+      case 7: return Step7FixedCosts;      // 8. Custos fixos
+      case 8: return Step1ModelInfoFixed;  // 9. Informações detalhadas do modelo
       case 9: return Step8SummaryFixed;    // 10. Resumo final
       default: return Step0PricingMode;
     }
