@@ -70,49 +70,37 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
 
   // Lista completa de todos os módulos
   const allModules = [
-    // Principais
+    // Principais (Core Business)
     { id: 'dashboard', icon: Gauge, label: 'Dashboard', badge: null, section: 'main' },
     { id: 'financial', icon: TrendingUp, label: 'Financeiro', badge: null, section: 'main' },
     
     // Produção & Materiais
     { id: 'fabrics', icon: Scissors, label: 'Tecidos', badge: 3, section: 'production' },
     { id: 'models', icon: Calculator, label: 'Modelos & Precificação', badge: null, section: 'production' },
-    { id: 'simulations', icon: BarChart3, label: 'Simulações Avançadas', badge: null, section: 'production' },
-    { id: 'quotations', icon: FileText, label: 'Orçamentos', badge: null, section: 'production' },
     { id: 'orders', icon: ShoppingCart, label: 'Pedidos', badge: 12, section: 'production' },
-    { id: 'production-advanced', icon: Factory, label: 'Produção Avançada', badge: null, section: 'production' },
+    { id: 'production', icon: Factory, label: 'Produção Avançada', badge: null, section: 'production' },
     { id: 'inventory', icon: Package, label: 'Estoque Inteligente', badge: null, section: 'production' },
     
-    // Ferramentas & Relatórios
-    { id: 'documents', icon: FolderOpen, label: 'Central de Documentos', badge: null, section: 'tools' },
-    { id: 'commercial-docs', icon: Receipt, label: 'Documentos Comerciais', badge: null, section: 'tools' },
-    { id: 'reports', icon: PieChart, label: 'Relatórios Inteligentes', badge: null, section: 'tools' },
-    { id: 'calendar', icon: Calendar, label: 'Calendário de Produção', badge: null, section: 'tools' },
-    { id: 'qr-generator', icon: QrCode, label: 'QR Code & Etiquetas', badge: null, section: 'tools' },
+    // Análise & Documentos (Módulos Unificados)
+    { id: 'documents-reports', icon: FolderOpen, label: 'Documentos & Relatórios', badge: null, section: 'tools' },
+    { id: 'analytics-simulations', icon: BarChart3, label: 'Analytics & Simulações', badge: null, section: 'tools' },
+    { id: 'operations-schedule', icon: CheckSquare, label: 'Operações & Cronograma', badge: null, section: 'tools' },
     
-    // Painéis
-    { id: 'operational-panel', icon: CheckSquare, label: 'Painel Operacional', badge: null, section: 'panels' },
-    { id: 'employee-management', icon: UserCheck, label: 'Gestão de Funcionários', badge: null, section: 'panels' },
-    { id: 'user-panels', icon: Users, label: 'Painéis de Usuário', badge: null, section: 'panels' },
-    { id: 'ai-assistant', icon: Bot, label: 'Assistente IA', badge: null, section: 'panels' },
-    
-    // Gestão
+    // Gestão de Pessoas & Sistema
     { id: 'clients', icon: Building, label: 'Gestão de Clientes', badge: null, section: 'management' },
-    { id: 'administration', icon: Shield, label: 'Administração', badge: null, section: 'management' },
-    { id: 'backup', icon: Download, label: 'Backup & Exportação', badge: null, section: 'management' },
-    { id: 'notifications', icon: Bell, label: 'Central de Notificações', badge: null, section: 'management' },
+    { id: 'team-users', icon: UserCheck, label: 'Equipe & Usuários', badge: null, section: 'management' },
+    { id: 'admin-complete', icon: Shield, label: 'Administração Completa', badge: null, section: 'management' },
     
-    // Configurações
-    { id: 'brand-settings', icon: Settings, label: 'Configurações da Marca', badge: null, section: 'settings' },
+    // Assistentes & Backup
+    { id: 'ai-assistant', icon: Bot, label: 'Assistente IA', badge: null, section: 'tools' },
+    { id: 'backup', icon: Download, label: 'Backup & Exportação', badge: null, section: 'management' },
   ];
 
   // Módulos agrupados por seção para exibição
   const mainModules = allModules.filter(m => m.section === 'main');
   const productionModules = allModules.filter(m => m.section === 'production');
   const toolsModules = allModules.filter(m => m.section === 'tools');
-  const panelsModules = allModules.filter(m => m.section === 'panels');
   const managementModules = allModules.filter(m => m.section === 'management');
-  const settingsModules = allModules.filter(m => m.section === 'settings');
 
   // Módulos favoritos
   const favoriteModules = allModules.filter(module => favorites.includes(module.id));
@@ -225,16 +213,6 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
           </div>
         </div>
 
-        {/* Painéis */}
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
-            Painéis
-          </h3>
-          <div className="space-y-1">
-            {panelsModules.map(item => renderMenuItem(item, true))}
-          </div>
-        </div>
-
         {/* Gestão */}
         <div>
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
@@ -242,16 +220,6 @@ export default function SidebarImproved({ activeSection, onSectionChange }: Side
           </h3>
           <div className="space-y-1">
             {managementModules.map(item => renderMenuItem(item, true))}
-          </div>
-        </div>
-
-        {/* Configurações */}
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
-            Configurações
-          </h3>
-          <div className="space-y-1">
-            {settingsModules.map(item => renderMenuItem(item, true))}
           </div>
         </div>
       </div>

@@ -21,13 +21,14 @@ import AdminPanel from "@/components/AdminPanel";
 import BackupExport from "@/components/BackupExport";
 import NotificationCenter from "@/components/NotificationCenter";
 import BrandSettings from "@/components/BrandSettings";
-import CommercialDocuments from "@/components/CommercialDocuments";
+import DocumentsAndReports from "@/components/DocumentsAndReports";
+import AnalyticsAndSimulations from "@/components/AnalyticsAndSimulations";
 
 import AIAssistantImproved from "@/components/AIAssistantImproved";
 import UserPanels from "@/components/UserPanels";
 import OperationalPanelFixed from "@/components/OperationalPanelFixed";
 
-export type ActiveSection = 'dashboard' | 'fabrics' | 'quotations' | 'models' | 'simulations' | 'orders' | 'production' | 'advanced-production' | 'documents' | 'commercial-docs' | 'clients' | 'employees' | 'financial' | 'inventory' | 'admin' | 'backup' | 'notifications' | 'brand-settings' | 'reports' | 'calendar' | 'qrcodes' | 'ai-assistant' | 'user-panels' | 'operational';
+export type ActiveSection = 'dashboard' | 'fabrics' | 'models' | 'orders' | 'production' | 'clients' | 'financial' | 'inventory' | 'documents-reports' | 'analytics-simulations' | 'operations-schedule' | 'team-users' | 'admin-complete' | 'ai-assistant' | 'backup';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
@@ -39,50 +40,32 @@ export default function Home() {
         return <CustomizableDashboardFixed onSectionChange={setActiveSection} />;
       case 'fabrics':
         return <FabricManagement />;
-      case 'quotations':
-        return <QuotationManagement />;
       case 'models':
         return <ModelManagement />;
-      case 'simulations':
-        return <AdvancedSimulations />;
       case 'orders':
         return <OrderManagement />;
       case 'production':
         return <AdvancedProduction />;
-      case 'advanced-production':
-        return <AdvancedProduction />;
-      case 'documents':
-        return <DocumentCenter />;
-      case 'commercial-docs':
-        return <CommercialDocuments />;
       case 'clients':
         return <ClientManagement />;
-      case 'employees':
-        return <EmployeeManagement />;
       case 'financial':
         return <FinancialManagement />;
       case 'inventory':
         return <InventoryManagement />;
-      case 'admin':
+      case 'documents-reports':
+        return <DocumentsAndReports />;
+      case 'analytics-simulations':
+        return <AnalyticsAndSimulations />;
+      case 'operations-schedule':
+        return <OperationalPanelFixed />;
+      case 'team-users':
+        return <EmployeeManagement />;
+      case 'admin-complete':
         return <AdminPanel />;
-      case 'backup':
-        return <BackupExport />;
-      case 'notifications':
-        return <NotificationCenter />;
-      case 'brand-settings':
-        return <BrandSettings />;
-      case 'reports':
-        return <IntelligentReports />;
-      case 'calendar':
-        return <ProductionCalendar />;
-      case 'qrcodes':
-        return <QRCodeGenerator />;
       case 'ai-assistant':
         return <AIAssistantImproved />;
-      case 'user-panels':
-        return <UserPanels />;
-      case 'operational':
-        return <OperationalPanelFixed />;
+      case 'backup':
+        return <BackupExport />;
       default:
         return <CustomizableDashboardFixed onSectionChange={setActiveSection} />;
     }
