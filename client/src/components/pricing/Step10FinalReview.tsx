@@ -22,7 +22,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import html2canvas from 'html2canvas';
 
@@ -58,6 +58,12 @@ interface PriceSuggestion {
 function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Buscar dados do tecido
+  const { data: fabrics = [] } = useQuery({
+    queryKey: ['/api/fabrics'],
+  });
+  
   const [sizeMargins, setSizeMargins] = useState<SizeMargin[]>([]);
   const [averages, setAverages] = useState({
     averageCost: 0,
@@ -96,86 +102,51 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
   useEffect(() => {
     console.log('Step10 - FormData recebido:', formData);
     console.log('Step10 - Sizes:', formData.sizes);
-    console.log('Step10 - Fabric:', formData.fabric);
-    console.log('Step10 - CreationCosts:', formData.creationCosts);
-    console.log('Step10 - Supplies:', formData.supplies);
-    console.log('Step10 - Labor:', formData.labor);
-    console.log('Step10 - FixedCosts:', formData.fixedCosts);
+    console.log('Step10 - Fabrics disponíveis:', fabrics);
     
     if (!formData.sizes || formData.sizes.length === 0) {
       console.log('Step10 - ERRO: Sizes não encontrado ou vazio');
       // Criar dados padrão para evitar tela vazia
-      const defaultSizes = [
-        { name: 'P', size: 'P', quantity: 1, weight: 200, weightPerPiece: 0.2 },
-        { name: 'M', size: 'M', quantity: 1, weight: 220, weightPerPiece: 0.22 },
-        { name: 'G', size: 'G', quantity: 1, weight: 240, weightPerPiece: 0.24 }
+      const defaultMargins = [
+        { size: 'P', quantity: 1, cost: 25.00, fabricCost: 15.00, creationCost: 5.00, supplyCost: 2.00, laborCost: 2.00, fixedCost: 1.00, marginPercent: 20, profitValue: 5.00, finalPrice: 30.00 },
+        { size: 'M', quantity: 1, cost: 27.00, fabricCost: 16.00, creationCost: 5.00, supplyCost: 2.00, laborCost: 2.00, fixedCost: 1.00, marginPercent: 20, profitValue: 5.40, finalPrice: 32.40 },
+        { size: 'G', quantity: 1, cost: 29.00, fabricCost: 17.00, creationCost: 5.00, supplyCost: 2.00, laborCost: 2.00, fixedCost: 1.00, marginPercent: 20, profitValue: 5.80, finalPrice: 34.80 }
       ];
-      
-      const defaultMargins = defaultSizes.map(size => ({
-        size: size.name,
-        quantity: 1,
-        cost: 25.00,
-        fabricCost: 15.00,
-        creationCost: 5.00,
-        supplyCost: 2.00,
-        laborCost: 2.00,
-        fixedCost: 1.00,
-        marginPercent: 20,
-        profitValue: 5.00,
-        finalPrice: 30.00
-      }));
-      
       setSizeMargins(defaultMargins);
       return;
     }
     
     const totalPieces = formData.sizes.reduce((sum: number, size: any) => sum + (size.quantity || 1), 0);
+    const selectedFabric = (fabrics as any[]).find((f: any) => f.id === formData.fabricId);
+
+    // Usar EXATAMENTE a mesma lógica da etapa 9
+    const pricePerKg = parseFloat(selectedFabric?.pricePerKg?.toString() || '50');
+    const wasteMultiplier = 1 + (formData.wastePercentage / 100);
     
+    // Custos fixos (rateados) - IGUAL etapa 9
+    const totalCreationCosts = formData.creationCosts?.reduce((sum: number, cost: any) => 
+      sum + (cost.unitValue * cost.quantity), 0) || 0;
+    const creationCostPerPiece = totalCreationCosts / totalPieces;
+    
+    // Custos por peça - IGUAL etapa 9
+    const supplyCostPerPiece = formData.supplies?.reduce((sum: number, supply: any) => 
+      sum + (supply.unitValue * supply.quantity * (1 + supply.wastePercentage / 100)), 0) || 0;
+    const laborCostPerPiece = formData.labor?.reduce((sum: number, labor: any) => 
+      sum + (labor.unitValue * labor.quantity), 0) || 0;
+    const fixedCostPerPiece = formData.fixedCosts?.reduce((sum: number, fixed: any) => 
+      sum + (fixed.unitValue * fixed.quantity), 0) || 0;
+
     const newSizeMargins: SizeMargin[] = formData.sizes.map((size: any) => {
-      // Cálculo do custo do tecido - peso em gramas / 1000 para kg
-      const fabricWeight = (size.weight || 200) / 1000; // converter gramas para kg, padrão 200g
-      
-      // Buscar dados do tecido se disponível
-      let fabricPricePerKg = 50; // Preço padrão
-      if (formData.fabricId && formData.selectedFabric) {
-        fabricPricePerKg = formData.selectedFabric.pricePerKg || formData.selectedFabric.pricePerMeter || 50;
-      }
-      
-      const wastePercentage = formData.wastePercentage || 10;
-      const fabricCost = fabricWeight * fabricPricePerKg * (1 + wastePercentage / 100);
-      
-      // Custos de criação (total dividido por todas as peças)
-      const creationCosts = Array.isArray(formData.creationCosts) 
-        ? formData.creationCosts.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
-        : 0;
-      const creationCost = creationCosts / totalPieces;
-      
-      // Custos de insumos
-      const suppliesCosts = Array.isArray(formData.supplies) 
-        ? formData.supplies.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
-        : 0;
-      const supplyCost = suppliesCosts / totalPieces;
-      
-      // Custos de mão de obra
-      const laborCosts = Array.isArray(formData.labor) 
-        ? formData.labor.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
-        : 0;
-      const laborCost = laborCosts / totalPieces;
-      
-      // Custos fixos
-      const fixedCosts = Array.isArray(formData.fixedCosts) 
-        ? formData.fixedCosts.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
-        : 0;
-      const fixedCost = fixedCosts / totalPieces;
-      
-      const sizeUnitCost = fabricCost + creationCost + supplyCost + laborCost + fixedCost;
+      // EXATAMENTE igual à etapa 9
+      const fabricCost = (size.weight / 1000) * pricePerKg * wasteMultiplier;
+      const sizeUnitCost = fabricCost + creationCostPerPiece + supplyCostPerPiece + laborCostPerPiece + fixedCostPerPiece;
       
       console.log(`Custos para ${size.size || size.name}:`, {
         fabricCost,
-        creationCost,
-        supplyCost,
-        laborCost,
-        fixedCost,
+        creationCostPerPiece,
+        supplyCostPerPiece,
+        laborCostPerPiece,
+        fixedCostPerPiece,
         sizeUnitCost
       });
       
@@ -184,10 +155,10 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
         quantity: size.quantity || 1,
         cost: sizeUnitCost,
         fabricCost,
-        creationCost,
-        supplyCost,
-        laborCost,
-        fixedCost,
+        creationCost: creationCostPerPiece,
+        supplyCost: supplyCostPerPiece,
+        laborCost: laborCostPerPiece,
+        fixedCost: fixedCostPerPiece,
         marginPercent: 20, // Margem padrão de 20%
         profitValue: sizeUnitCost * 0.20,
         finalPrice: sizeUnitCost * 1.20
@@ -195,7 +166,7 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
     });
     
     setSizeMargins(newSizeMargins);
-  }, [formData]);
+  }, [formData, fabrics]);
 
   // Calcular médias e sugestões
   useEffect(() => {
