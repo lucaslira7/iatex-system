@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { usePricing } from '@/context/PricingContext';
 
 // Lazy load dos componentes de step pesados
 const Step0PricingMode = lazy(() => import('./Step0PricingMode'));
@@ -13,6 +14,7 @@ const Step5Supplies = lazy(() => import('./Step5Supplies'));
 const Step6Labor = lazy(() => import('./Step6Labor'));
 const Step7FixedCosts = lazy(() => import('./Step7FixedCosts'));
 const Step8SummaryFixed = lazy(() => import('./Step8SummaryFixed'));
+const Step10FinalReview = lazy(() => import('./Step10FinalReview').then(module => ({ default: module.default })));
 
 // Skeleton personalizado para steps
 const StepSkeleton = () => (
@@ -37,26 +39,32 @@ interface PricingOptimizedProps {
 }
 
 const PricingOptimized: React.FC<PricingOptimizedProps> = ({ currentStep }) => {
+  const { formData, setCurrentStep } = usePricing();
+  
+  // Handlers para navegação
+  const handleNext = () => setCurrentStep(Math.min(9, currentStep + 1));
+  const handleBack = () => setCurrentStep(Math.max(0, currentStep - 1));
+
   // Memoizar qual componente deve ser renderizado
-  const CurrentStepComponent = useMemo(() => {
+  const renderStep = useMemo(() => {
     switch (currentStep) {
-      case 0: return Step0PricingMode;     // 1. Modo de precificação
-      case 1: return Step1GarmentType;     // 2. Tipo de peça
-      case 2: return Step3Fabric;          // 3. Seleção do tecido
-      case 3: return Step2Sizes;           // 4. Tamanhos e pesos
-      case 4: return Step4CreationCosts;   // 5. Custos de criação  
-      case 5: return Step5Supplies;        // 6. Insumos
-      case 6: return Step6Labor;           // 7. Mão de obra
-      case 7: return Step7FixedCosts;      // 8. Custos fixos
-      case 8: return Step1ModelInfoFixed;  // 9. Informações detalhadas do modelo
-      case 9: return Step8SummaryFixed;    // 10. Resumo final
-      default: return Step0PricingMode;
+      case 0: return <Step0PricingMode />;
+      case 1: return <Step1GarmentType />;
+      case 2: return <Step3Fabric />;
+      case 3: return <Step2Sizes />;
+      case 4: return <Step4CreationCosts />;
+      case 5: return <Step5Supplies />;
+      case 6: return <Step6Labor />;
+      case 7: return <Step7FixedCosts />;
+      case 8: return <Step1ModelInfoFixed />;
+      case 9: return <Step10FinalReview formData={formData} onNext={handleNext} onBack={handleBack} />;
+      default: return <Step0PricingMode />;
     }
-  }, [currentStep]);
+  }, [currentStep, formData]);
 
   return (
     <Suspense fallback={<StepSkeleton />}>
-      <CurrentStepComponent />
+      {renderStep}
     </Suspense>
   );
 };
