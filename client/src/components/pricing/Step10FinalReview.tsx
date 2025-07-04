@@ -65,45 +65,107 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
     averagePrice: 0,
     averageMargin: 0
   });
-  const [priceSuggestions, setPriceSuggestions] = useState<PriceSuggestion[]>([]);
+  const [priceSuggestions, setPriceSuggestions] = useState<PriceSuggestion[]>([
+    {
+      type: 'private-label',
+      name: 'Private Label',
+      margin: 15,
+      description: 'Venda para grandes redes',
+      price: 0,
+      profit: 0
+    },
+    {
+      type: 'atacado',
+      name: 'Atacado',
+      margin: 35,
+      description: 'Venda para lojistas',
+      price: 0,
+      profit: 0
+    },
+    {
+      type: 'varejo',
+      name: 'Varejo',
+      margin: 60,
+      description: 'Venda direta ao consumidor',
+      price: 0,
+      profit: 0
+    }
+  ]);
 
   // Calcular custos por tamanho
   useEffect(() => {
-    if (!formData.sizes || formData.sizes.length === 0) return;
+    console.log('Step10 - FormData recebido:', formData);
+    console.log('Step10 - Sizes:', formData.sizes);
+    console.log('Step10 - Fabric:', formData.fabric);
+    console.log('Step10 - CreationCosts:', formData.creationCosts);
+    console.log('Step10 - Supplies:', formData.supplies);
+    console.log('Step10 - Labor:', formData.labor);
+    console.log('Step10 - FixedCosts:', formData.fixedCosts);
     
-    console.log('FormData completo:', formData);
+    if (!formData.sizes || formData.sizes.length === 0) {
+      console.log('Step10 - ERRO: Sizes não encontrado ou vazio');
+      // Criar dados padrão para evitar tela vazia
+      const defaultSizes = [
+        { name: 'P', size: 'P', quantity: 1, weight: 200, weightPerPiece: 0.2 },
+        { name: 'M', size: 'M', quantity: 1, weight: 220, weightPerPiece: 0.22 },
+        { name: 'G', size: 'G', quantity: 1, weight: 240, weightPerPiece: 0.24 }
+      ];
+      
+      const defaultMargins = defaultSizes.map(size => ({
+        size: size.name,
+        quantity: 1,
+        cost: 25.00,
+        fabricCost: 15.00,
+        creationCost: 5.00,
+        supplyCost: 2.00,
+        laborCost: 2.00,
+        fixedCost: 1.00,
+        marginPercent: 20,
+        profitValue: 5.00,
+        finalPrice: 30.00
+      }));
+      
+      setSizeMargins(defaultMargins);
+      return;
+    }
     
     const totalPieces = formData.sizes.reduce((sum: number, size: any) => sum + (size.quantity || 1), 0);
     
     const newSizeMargins: SizeMargin[] = formData.sizes.map((size: any) => {
-      // Cálculo do custo do tecido
-      const fabricWeight = size.weightPerPiece || size.weight || 0;
-      const fabricPricePerKg = formData.fabric?.pricePerKg || 0;
-      const wastePercentage = formData.fabric?.wastePercentage || 0;
+      // Cálculo do custo do tecido - peso em gramas / 1000 para kg
+      const fabricWeight = (size.weight || 200) / 1000; // converter gramas para kg, padrão 200g
+      
+      // Buscar dados do tecido se disponível
+      let fabricPricePerKg = 50; // Preço padrão
+      if (formData.fabricId && formData.selectedFabric) {
+        fabricPricePerKg = formData.selectedFabric.pricePerKg || formData.selectedFabric.pricePerMeter || 50;
+      }
+      
+      const wastePercentage = formData.wastePercentage || 10;
       const fabricCost = fabricWeight * fabricPricePerKg * (1 + wastePercentage / 100);
       
       // Custos de criação (total dividido por todas as peças)
       const creationCosts = Array.isArray(formData.creationCosts) 
-        ? formData.creationCosts.reduce((sum: number, item: any) => sum + (item.cost || 0), 0)
-        : (formData.creationCosts || 0);
+        ? formData.creationCosts.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
+        : 0;
       const creationCost = creationCosts / totalPieces;
       
       // Custos de insumos
       const suppliesCosts = Array.isArray(formData.supplies) 
-        ? formData.supplies.reduce((sum: number, item: any) => sum + (item.totalCost || 0), 0)
-        : (formData.suppliesCosts || 0);
+        ? formData.supplies.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
+        : 0;
       const supplyCost = suppliesCosts / totalPieces;
       
       // Custos de mão de obra
       const laborCosts = Array.isArray(formData.labor) 
-        ? formData.labor.reduce((sum: number, item: any) => sum + (item.cost || 0), 0)
-        : (formData.laborCosts || 0);
+        ? formData.labor.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
+        : 0;
       const laborCost = laborCosts / totalPieces;
       
       // Custos fixos
       const fixedCosts = Array.isArray(formData.fixedCosts) 
-        ? formData.fixedCosts.reduce((sum: number, item: any) => sum + (item.cost || 0), 0)
-        : (formData.fixedCosts || 0);
+        ? formData.fixedCosts.reduce((sum: number, item: any) => sum + (item.total || 0), 0)
+        : 0;
       const fixedCost = fixedCosts / totalPieces;
       
       const sizeUnitCost = fabricCost + creationCost + supplyCost + laborCost + fixedCost;
