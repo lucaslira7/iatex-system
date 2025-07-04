@@ -34,10 +34,25 @@ interface Step10FinalReviewProps {
 
 interface SizeMargin {
   size: string;
+  quantity: number;
   cost: number;
+  fabricCost: number;
+  creationCost: number;
+  supplyCost: number;
+  laborCost: number;
+  fixedCost: number;
   marginPercent: number;
   profitValue: number;
   finalPrice: number;
+}
+
+interface PriceSuggestion {
+  type: string;
+  name: string;
+  margin: number;
+  description: string;
+  price: number;
+  profit: number;
 }
 
 function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps) {
@@ -50,29 +65,67 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
     averagePrice: 0,
     averageMargin: 0
   });
+  const [priceSuggestions, setPriceSuggestions] = useState<PriceSuggestion[]>([]);
 
   // Calcular custos por tamanho
   useEffect(() => {
     if (!formData.sizes || formData.sizes.length === 0) return;
     
-    const totalPieces = formData.sizes.reduce((sum: number, size: any) => sum + size.quantity, 0);
+    console.log('FormData completo:', formData);
+    
+    const totalPieces = formData.sizes.reduce((sum: number, size: any) => sum + (size.quantity || 1), 0);
     
     const newSizeMargins: SizeMargin[] = formData.sizes.map((size: any) => {
-      const fabricCostPerGram = formData.selectedFabric ? 
-        Number(formData.selectedFabric.pricePerMeter || 0) / Number(formData.selectedFabric.gramWeight || 1) : 0;
-      const fabricCostWithWaste = (size.weight * fabricCostPerGram) * (1 + (formData.wastePercentage || 0) / 100);
+      // Cálculo do custo do tecido
+      const fabricWeight = size.weightPerPiece || size.weight || 0;
+      const fabricPricePerKg = formData.fabric?.pricePerKg || 0;
+      const wastePercentage = formData.fabric?.wastePercentage || 0;
+      const fabricCost = fabricWeight * fabricPricePerKg * (1 + wastePercentage / 100);
       
-      // Calcular custo base
-      const creationCost = (formData.creationCosts || 0) / totalPieces;
-      const supplyCost = (formData.suppliesCosts || 0) / totalPieces;
-      const laborCost = (formData.laborCosts || 0) / totalPieces;
-      const fixedCost = (formData.fixedCosts || 0) / totalPieces;
+      // Custos de criação (total dividido por todas as peças)
+      const creationCosts = Array.isArray(formData.creationCosts) 
+        ? formData.creationCosts.reduce((sum: number, item: any) => sum + (item.cost || 0), 0)
+        : (formData.creationCosts || 0);
+      const creationCost = creationCosts / totalPieces;
       
-      const sizeUnitCost = fabricCostWithWaste + creationCost + supplyCost + laborCost + fixedCost;
+      // Custos de insumos
+      const suppliesCosts = Array.isArray(formData.supplies) 
+        ? formData.supplies.reduce((sum: number, item: any) => sum + (item.totalCost || 0), 0)
+        : (formData.suppliesCosts || 0);
+      const supplyCost = suppliesCosts / totalPieces;
+      
+      // Custos de mão de obra
+      const laborCosts = Array.isArray(formData.labor) 
+        ? formData.labor.reduce((sum: number, item: any) => sum + (item.cost || 0), 0)
+        : (formData.laborCosts || 0);
+      const laborCost = laborCosts / totalPieces;
+      
+      // Custos fixos
+      const fixedCosts = Array.isArray(formData.fixedCosts) 
+        ? formData.fixedCosts.reduce((sum: number, item: any) => sum + (item.cost || 0), 0)
+        : (formData.fixedCosts || 0);
+      const fixedCost = fixedCosts / totalPieces;
+      
+      const sizeUnitCost = fabricCost + creationCost + supplyCost + laborCost + fixedCost;
+      
+      console.log(`Custos para ${size.size || size.name}:`, {
+        fabricCost,
+        creationCost,
+        supplyCost,
+        laborCost,
+        fixedCost,
+        sizeUnitCost
+      });
       
       return {
-        size: size.size,
+        size: size.size || size.name,
+        quantity: size.quantity || 1,
         cost: sizeUnitCost,
+        fabricCost,
+        creationCost,
+        supplyCost,
+        laborCost,
+        fixedCost,
         marginPercent: 20, // Margem padrão de 20%
         profitValue: sizeUnitCost * 0.20,
         finalPrice: sizeUnitCost * 1.20
@@ -82,20 +135,51 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
     setSizeMargins(newSizeMargins);
   }, [formData]);
 
-  // Calcular médias
+  // Calcular médias e sugestões
   useEffect(() => {
     if (sizeMargins.length > 0) {
       const totalCost = sizeMargins.reduce((sum, item) => sum + item.cost, 0);
       const totalProfit = sizeMargins.reduce((sum, item) => sum + item.profitValue, 0);
       const totalPrice = sizeMargins.reduce((sum, item) => sum + item.finalPrice, 0);
       const totalMargin = sizeMargins.reduce((sum, item) => sum + item.marginPercent, 0);
+      const avgCost = totalCost / sizeMargins.length;
       
       setAverages({
-        averageCost: totalCost / sizeMargins.length,
+        averageCost: avgCost,
         averageProfit: totalProfit / sizeMargins.length,
         averagePrice: totalPrice / sizeMargins.length,
         averageMargin: totalMargin / sizeMargins.length
       });
+
+      // Calcular sugestões de preço
+      const suggestions: PriceSuggestion[] = [
+        {
+          type: 'private-label',
+          name: 'Private Label',
+          margin: 15,
+          description: 'Venda para grandes redes',
+          price: avgCost * 1.15,
+          profit: avgCost * 0.15
+        },
+        {
+          type: 'atacado',
+          name: 'Atacado',
+          margin: 35,
+          description: 'Venda para lojistas',
+          price: avgCost * 1.35,
+          profit: avgCost * 0.35
+        },
+        {
+          type: 'varejo',
+          name: 'Varejo',
+          margin: 60,
+          description: 'Venda direta ao consumidor',
+          price: avgCost * 1.60,
+          profit: avgCost * 0.60
+        }
+      ];
+      
+      setPriceSuggestions(suggestions);
     }
   }, [sizeMargins]);
 
@@ -353,6 +437,25 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
                 </div>
               </div>
 
+              {/* Sugestões de Preço */}
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                <h3 className="font-bold text-lg mb-4 text-center">💡 Sugestões de Preço</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {priceSuggestions.map((suggestion, index) => (
+                    <div key={suggestion.type} className="bg-white p-4 rounded-lg shadow-sm border">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-800">{suggestion.name}</div>
+                        <div className="text-sm text-gray-600 mb-2">{suggestion.description}</div>
+                        <div className="text-2xl font-bold text-green-600">R$ {suggestion.price.toFixed(2)}</div>
+                        <div className="text-sm text-gray-500">
+                          Lucro: R$ {suggestion.profit.toFixed(2)} ({suggestion.margin}%)
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <h3 className="font-bold text-lg">Breakdown por Tamanho:</h3>
                 {sizeMargins.map(item => (
@@ -429,6 +532,25 @@ function Step10FinalReview({ formData, onNext, onBack }: Step10FinalReviewProps)
                       <div key={size.size} className="p-2 bg-gray-50 rounded text-center">
                         <div className="font-medium">{size.size}</div>
                         <div className="text-sm text-gray-600">{size.weight}g</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Sugestões de Preço na Ficha Técnica */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
+                  <h3 className="font-bold text-lg mb-4 text-center">Sugestões de Preço</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {priceSuggestions.map((suggestion) => (
+                      <div key={suggestion.type} className="bg-white p-3 rounded-lg shadow-sm border">
+                        <div className="text-center">
+                          <div className="font-bold text-gray-800">{suggestion.name}</div>
+                          <div className="text-sm text-gray-600 mb-1">{suggestion.description}</div>
+                          <div className="text-xl font-bold text-green-600">R$ {suggestion.price.toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">
+                            Margem: {suggestion.margin}%
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
