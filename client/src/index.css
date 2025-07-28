@@ -146,8 +146,9 @@
 /* Classe global para valores dos cards - layout responsivo */
 .card-value {
   white-space: nowrap;
-  overflow: visible;
-  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
   word-break: break-word;
 }
 
@@ -156,20 +157,20 @@
   .sidebar-desktop {
     display: none;
   }
-  
+
   .content-area {
     width: 100% !important;
   }
-  
+
   .grid-responsive {
     grid-template-columns: 1fr !important;
     gap: 0.75rem !important;
   }
-  
+
   .text-responsive {
     font-size: 0.875rem !important;
   }
-  
+
   .padding-responsive {
     padding: 0.75rem !important;
   }

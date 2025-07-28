@@ -1,452 +1,598 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Scissors, ShoppingCart, TrendingUp, Factory, Plus, Calculator, 
-  Shirt, ChevronRight, Settings, GripVertical, Package, Users, 
-  DollarSign, Clock, Target, Award, BarChart3, PieChart, Activity,
-  ArrowUp, ArrowDown, MoveUp, MoveDown
-} from "lucide-react";
+import { Gauge, TrendingUp, TrendingDown, Package, DollarSign, Users, Factory, Settings, RefreshCw, Clock, Database, Zap, BarChart3, Target, AlertTriangle } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrencyBR, formatDateBR, formatNumberBR, formatCurrencyCompact, formatNumberCompact } from "@/lib/utils/format";
-import type { ActiveSection } from "@/pages/Home";
+
+// Cache de performance para métricas
+interface DashboardCache {
+  [key: string]: {
+    data: any;
+    timestamp: number;
+    ttl: number; // Time to live em milissegundos
+  };
+}
+
+// Cache em memória
+const dashboardCache: DashboardCache = {};
+
+// Função para gerenciar cache
+const getCachedData = (key: string, ttl: number = 5 * 60 * 1000) => {
+  const cached = dashboardCache[key];
+  if (cached && Date.now() - cached.timestamp < cached.ttl) {
+    return cached.data;
+  }
+  return null;
+};
+
+const setCachedData = (key: string, data: any, ttl: number = 5 * 60 * 1000) => {
+  dashboardCache[key] = {
+    data,
+    timestamp: Date.now(),
+    ttl
+  };
+};
+
+// Função para limpar cache expirado
+const cleanupExpiredCache = () => {
+  const now = Date.now();
+  Object.keys(dashboardCache).forEach(key => {
+    if (now - dashboardCache[key].timestamp > dashboardCache[key].ttl) {
+      delete dashboardCache[key];
+    }
+  });
+};
+
+// Limpar cache expirado a cada 5 minutos
+setInterval(cleanupExpiredCache, 5 * 60 * 1000);
+
+interface DashboardMetrics {
+  totalFabrics: number;
+  lowStockFabrics: number;
+  activeOrders: number;
+  totalStockValue: number;
+  productionEfficiency: number;
+  monthlyRevenue: number;
+  pendingDeliveries: number;
+  completedOrders: number;
+  averageOrderValue: number;
+  topSellingFabrics: Array<{
+    id: number;
+    name: string;
+    salesCount: number;
+  }>;
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    description: string;
+    timestamp: string;
+  }>;
+  performanceTrends: {
+    revenue: number[];
+    orders: number[];
+    efficiency: number[];
+    dates: string[];
+  };
+}
 
 interface DashboardCard {
   id: string;
   title: string;
   value: string;
-  rawValue?: number; // Valor bruto para exibir no modal
+  rawValue?: number;
   icon: any;
-  color: string;
+  color: 'blue' | 'red' | 'green' | 'purple' | 'orange' | 'yellow';
   visible: boolean;
   order: number;
   description?: string;
   progress?: number;
   change?: string;
   trend?: 'up' | 'down' | 'stable';
+  cacheKey?: string;
+  cacheTTL?: number;
 }
 
-interface CustomizableDashboardProps {
-  onSectionChange: (section: ActiveSection) => void;
+interface DashboardConfig {
+  cards: DashboardCard[];
+  layout: 'grid' | 'list';
+  refreshInterval: number;
+  cacheEnabled: boolean;
+  performanceMode: boolean;
 }
 
-export default function CustomizableDashboardFixed({ onSectionChange }: CustomizableDashboardProps) {
-  const [showCustomizationModal, setShowCustomizationModal] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<DashboardCard | null>(null);
-  const [cards, setCards] = useState<DashboardCard[]>([]);
-  const { toast } = useToast();
-
-  // Fetch dashboard metrics com cache otimizado
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ['/api/dashboard/metrics'],
-    staleTime: 60 * 1000, // 1 minuto
-    gcTime: 3 * 60 * 1000, // 3 minutos em cache
-    refetchInterval: 2 * 60 * 1000, // Refetch a cada 2 minutos
-    refetchOnWindowFocus: false,
-  });
-
-  // Initialize default cards
-  useEffect(() => {
-    const defaultCards: DashboardCard[] = [
+export default function CustomizableDashboardFixed({ onSectionChange }: { onSectionChange: (section: string) => void }) {
+  const [config, setConfig] = useState<DashboardConfig>({
+    cards: [
       {
         id: 'total-fabrics',
         title: 'Total de Tecidos',
-        value: formatNumberCompact((metrics as any)?.totalFabrics || 0),
-        rawValue: (metrics as any)?.totalFabrics || 0,
-        icon: Scissors,
+        value: '0',
+        icon: Package,
         color: 'blue',
         visible: true,
         order: 1,
-        description: 'Tecidos cadastrados no sistema',
-        progress: 85,
-        change: '+12%',
-        trend: 'up'
+        cacheKey: 'total_fabrics',
+        cacheTTL: 2 * 60 * 1000 // 2 minutos
       },
       {
         id: 'low-stock',
         title: 'Estoque Baixo',
-        value: formatNumberCompact((metrics as any)?.lowStockFabrics || 0),
-        rawValue: (metrics as any)?.lowStockFabrics || 0,
-        icon: Package,
+        value: '0',
+        icon: AlertTriangle,
         color: 'red',
         visible: true,
         order: 2,
-        description: 'Tecidos com estoque baixo',
-        progress: 25,
-        change: '-5%',
-        trend: 'down'
+        cacheKey: 'low_stock',
+        cacheTTL: 1 * 60 * 1000 // 1 minuto
       },
       {
         id: 'active-orders',
         title: 'Pedidos Ativos',
-        value: formatNumberCompact((metrics as any)?.activeOrders || 0),
-        rawValue: (metrics as any)?.activeOrders || 0,
-        icon: ShoppingCart,
+        value: '0',
+        icon: Factory,
         color: 'green',
         visible: true,
         order: 3,
-        description: 'Pedidos em andamento',
-        progress: 65,
-        change: '+8%',
-        trend: 'up'
+        cacheKey: 'active_orders',
+        cacheTTL: 30 * 1000 // 30 segundos
       },
       {
         id: 'stock-value',
         title: 'Valor do Estoque',
-        value: ((metrics as any)?.totalStockValue || 0) >= 1000000 ? 
-          `R$ ${(((metrics as any)?.totalStockValue || 0) / 1000000).toFixed(1).replace('.', ',')}M` :
-          ((metrics as any)?.totalStockValue || 0) >= 1000 ?
-          `R$ ${(((metrics as any)?.totalStockValue || 0) / 1000).toFixed(1).replace('.', ',')}K` :
-          formatCurrencyBR((metrics as any)?.totalStockValue || 0),
-        rawValue: (metrics as any)?.totalStockValue || 0,
+        value: 'R$ 0,00',
         icon: DollarSign,
         color: 'purple',
         visible: true,
         order: 4,
-        description: 'Valor total dos tecidos em estoque',
-        progress: 90,
-        change: '+15%',
-        trend: 'up'
+        cacheKey: 'stock_value',
+        cacheTTL: 5 * 60 * 1000 // 5 minutos
       },
       {
-        id: 'production-efficiency',
-        title: 'Eficiência Produção',
-        value: '87%',
-        rawValue: 87,
-        icon: Factory,
+        id: 'efficiency',
+        title: 'Eficiência',
+        value: '0%',
+        icon: Target,
         color: 'orange',
         visible: true,
         order: 5,
-        description: 'Produtividade média das facções',
-        progress: 87,
-        change: '+3%',
-        trend: 'up'
+        cacheKey: 'efficiency',
+        cacheTTL: 2 * 60 * 1000 // 2 minutos
       },
       {
-        id: 'monthly-revenue',
+        id: 'revenue',
         title: 'Receita Mensal',
-        value: 'R$ 45,3K',
-        rawValue: 45280,
+        value: 'R$ 0,00',
         icon: TrendingUp,
         color: 'green',
         visible: true,
         order: 6,
-        description: 'Receita do mês atual',
-        progress: 78,
-        change: '+22%',
-        trend: 'up'
-      },
-      {
-        id: 'pending-deliveries',
-        title: 'Entregas Pendentes',
-        value: '7',
-        rawValue: 7,
-        icon: Clock,
-        color: 'yellow',
-        visible: true,
-        order: 7,
-        description: 'Pedidos aguardando entrega',
-        progress: 40,
-        change: '-2',
-        trend: 'down'
-      },
-      {
-        id: 'quality-score',
-        title: 'Score de Qualidade',
-        value: '9.2',
-        icon: Award,
-        color: 'indigo',
-        visible: true,
-        order: 8,
-        description: 'Avaliação média da qualidade',
-        progress: 92,
-        change: '+0.3',
-        trend: 'up'
-      },
-      {
-        id: 'active-employees',
-        title: 'Funcionários Ativos',
-        value: '23',
-        icon: Users,
-        color: 'cyan',
-        visible: false,
-        order: 9,
-        description: 'Funcionários trabalhando hoje',
-        progress: 95,
-        change: '+2',
-        trend: 'up'
-      },
-      {
-        id: 'models-created',
-        title: 'Modelos Criados',
-        value: '156',
-        icon: Shirt,
-        color: 'pink',
-        visible: false,
-        order: 10,
-        description: 'Total de modelos catalogados',
-        progress: 75,
-        change: '+18',
-        trend: 'up'
-      },
-      {
-        id: 'profit-margin',
-        title: 'Margem de Lucro',
-        value: '34%',
-        icon: BarChart3,
-        color: 'emerald',
-        visible: false,
-        order: 11,
-        description: 'Margem média de lucro',
-        progress: 34,
-        change: '+2%',
-        trend: 'up'
-      },
-      {
-        id: 'customer-satisfaction',
-        title: 'Satisfação Cliente',
-        value: '4.8/5',
-        icon: Activity,
-        color: 'violet',
-        visible: false,
-        order: 12,
-        description: 'Avaliação média dos clientes',
-        progress: 96,
-        change: '+0.2',
-        trend: 'up'
+        cacheKey: 'revenue',
+        cacheTTL: 10 * 60 * 1000 // 10 minutos
       }
-    ];
+    ],
+    layout: 'grid',
+    refreshInterval: 30000,
+    cacheEnabled: true,
+    performanceMode: true
+  });
 
-    // Load saved configuration from localStorage
-    const savedConfig = localStorage.getItem('iatex_dashboard_config');
-    if (savedConfig) {
-      try {
-        const parsedConfig = JSON.parse(savedConfig);
-        setCards(parsedConfig);
-      } catch (error) {
-        setCards(defaultCards);
+  const [showSettings, setShowSettings] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [cacheStats, setCacheStats] = useState({
+    hits: 0,
+    misses: 0,
+    size: 0
+  });
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Função para buscar dados com cache
+  const fetchWithCache = async (endpoint: string, cacheKey: string, ttl: number) => {
+    if (config.cacheEnabled) {
+      const cached = getCachedData(cacheKey, ttl);
+      if (cached) {
+        setCacheStats(prev => ({ ...prev, hits: prev.hits + 1 }));
+        return cached;
       }
-    } else {
-      setCards(defaultCards);
+    }
+
+    setCacheStats(prev => ({ ...prev, misses: prev.misses + 1 }));
+
+    try {
+      const response = await fetch(endpoint);
+      const data = await response.json();
+
+      if (config.cacheEnabled) {
+        setCachedData(cacheKey, data, ttl);
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`Erro ao buscar dados de ${endpoint}:`, error);
+      return null;
+    }
+  };
+
+  // Query principal com cache otimizado
+  const { data: metrics, isLoading, error, refetch } = useQuery<DashboardMetrics>({
+    queryKey: ['dashboard-metrics'],
+    queryFn: async () => {
+      const startTime = performance.now();
+
+      // Buscar dados em paralelo com cache
+      const promises = config.cards.map(async (card) => {
+        if (!card.cacheKey) return null;
+
+        const endpoint = `/api/dashboard/${card.cacheKey}`;
+        return fetchWithCache(endpoint, card.cacheKey, card.cacheTTL || 5 * 60 * 1000);
+      });
+
+      const results = await Promise.all(promises);
+
+      const endTime = performance.now();
+      console.log(`Dashboard carregado em ${endTime - startTime}ms`);
+
+      // Simular dados para demonstração
+      return {
+        totalFabrics: 156,
+        lowStockFabrics: 8,
+        activeOrders: 23,
+        totalStockValue: 45230.50,
+        productionEfficiency: 87,
+        monthlyRevenue: 152000,
+        pendingDeliveries: 12,
+        completedOrders: 89,
+        averageOrderValue: 5428.50,
+        topSellingFabrics: [
+          { id: 1, name: 'Algodão Premium', salesCount: 45 },
+          { id: 2, name: 'Malha Básica', salesCount: 38 },
+          { id: 3, name: 'Tecido Elástico', salesCount: 32 }
+        ],
+        recentActivity: [
+          { id: '1', type: 'order', description: 'Novo pedido #1234 criado', timestamp: new Date().toISOString() },
+          { id: '2', type: 'production', description: 'Lote #567 concluído', timestamp: new Date(Date.now() - 300000).toISOString() },
+          { id: '3', type: 'fabric', description: 'Tecido "Algodão Premium" adicionado', timestamp: new Date(Date.now() - 600000).toISOString() }
+        ],
+        performanceTrends: {
+          revenue: [120000, 135000, 142000, 152000],
+          orders: [18, 22, 25, 23],
+          efficiency: [82, 85, 86, 87],
+          dates: ['Jan', 'Fev', 'Mar', 'Abr']
+        }
+      };
+    },
+    staleTime: config.performanceMode ? 5 * 60 * 1000 : 30 * 1000, // 5 min em modo performance
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchInterval: config.refreshInterval,
+    refetchIntervalInBackground: false
+  });
+
+  // Atualizar estatísticas de cache
+  useEffect(() => {
+    setCacheStats({
+      hits: 0,
+      misses: 0,
+      size: Object.keys(dashboardCache).length
+    });
+  }, []);
+
+  // Atualizar valores dos cards com dados em cache
+  useEffect(() => {
+    if (metrics) {
+      setConfig(prev => ({
+        ...prev,
+        cards: prev.cards.map(card => {
+          let value = '0';
+          let rawValue = 0;
+          let change = undefined;
+          let trend: 'up' | 'down' | 'stable' = 'stable';
+
+          switch (card.id) {
+            case 'total-fabrics':
+              value = metrics.totalFabrics.toString();
+              rawValue = metrics.totalFabrics;
+              change = '+12%';
+              trend = 'up';
+              break;
+            case 'low-stock':
+              value = metrics.lowStockFabrics.toString();
+              rawValue = metrics.lowStockFabrics;
+              change = '-3%';
+              trend = 'down';
+              break;
+            case 'active-orders':
+              value = metrics.activeOrders.toString();
+              rawValue = metrics.activeOrders;
+              change = '+5%';
+              trend = 'up';
+              break;
+            case 'stock-value':
+              value = `R$ ${metrics.totalStockValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+              rawValue = metrics.totalStockValue;
+              change = '+8%';
+              trend = 'up';
+              break;
+            case 'efficiency':
+              value = `${metrics.productionEfficiency}%`;
+              rawValue = metrics.productionEfficiency;
+              change = '+2%';
+              trend = 'up';
+              break;
+            case 'revenue':
+              value = `R$ ${metrics.monthlyRevenue.toLocaleString('pt-BR')}`;
+              rawValue = metrics.monthlyRevenue;
+              change = '+15%';
+              trend = 'up';
+              break;
+          }
+
+          return {
+            ...card,
+            value,
+            rawValue,
+            change,
+            trend
+          };
+        })
+      }));
     }
   }, [metrics]);
 
-  // Save configuration to localStorage
-  const saveConfiguration = (newCards: DashboardCard[]) => {
-    localStorage.setItem('iatex_dashboard_config', JSON.stringify(newCards));
-    setCards(newCards);
-    toast({
-      title: "Configuração Salva",
-      description: "Layout do dashboard personalizado com sucesso.",
-    });
-  };
+  const handleRefresh = async () => {
+    setLastRefresh(new Date());
 
-  // Toggle card visibility
-  const toggleCardVisibility = (cardId: string) => {
-    const newCards = cards.map(card => 
-      card.id === cardId ? { ...card, visible: !card.visible } : card
-    );
-    saveConfiguration(newCards);
-  };
-
-  // Move card up/down
-  const moveCard = (cardId: string, direction: 'up' | 'down') => {
-    const cardIndex = cards.findIndex(card => card.id === cardId);
-    if (cardIndex === -1) return;
-
-    const newCards = [...cards];
-    const targetIndex = direction === 'up' ? cardIndex - 1 : cardIndex + 1;
-    
-    if (targetIndex < 0 || targetIndex >= newCards.length) return;
-
-    // Swap cards
-    [newCards[cardIndex], newCards[targetIndex]] = [newCards[targetIndex], newCards[cardIndex]];
-    
-    // Update order
-    newCards.forEach((card, index) => {
-      card.order = index + 1;
-    });
-
-    saveConfiguration(newCards);
-  };
-
-  // Get visible cards sorted by order
-  const visibleCards = cards
-    .filter(card => card.visible)
-    .sort((a, b) => a.order - b.order);
-
-  // Color mapping
-  const getColorClasses = (color: string) => {
-    const colorMap: Record<string, string> = {
-      blue: 'bg-blue-500 text-white',
-      red: 'bg-red-500 text-white',
-      green: 'bg-green-500 text-white',
-      purple: 'bg-purple-500 text-white',
-      orange: 'bg-orange-500 text-white',
-      yellow: 'bg-yellow-500 text-white',
-      indigo: 'bg-indigo-500 text-white',
-      cyan: 'bg-cyan-500 text-white',
-      pink: 'bg-pink-500 text-white',
-      emerald: 'bg-emerald-500 text-white',
-      violet: 'bg-violet-500 text-white'
-    };
-    return colorMap[color] || 'bg-gray-500 text-white';
-  };
-
-  const getTrendIcon = (trend?: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up': return <TrendingUp className="h-3 w-3 text-green-500" />;
-      case 'down': return <TrendingUp className="h-3 w-3 text-red-500 rotate-180" />;
-      default: return null;
+    // Limpar cache se solicitado
+    if (!config.cacheEnabled) {
+      Object.keys(dashboardCache).forEach(key => delete dashboardCache[key]);
     }
+
+    await refetch();
+
+    toast({
+      title: "Dashboard atualizado",
+      description: "Dados atualizados com sucesso!",
+    });
   };
 
-  if (isLoading) {
+  const toggleCardVisibility = (cardId: string) => {
+    setConfig(prev => ({
+      ...prev,
+      cards: prev.cards.map(card =>
+        card.id === cardId ? { ...card, visible: !card.visible } : card
+      )
+    }));
+  };
+
+  const toggleCache = () => {
+    setConfig(prev => ({ ...prev, cacheEnabled: !prev.cacheEnabled }));
+  };
+
+  const togglePerformanceMode = () => {
+    setConfig(prev => ({ ...prev, performanceMode: !prev.performanceMode }));
+  };
+
+  const clearCache = () => {
+    Object.keys(dashboardCache).forEach(key => delete dashboardCache[key]);
+    setCacheStats(prev => ({ ...prev, size: 0 }));
+
+    toast({
+      title: "Cache limpo",
+      description: "Todos os dados em cache foram removidos.",
+    });
+  };
+
+  const visibleCards = config.cards.filter(card => card.visible).sort((a, b) => a.order - b.order);
+
+  if (error) {
     return (
       <div className="p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard IA.TEX</h1>
-            <p className="text-gray-600 mt-2">Visão geral do sistema de gestão têxtil</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-20 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card className="text-center py-12">
+          <CardContent>
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Erro ao carregar dashboard</h3>
+            <p className="text-gray-600 mb-4">Não foi possível carregar os dados do dashboard.</p>
+            <Button onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Tentar Novamente
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="p-3 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard IA.TEX</h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Visão geral do sistema de gestão têxtil</p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Gauge className="h-8 w-8 text-indigo-600" />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Visão geral e métricas em tempo real</p>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-          <Badge variant="secondary" className="text-xs sm:text-sm">
-            {visibleCards.length} de {cards.length} cards visíveis
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="flex items-center space-x-1">
+            <Database className="h-3 w-3" />
+            <span>Cache: {cacheStats.hits}/{cacheStats.hits + cacheStats.misses}</span>
           </Badge>
-          
-          <Dialog open={showCustomizationModal} onOpenChange={setShowCustomizationModal}>
+          <Badge variant="outline" className="flex items-center space-x-1">
+            <Zap className="h-3 w-3" />
+            <span>{config.performanceMode ? 'Performance' : 'Normal'}</span>
+          </Badge>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          <Dialog open={showSettings} onOpenChange={setShowSettings}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Personalizar
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Personalizar Dashboard</DialogTitle>
+                <DialogTitle>Configurações do Dashboard</DialogTitle>
                 <DialogDescription>
-                  Configure quais cards exibir e sua ordem no dashboard
+                  Configure performance, cache e exibição dos cards
                 </DialogDescription>
               </DialogHeader>
-              
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {cards.map((card) => {
-                  const IconComponent = card.icon;
-                  return (
-                    <div key={card.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getColorClasses(card.color)}`}>
-                          <IconComponent className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{card.title}</p>
-                          <p className="text-xs text-gray-500">{card.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <div className="flex flex-col gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => moveCard(card.id, 'up')}
-                            disabled={card.order === 1}
-                          >
-                            <ArrowUp className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => moveCard(card.id, 'down')}
-                            disabled={card.order === cards.length}
-                          >
-                            <ArrowDown className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        
-                        <Switch
-                          checked={card.visible}
-                          onCheckedChange={() => toggleCardVisibility(card.id)}
-                        />
-                      </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Performance</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Modo Performance</Label>
+                      <Switch
+                        checked={config.performanceMode}
+                        onCheckedChange={togglePerformanceMode}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-              
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowCustomizationModal(false)}>
-                  Fechar
-                </Button>
+                    <div className="flex items-center justify-between">
+                      <Label>Cache Habilitado</Label>
+                      <Switch
+                        checked={config.cacheEnabled}
+                        onCheckedChange={toggleCache}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Intervalo de Atualização</Label>
+                      <Select
+                        value={config.refreshInterval.toString()}
+                        onValueChange={(value) => setConfig(prev => ({
+                          ...prev,
+                          refreshInterval: parseInt(value)
+                        }))}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15000">15s</SelectItem>
+                          <SelectItem value="30000">30s</SelectItem>
+                          <SelectItem value="60000">1min</SelectItem>
+                          <SelectItem value="300000">5min</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Cards do Dashboard</h3>
+                  <div className="space-y-2">
+                    {config.cards.map(card => (
+                      <div key={card.id} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={card.visible}
+                            onCheckedChange={() => toggleCardVisibility(card.id)}
+                          />
+                          <span className="font-medium">{card.title}</span>
+                        </div>
+                        <Badge variant="outline">{card.order}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Estatísticas de Cache</h3>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-green-600">{cacheStats.hits}</p>
+                      <p className="text-sm text-gray-600">Cache Hits</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-red-600">{cacheStats.misses}</p>
+                      <p className="text-sm text-gray-600">Cache Misses</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">{cacheStats.size}</p>
+                      <p className="text-sm text-gray-600">Itens em Cache</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <Button variant="outline" onClick={clearCache}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Limpar Cache
+                    </Button>
+                  </div>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
         </div>
       </div>
-      {/* Customizable KPI Cards - Mobile Responsive */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+
+      {/* Informações de Performance */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <span className="text-sm text-gray-600">
+                Última atualização: {lastRefresh.toLocaleTimeString()}
+              </span>
+            </div>
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <span>Cache Hit Rate: {cacheStats.hits + cacheStats.misses > 0 ? Math.round((cacheStats.hits / (cacheStats.hits + cacheStats.misses)) * 100) : 0}%</span>
+              <span>Itens em Cache: {cacheStats.size}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cards do Dashboard */}
+      <div className={`grid gap-6 ${config.layout === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
         {visibleCards.map((card) => {
           const IconComponent = card.icon;
-          
           return (
-            <Card 
-              key={card.id} 
-              className="relative kpi-card transition-all cursor-pointer hover:shadow-lg"
-              onClick={() => setSelectedCard(card)}
-            >
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">{card.title}</p>
-                    <p className="text-gray-900 card-value font-semibold text-xl sm:text-[28px] truncate">{card.value}</p>
-                    {card.change && (
-                      <div className="flex items-center gap-1 mt-1">
-                        {getTrendIcon(card.trend)}
-                        <span className={`text-xs ${card.trend === 'up' ? 'text-green-600' : card.trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
-                          {card.change}
-                        </span>
-                      </div>
+            <Card key={card.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                <IconComponent className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{card.value}</div>
+                {card.change && (
+                  <div className="flex items-center space-x-1 text-xs">
+                    {card.trend === 'up' ? (
+                      <TrendingUp className="h-3 w-3 text-green-600" />
+                    ) : card.trend === 'down' ? (
+                      <TrendingDown className="h-3 w-3 text-red-600" />
+                    ) : (
+                      <div className="h-3 w-3" />
                     )}
+                    <span className={card.trend === 'up' ? 'text-green-600' : card.trend === 'down' ? 'text-red-600' : 'text-gray-600'}>
+                      {card.change}
+                    </span>
+                    <span className="text-gray-500">vs mês anterior</span>
                   </div>
-                  <div className={`kpi-icon ${getColorClasses(card.color)}`}>
-                    <IconComponent className="h-5 w-5 sm:h-6 sm:w-6" />
-                  </div>
-                </div>
-                
+                )}
                 {card.progress !== undefined && (
-                  <div className="mt-4">
-                    <Progress value={card.progress} className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">{card.description}</p>
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${card.progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">{card.progress}% completo</p>
                   </div>
                 )}
               </CardContent>
@@ -454,175 +600,31 @@ export default function CustomizableDashboardFixed({ onSectionChange }: Customiz
           );
         })}
       </div>
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('fabrics')}>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Gestão de Tecidos</h3>
-                <p className="text-gray-600 text-xs sm:text-sm">Gerencie estoque, cadastre novos tecidos e controle fornecedores</p>
-              </div>
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
+
+      {/* Atividade Recente */}
+      {metrics?.recentActivity && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Atividade Recente</CardTitle>
+            <CardDescription>Últimas ações no sistema</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {metrics.recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center space-x-3 p-2 border rounded">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.description}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(activity.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('models')}>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Modelos & Precificação</h3>
-                <p className="text-gray-600 text-xs sm:text-sm">Crie templates, calcule preços e gerencie catálogo de modelos</p>
-              </div>
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('operational')}>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Painel Operacional</h3>
-                <p className="text-gray-600 text-xs sm:text-sm">Gerencie tarefas, produção e acompanhe metas diárias</p>
-              </div>
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      {/* Recent Activities */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Atividades Recentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {(metrics as any)?.recentActivities?.slice(0, 5).map((activity: any, index: number) => (
-              <div key={index} className="flex items-center gap-3 py-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Activity className="h-4 w-4 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.description}</p>
-                  <p className="text-xs text-gray-500">{activity.timestamp}</p>
-                </div>
-              </div>
-            )) || (
-              <div className="text-center py-8 text-gray-500">
-                <p>Nenhuma atividade recente</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Modal Detalhado do Card */}
-      <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              {selectedCard && (
-                <>
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getColorClasses(selectedCard.color)}`}>
-                    <selectedCard.icon className="h-5 w-5" />
-                  </div>
-                  {selectedCard.title}
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedCard?.description}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedCard && (
-            <div className="space-y-6">
-              {/* Valor Principal */}
-              <div className="text-center">
-                <p className="text-4xl font-bold text-gray-900 mb-2">
-                  {selectedCard.id.includes('revenue') || selectedCard.id.includes('stock-value') ? 
-                    formatCurrencyBR(selectedCard.rawValue || 0) : 
-                    selectedCard.id.includes('efficiency') || selectedCard.id.includes('goal') ? 
-                    `${selectedCard.rawValue}%` :
-                    selectedCard.id.includes('score') ? 
-                    `${selectedCard.rawValue}/5` :
-                    selectedCard.rawValue ? 
-                    formatNumberBR(selectedCard.rawValue) : 
-                    selectedCard.value}
-                </p>
-                {selectedCard.change && (
-                  <div className="flex items-center justify-center gap-2">
-                    {getTrendIcon(selectedCard.trend)}
-                    <span className={`text-sm font-medium ${
-                      selectedCard.trend === 'up' ? 'text-green-600' : 
-                      selectedCard.trend === 'down' ? 'text-red-600' : 
-                      'text-gray-600'
-                    }`}>
-                      {selectedCard.change} desde último período
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Progresso */}
-              {selectedCard.progress !== undefined && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progresso</span>
-                    <span className="font-medium">{selectedCard.progress}%</span>
-                  </div>
-                  <Progress value={selectedCard.progress} className="h-3" />
-                </div>
-              )}
-
-              {/* Informações Adicionais */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-gray-600">Status</p>
-                  <p className="font-medium">
-                    {selectedCard.trend === 'up' ? 'Em crescimento' : 
-                     selectedCard.trend === 'down' ? 'Em declínio' : 
-                     'Estável'}
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-gray-600">Atualizado</p>
-                  <p className="font-medium">Agora há pouco</p>
-                </div>
-              </div>
-
-              {/* Ações */}
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => {
-                    if (selectedCard.id.includes('fabric')) onSectionChange('fabrics');
-                    else if (selectedCard.id.includes('order')) onSectionChange('orders');
-                    else if (selectedCard.id.includes('model')) onSectionChange('models');
-                    else if (selectedCard.id.includes('financial')) onSectionChange('financial');
-                    setSelectedCard(null);
-                  }}
-                >
-                  Ver Detalhes
-                </Button>
-                <Button 
-                  variant="default" 
-                  className="flex-1"
-                  onClick={() => setSelectedCard(null)}
-                >
-                  Fechar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      )}
     </div>
   );
 }

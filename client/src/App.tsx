@@ -24,13 +24,13 @@ function Router() {
         queryKey: ['/api/garment-types'],
         staleTime: 10 * 60 * 1000, // 10 minutos
       });
-      
+
       queryClient.prefetchQuery({
         queryKey: ['/api/cost-categories'],
         staleTime: 10 * 60 * 1000,
       });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, queryClient]);
 
   return (
     <Switch>

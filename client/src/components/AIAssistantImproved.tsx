@@ -6,13 +6,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Bot, 
-  Send, 
-  Lightbulb, 
-  TrendingUp, 
-  MessageSquare, 
-  Sparkles, 
+import {
+  Bot,
+  Send,
+  Lightbulb,
+  TrendingUp,
+  MessageSquare,
+  Sparkles,
   User,
   X,
   Loader2,
@@ -71,12 +71,14 @@ export default function AIAssistantImproved() {
   // Fetch AI insights and suggestions
   const { data: suggestions = [], isLoading: loadingSuggestions } = useQuery<any[]>({
     queryKey: ['/api/ai/suggestions'],
-    refetchInterval: 30000,
+    refetchInterval: 10 * 60 * 1000, // 10 minutos em vez de 30s
+    staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 1
   });
 
   const { data: chatHistory = [] } = useQuery<any[]>({
     queryKey: ['/api/ai/chat-history'],
+    staleTime: 2 * 60 * 1000, // 2 minutos
     retry: 1
   });
 
@@ -186,7 +188,7 @@ export default function AIAssistantImproved() {
       confidence: 92
     },
     {
-      id: '2', 
+      id: '2',
       title: 'Redução de Desperdício - Tecido Algodão',
       description: 'Otimize o corte para reduzir desperdício de tecido em 8%',
       impact: 'Economia de R$ 800/mês',
@@ -328,20 +330,18 @@ export default function AIAssistantImproved() {
                     <div className="space-y-4">
                       {messages.map((message) => (
                         <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] rounded-lg p-3 ${
-                            message.role === 'user' 
-                              ? 'bg-blue-500 text-white' 
+                          <div className={`max-w-[80%] rounded-lg p-3 ${message.role === 'user'
+                              ? 'bg-blue-500 text-white'
                               : 'bg-gray-100 text-gray-900'
-                          }`}>
+                            }`}>
                             <div className="flex items-start gap-2">
                               {message.role === 'assistant' && (
                                 <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
                               )}
                               <div className="flex-1">
                                 <p className="text-sm">{message.content}</p>
-                                <p className={`text-xs mt-1 ${
-                                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                                }`}>
+                                <p className={`text-xs mt-1 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                                  }`}>
                                   {message.timestamp.toLocaleTimeString()}
                                 </p>
                               </div>
@@ -384,8 +384,8 @@ export default function AIAssistantImproved() {
                 }}
                 disabled={sendMessageMutation.isPending}
               />
-              <Button 
-                onClick={handleSendMessage} 
+              <Button
+                onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || sendMessageMutation.isPending}
                 size="icon"
               >
@@ -406,7 +406,7 @@ export default function AIAssistantImproved() {
               <h3 className="text-lg font-medium">Sugestões Inteligentes</h3>
               <Badge variant="secondary">{mockSuggestions.length} sugestões</Badge>
             </div>
-            
+
             <div className="space-y-3">
               {mockSuggestions.map((suggestion) => (
                 <Card key={suggestion.id} className="hover:shadow-md transition-shadow">
@@ -446,7 +446,7 @@ export default function AIAssistantImproved() {
               <h3 className="text-lg font-medium">Otimizações Disponíveis</h3>
               <Badge variant="secondary">{mockOptimizations.length} otimizações</Badge>
             </div>
-            
+
             <div className="space-y-3">
               {mockOptimizations.map((optimization) => (
                 <Card key={optimization.id} className="hover:shadow-md transition-shadow">

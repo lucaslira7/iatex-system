@@ -8,8 +8,9 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+// Para desenvolvimento local, tornar autenticação opcional
 if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+  console.log("⚠️  REPLIT_DOMAINS não encontrada. Autenticação será desabilitada para desenvolvimento local.");
 }
 
 const getOidcConfig = memoize(
@@ -24,6 +25,22 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+
+  // Para desenvolvimento local sem DATABASE_URL, usar MemoryStore
+  if (!process.env.DATABASE_URL) {
+    console.log("🔧 Usando MemoryStore para sessões (desenvolvimento local)");
+    return session({
+      secret: process.env.SESSION_SECRET || "dev-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: false, // Set to false for development
+        maxAge: sessionTtl,
+      },
+    });
+  }
+
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -71,6 +88,45 @@ export async function setupAuth(app: Express) {
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Se não houver REPLIT_DOMAINS, configurar autenticação mock para desenvolvimento
+  if (!process.env.REPLIT_DOMAINS) {
+    console.log("🔧 Configurando autenticação mock para desenvolvimento local");
+
+    passport.serializeUser((user: Express.User, cb) => cb(null, user));
+    passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+
+    // Mock user para desenvolvimento
+    const mockUser = {
+      id: "dev-user-123",
+      email: "dev@iatex.local",
+      firstName: "Desenvolvedor",
+      lastName: "Local",
+      profileImageUrl: "",
+      role: "admin"
+    };
+
+    app.get("/api/login", (req, res) => {
+      req.login(mockUser, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Erro no login mock" });
+        }
+        res.redirect("/");
+      });
+    });
+
+    app.get("/api/callback", (req, res) => {
+      res.redirect("/");
+    });
+
+    app.get("/api/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect("/");
+      });
+    });
+
+    return;
+  }
 
   const config = await getOidcConfig();
 

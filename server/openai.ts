@@ -1,12 +1,22 @@
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+} else {
+  console.log("⚠️  OPENAI_API_KEY não encontrada. Funcionalidades de IA serão limitadas.");
+}
 
 export async function chatWithAI(message: string, context: string = 'general'): Promise<string> {
   try {
+    if (!openai) {
+      return "Funcionalidade de IA não disponível. Configure OPENAI_API_KEY para usar esta funcionalidade.";
+    }
+
     const systemPrompt = getSystemPrompt(context);
-    
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -26,6 +36,10 @@ export async function chatWithAI(message: string, context: string = 'general'): 
 
 export async function generateFabricSuggestions(modelData: any): Promise<any> {
   try {
+    if (!openai) {
+      return { suggestions: [] };
+    }
+
     const prompt = `Baseado nos seguintes dados de modelos de confecção, sugira os melhores tecidos:
 
 Dados dos modelos: ${JSON.stringify(modelData, null, 2)}
@@ -66,6 +80,10 @@ Analise e retorne sugestões em JSON no formato:
 
 export async function optimizeMargins(pricingData: any): Promise<any> {
   try {
+    if (!openai) {
+      return { improvements: [] };
+    }
+
     const prompt = `Analise os seguintes dados de precificação e sugira otimizações de margem:
 
 Dados de precificação: ${JSON.stringify(pricingData, null, 2)}
@@ -109,6 +127,10 @@ Retorne análise em JSON no formato:
 
 export async function generateInsights(businessData: any): Promise<any> {
   try {
+    if (!openai) {
+      return { insights: [] };
+    }
+
     const prompt = `Analise os dados do negócio de confecção e gere insights inteligentes:
 
 Dados: ${JSON.stringify(businessData, null, 2)}
@@ -184,7 +206,7 @@ export async function analyzeFabricUsage(fabricData: any[]): Promise<any> {
 
   return {
     totalTypes: Object.keys(usage).length,
-    mostUsed: Object.entries(usage).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 5),
+    mostUsed: Object.entries(usage).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 5),
     lowStock: fabricData.filter(f => parseFloat(f.currentStock || '0') < parseFloat(f.minimumStock || '10')),
     recommendations: await generateFabricRecommendations(usage)
   };
@@ -192,19 +214,19 @@ export async function analyzeFabricUsage(fabricData: any[]): Promise<any> {
 
 export async function generateFabricRecommendations(usage: Record<string, number>): Promise<string[]> {
   const recommendations = [];
-  
+
   // Simple logic - in a real implementation, this would be more sophisticated
-  const sortedUsage = Object.entries(usage).sort(([,a], [,b]) => b - a);
-  
+  const sortedUsage = Object.entries(usage).sort(([, a], [, b]) => b - a);
+
   if (sortedUsage.length > 0) {
     const topFabric = sortedUsage[0][0];
     recommendations.push(`Considere aumentar estoque de ${topFabric} (mais utilizado)`);
   }
-  
+
   if (sortedUsage.length > 3) {
     const underUsed = sortedUsage.slice(-2);
     recommendations.push(`Avalie reduzir estoque de ${underUsed.map(([name]) => name).join(' e ')} (pouco utilizados)`);
   }
-  
+
   return recommendations;
 }

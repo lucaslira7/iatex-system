@@ -32,23 +32,23 @@ app.use((req, res, next) => {
     res.setHeader('Service-Worker-Allowed', '/');
     res.setHeader('Cache-Control', 'no-cache'); // SW sempre fresh
   }
-  
+
   // Manifest.json
   if (req.path === '/manifest.json') {
     res.setHeader('Content-Type', 'application/manifest+json');
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache por 1 dia
   }
-  
+
   // Cache para recursos estáticos
   if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache por 1 ano
   }
-  
+
   // Cache para APIs específicas (dados menos dinâmicos)
   if (req.path.match(/\/api\/(garment-types|cost-categories|suppliers)/)) {
     res.setHeader('Cache-Control', 'public, max-age=300'); // Cache por 5 minutos
   }
-  
+
   next();
 });
 
@@ -102,15 +102,13 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Para desenvolvimento local, usar porta 3000
+  const port = process.env.PORT || 3000;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "localhost",
   }, () => {
-    log(`serving on port ${port}`);
+    log(`🚀 Servidor rodando em http://localhost:${port}`);
+    log(`📱 PWA disponível em http://localhost:${port}`);
   });
 })();

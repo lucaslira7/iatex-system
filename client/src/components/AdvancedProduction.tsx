@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Factory, Plus, Calendar as CalendarIcon, AlertTriangle, TrendingUp, TrendingDown, Clock, Target, Award, BarChart3, CheckCircle2, XCircle, Pause, FileText, Download } from "lucide-react";
+import { Factory, Plus, Calendar as CalendarIcon, AlertTriangle, TrendingUp, TrendingDown, Clock, Target, Award, BarChart3, CheckCircle2, XCircle, Pause, FileText, Download, Package, Users, QrCode, Printer, Share2, Smartphone, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -59,6 +59,22 @@ interface ProductionWeek {
   rejectedPieces: number;
   efficiency: number;
   wastePercentage: number;
+}
+
+interface QRCodeData {
+  id: number;
+  type: 'tech_sheet' | 'model_info' | 'order_status' | 'fabric_info' | 'production_track';
+  title: string;
+  description: string;
+  url: string;
+  modelId?: number;
+  orderId?: number;
+  fabricId?: number;
+  qrCodeUrl: string;
+  labelFormat: 'small' | 'medium' | 'large';
+  printCount: number;
+  createdAt: Date;
+  lastUsed?: Date;
 }
 
 const mockStages: ProductionStage[] = [
@@ -184,6 +200,11 @@ export default function AdvancedProduction() {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [filterFactory, setFilterFactory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [qrCodes, setQRCodes] = useState<QRCodeData[]>([]);
+  const [isCreateQROpen, setIsCreateQROpen] = useState(false);
+  const [selectedQRType, setSelectedQRType] = useState("");
+  const [selectedQRFormat, setSelectedQRFormat] = useState("medium");
+  const [customQRUrl, setCustomQRUrl] = useState("");
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -279,14 +300,91 @@ export default function AdvancedProduction() {
     return productions.reduce((sum, p) => sum + p.wasteQuantity, 0);
   };
 
+  const getQRTypeIcon = (type: string) => {
+    switch (type) {
+      case 'tech_sheet': return <QrCode className="h-5 w-5 text-blue-600" />;
+      case 'model_info': return <Tag className="h-5 w-5 text-green-600" />;
+      case 'order_status': return <Smartphone className="h-5 w-5 text-purple-600" />;
+      case 'fabric_info': return <QrCode className="h-5 w-5 text-orange-600" />;
+      case 'production_track': return <QrCode className="h-5 w-5 text-red-600" />;
+      default: return <QrCode className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getQRTypeName = (type: string) => {
+    switch (type) {
+      case 'tech_sheet': return 'Ficha Técnica';
+      case 'model_info': return 'Info do Modelo';
+      case 'order_status': return 'Status do Pedido';
+      case 'fabric_info': return 'Info do Tecido';
+      case 'production_track': return 'Rastreamento';
+      default: return type;
+    }
+  };
+
+  const handleCreateQR = () => {
+    if (!selectedQRType) {
+      toast({
+        title: "Erro",
+        description: "Selecione o tipo de QR Code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newQR: QRCodeData = {
+      id: qrCodes.length + 1,
+      type: selectedQRType as any,
+      title: `${getQRTypeName(selectedQRType)} - ${Date.now()}`,
+      description: `QR Code gerado para ${getQRTypeName(selectedQRType)}`,
+      url: customQRUrl || `https://iatex.app/${selectedQRType}/${Date.now()}`,
+      qrCodeUrl: `/qrcodes/qr-${selectedQRType}-${Date.now()}.png`,
+      labelFormat: selectedQRFormat as any,
+      printCount: 0,
+      createdAt: new Date()
+    };
+
+    setQRCodes([...qrCodes, newQR]);
+    setIsCreateQROpen(false);
+    setSelectedQRType("");
+    setCustomQRUrl("");
+
+    toast({
+      title: "QR Code Criado",
+      description: "QR Code gerado com sucesso!",
+    });
+  };
+
+  const handlePrintQR = (qr: QRCodeData) => {
+    toast({
+      title: "Enviando para Impressão",
+      description: `Imprimindo QR Code em formato ${qr.labelFormat}...`,
+    });
+  };
+
+  const handleDownloadQR = (qr: QRCodeData) => {
+    toast({
+      title: "Download Iniciado",
+      description: `Baixando QR Code: ${qr.title}`,
+    });
+  };
+
+  const handleShareQR = (qr: QRCodeData) => {
+    navigator.clipboard.writeText(qr.url);
+    toast({
+      title: "Link Copiado",
+      description: "URL do QR Code copiada para a área de transferência.",
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Factory className="h-8 w-8 text-indigo-600" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Produção Avançada</h1>
-            <p className="text-gray-600">Controle por facção, lotes e acompanhamento de perdas</p>
+            <h1 className="text-3xl font-bold text-gray-900">Produção & QR Codes</h1>
+            <p className="text-gray-600">Controle de produção por facção e geração de QR Codes</p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -453,6 +551,70 @@ export default function AdvancedProduction() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={isCreateQROpen} onOpenChange={setIsCreateQROpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo QR Code
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Criar Novo QR Code</DialogTitle>
+                <DialogDescription>
+                  Configure o tipo e formato do QR Code para impressão
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="qr-type">Tipo de QR Code</Label>
+                  <Select value={selectedQRType} onValueChange={setSelectedQRType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tech_sheet">Ficha Técnica</SelectItem>
+                      <SelectItem value="model_info">Info do Modelo</SelectItem>
+                      <SelectItem value="order_status">Status do Pedido</SelectItem>
+                      <SelectItem value="fabric_info">Info do Tecido</SelectItem>
+                      <SelectItem value="production_track">Rastreamento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="qr-format">Formato da Etiqueta</Label>
+                  <Select value={selectedQRFormat} onValueChange={setSelectedQRFormat}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o formato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Pequeno (40x30mm)</SelectItem>
+                      <SelectItem value="medium">Médio (60x40mm)</SelectItem>
+                      <SelectItem value="large">Grande (80x60mm)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="qr-url">URL Personalizada (opcional)</Label>
+                  <Input
+                    id="qr-url"
+                    placeholder="https://iatex.app/..."
+                    value={customQRUrl}
+                    onChange={(e) => setCustomQRUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsCreateQROpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateQR}>
+                  Criar QR Code
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -508,11 +670,12 @@ export default function AdvancedProduction() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="productions">Produções</TabsTrigger>
           <TabsTrigger value="factories">Facções</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="qrcodes">QR Codes & Etiquetas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -534,10 +697,9 @@ export default function AdvancedProduction() {
                       <div key={stage.id} className="space-y-2">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center space-x-2">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              progress === 100 ? 'bg-green-500 text-white' : 
-                              progress > 0 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
-                            }`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${progress === 100 ? 'bg-green-500 text-white' :
+                                progress > 0 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
+                              }`}>
                               {index + 1}
                             </div>
                             <span className="font-semibold">{stage.name}</span>
@@ -641,7 +803,7 @@ export default function AdvancedProduction() {
               const efficiency = calculateEfficiency(production);
               const wastePercentage = calculateWastePercentage(production);
               const factory = factories.find(f => f.id === production.factoryId);
-              
+
               return (
                 <Card key={production.id}>
                   <CardContent className="p-6">
@@ -657,7 +819,7 @@ export default function AdvancedProduction() {
                           </Badge>
                         </div>
                         <p className="text-gray-600 mb-3">Pedido #{production.orderId} • {production.notes}</p>
-                        
+
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
                             <span className="text-gray-600 text-sm">Planejado</span>
@@ -677,7 +839,7 @@ export default function AdvancedProduction() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="text-right ml-4">
                         <div className="space-y-2">
                           <div>
@@ -700,7 +862,7 @@ export default function AdvancedProduction() {
                         )}
                       </div>
                     </div>
-                    
+
                     {production.startDate && (
                       <div className="flex justify-between text-sm text-gray-500 pt-3 border-t">
                         <span>Início: {format(production.startDate, 'dd/MM/yyyy', { locale: ptBR })}</span>
@@ -723,7 +885,7 @@ export default function AdvancedProduction() {
               const totalProduced = factoryProductions.reduce((sum, p) => sum + p.producedQuantity, 0);
               const totalPlanned = factoryProductions.reduce((sum, p) => sum + p.plannedQuantity, 0);
               const activeProductions = factoryProductions.filter(p => p.status === 'in_progress').length;
-              
+
               return (
                 <Card key={factory.id}>
                   <CardContent className="p-6">
@@ -736,37 +898,37 @@ export default function AdvancedProduction() {
                         Score: {getFactoryScore(factory)}
                       </Badge>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Especialidades</span>
                         <span className="font-semibold text-sm">{factory.specialties.join(", ")}</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Eficiência</span>
                         <span className="font-semibold">{factory.efficiency}%</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Qualidade</span>
                         <span className="font-semibold">{factory.qualityScore}%</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Atraso Médio</span>
                         <span className={`font-semibold ${factory.averageDelay <= 2 ? 'text-green-600' : 'text-red-600'}`}>
                           {factory.averageDelay} dias
                         </span>
                       </div>
-                      
+
                       <Separator />
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Produções Ativas</span>
                         <span className="font-semibold">{activeProductions}</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Total Produzido</span>
                         <span className="font-semibold">{totalProduced} peças</span>
@@ -820,7 +982,7 @@ export default function AdvancedProduction() {
                     const factory = factories.find(f => f.id === week.factoryId);
                     const wasteGoal = 5; // Meta de 5% de perda
                     const isGoodWaste = week.wastePercentage <= wasteGoal;
-                    
+
                     return (
                       <div key={index} className="space-y-2">
                         <div className="flex justify-between">
@@ -829,9 +991,9 @@ export default function AdvancedProduction() {
                             {week.wastePercentage.toFixed(1)}%
                           </span>
                         </div>
-                        <Progress 
-                          value={Math.min((week.wastePercentage / 10) * 100, 100)} 
-                          className={`h-2 ${!isGoodWaste ? 'bg-red-100' : ''}`} 
+                        <Progress
+                          value={Math.min((week.wastePercentage / 10) * 100, 100)}
+                          className={`h-2 ${!isGoodWaste ? 'bg-red-100' : ''}`}
                         />
                         <div className="flex justify-between text-xs text-gray-600">
                           <span>Rejeitadas: {week.rejectedPieces}</span>
@@ -844,6 +1006,145 @@ export default function AdvancedProduction() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="qrcodes" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">QR Codes & Etiquetas</h2>
+              <p className="text-gray-600">Gere QR codes para fichas técnicas, rastreamento e status</p>
+            </div>
+            <Dialog open={isCreateQROpen} onOpenChange={setIsCreateQROpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo QR Code
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Criar Novo QR Code</DialogTitle>
+                  <DialogDescription>
+                    Configure o tipo e formato do QR Code para impressão
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="qr-type">Tipo de QR Code</Label>
+                    <Select value={selectedQRType} onValueChange={setSelectedQRType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tech_sheet">Ficha Técnica</SelectItem>
+                        <SelectItem value="model_info">Info do Modelo</SelectItem>
+                        <SelectItem value="order_status">Status do Pedido</SelectItem>
+                        <SelectItem value="fabric_info">Info do Tecido</SelectItem>
+                        <SelectItem value="production_track">Rastreamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="qr-format">Formato da Etiqueta</Label>
+                    <Select value={selectedQRFormat} onValueChange={setSelectedQRFormat}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o formato" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">Pequeno (40x30mm)</SelectItem>
+                        <SelectItem value="medium">Médio (60x40mm)</SelectItem>
+                        <SelectItem value="large">Grande (80x60mm)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="qr-url">URL Personalizada (opcional)</Label>
+                    <Input
+                      id="qr-url"
+                      placeholder="https://iatex.app/..."
+                      value={customQRUrl}
+                      onChange={(e) => setCustomQRUrl(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setIsCreateQROpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateQR}>
+                    Criar QR Code
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {qrCodes.map((qr) => (
+              <Card key={qr.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      {getQRTypeIcon(qr.type)}
+                      <CardTitle className="text-lg">{qr.title}</CardTitle>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {qr.labelFormat}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-sm">
+                    {qr.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <div className="w-24 h-24 bg-gray-200 rounded flex items-center justify-center">
+                      <QrCode className="h-8 w-8 text-gray-400" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Criado:</span>
+                      <span>{qr.createdAt.toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Impressões:</span>
+                      <span>{qr.printCount}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="outline" onClick={() => handlePrintQR(qr)}>
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDownloadQR(qr)}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleShareQR(qr)}>
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {qrCodes.length === 0 && (
+            <Card className="text-center py-12">
+              <CardContent>
+                <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum QR Code criado</h3>
+                <p className="text-gray-600 mb-4">
+                  Crie seu primeiro QR Code para fichas técnicas, rastreamento ou status de pedidos
+                </p>
+                <Button onClick={() => setIsCreateQROpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeiro QR Code
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

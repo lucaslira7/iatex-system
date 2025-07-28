@@ -10,14 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Users, 
-  Factory, 
-  Camera, 
-  Upload, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
+import {
+  Users,
+  Factory,
+  Camera,
+  Upload,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   MapPin,
   MessageSquare,
   Package,
@@ -45,6 +45,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { format, addDays, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay, isToday } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Interfaces para os dados
 interface KanbanTask {
@@ -131,6 +133,23 @@ interface DailyGoal {
   completed: boolean;
 }
 
+// Interface para eventos do calendário
+interface CalendarEvent {
+  id: number;
+  type: 'production' | 'delivery' | 'payment' | 'meeting' | 'reminder';
+  title: string;
+  description: string;
+  date: Date;
+  startTime?: string;
+  endTime?: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  relatedId?: number;
+  factory?: string;
+  pieces?: number;
+  value?: number;
+}
+
 export default function OperationalPanelFixed() {
   const [selectedTask, setSelectedTask] = useState<KanbanTask | null>(null);
   const [newTask, setNewTask] = useState({
@@ -161,25 +180,29 @@ export default function OperationalPanelFixed() {
   // Fetch kanban tasks
   const { data: tasks = [], isLoading: loadingTasks } = useQuery<any[]>({
     queryKey: ['/api/operational/tasks'],
-    refetchInterval: 30000
+    refetchInterval: 5 * 60 * 1000, // 5 minutos em vez de 30s
+    staleTime: 2 * 60 * 1000, // 2 minutos
   });
 
   // Fetch production orders
   const { data: productionOrders = [], isLoading: loadingProduction } = useQuery<any[]>({
     queryKey: ['/api/operational/production'],
-    refetchInterval: 30000
+    refetchInterval: 5 * 60 * 1000, // 5 minutos
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch supply requests
   const { data: supplyRequests = [], isLoading: loadingSupplies } = useQuery<any[]>({
     queryKey: ['/api/operational/supplies'],
-    refetchInterval: 30000
+    refetchInterval: 5 * 60 * 1000, // 5 minutos
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch daily goals
   const { data: dailyGoals = [], isLoading: loadingGoals } = useQuery<any[]>({
     queryKey: ['/api/operational/goals'],
-    refetchInterval: 30000
+    refetchInterval: 10 * 60 * 1000, // 10 minutos para metas diárias
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -264,6 +287,79 @@ export default function OperationalPanelFixed() {
   const isManager = user?.role === 'manager' || user?.role === 'admin';
   const isFactory = user?.role === 'factory' || user?.role === 'faccao';
 
+  const getEventTypeColor = (type: string) => {
+    switch (type) {
+      case 'production': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'delivery': return 'bg-green-100 text-green-800 border-green-200';
+      case 'payment': return 'bg-red-100 text-red-800 border-red-200';
+      case 'meeting': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'reminder': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getEventTypeIcon = (type: string) => {
+    switch (type) {
+      case 'production': return <Factory className="h-4 w-4" />;
+      case 'delivery': return <Package className="h-4 w-4" />;
+      case 'payment': return <DollarSign className="h-4 w-4" />;
+      case 'meeting': return <Calendar className="h-4 w-4" />;
+      case 'reminder': return <Clock className="h-4 w-4" />;
+      default: return <Calendar className="h-4 w-4" />;
+    }
+  };
+
+  const getEventTypeName = (type: string) => {
+    switch (type) {
+      case 'production': return 'Produção';
+      case 'delivery': return 'Entrega';
+      case 'payment': return 'Pagamento';
+      case 'meeting': return 'Reunião';
+      case 'reminder': return 'Lembrete';
+      default: return type;
+    }
+  };
+
+  const getWeekDays = () => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(start, i));
+    }
+    return days;
+  };
+
+  const getTodayEvents = () => {
+    return events.filter(e => isSameDay(e.date, new Date()));
+  };
+
+  const getUpcomingEvents = () => {
+    const today = new Date();
+    return events
+      .filter(e => e.date > today)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 5);
+  };
+
+  const handleSyncGoogleCalendar = () => {
+    toast({
+      title: "Sincronização Google Calendar",
+      description: "Funcionalidade de sincronização será implementada em breve.",
+    });
+  };
+
+  const getProductionSummary = () => {
+    const productionEvents = events.filter(e => e.type === 'production');
+    const totalPieces = productionEvents.reduce((sum, e) => sum + (e.pieces || 0), 0);
+    const activeProductions = productionEvents.filter(e => e.status === 'in_progress').length;
+
+    return {
+      totalPieces,
+      activeProductions,
+      totalEvents: productionEvents.length
+    };
+  };
+
   return (
     <div className="p-6 max-w-full mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -276,7 +372,7 @@ export default function OperationalPanelFixed() {
             <p className="text-gray-600">Gestão visual de tarefas e produção</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
             <SelectTrigger className="w-40">
@@ -288,7 +384,7 @@ export default function OperationalPanelFixed() {
               <SelectItem value="factory">Facção</SelectItem>
             </SelectContent>
           </Select>
-          
+
           {isManager && (
             <Button onClick={() => setShowTaskModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -309,7 +405,7 @@ export default function OperationalPanelFixed() {
         {/* Kanban Board - SEM DRAG & DROP */}
         <TabsContent value="kanban" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             {/* A Fazer */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -319,7 +415,7 @@ export default function OperationalPanelFixed() {
                   {kanbanColumns.todo.length}
                 </Badge>
               </div>
-              
+
               <div className="space-y-3 min-h-[400px] p-2 bg-gray-50 rounded-lg">
                 {kanbanColumns.todo.map((task) => (
                   <Card
@@ -331,15 +427,15 @@ export default function OperationalPanelFixed() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {getTaskTypeIcon(task.type)}
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs ${getPriorityColor(task.priority)} text-white`}
                           >
                             {task.priority}
                           </Badge>
                         </div>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -349,14 +445,14 @@ export default function OperationalPanelFixed() {
                           <ArrowRight className="h-3 w-3" />
                         </Button>
                       </div>
-                      
+
                       <h4 className="font-medium mb-1 text-sm">
                         {task.title}
                       </h4>
                       <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                         {task.description}
                       </p>
-                      
+
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
@@ -384,7 +480,7 @@ export default function OperationalPanelFixed() {
                   {kanbanColumns.doing.length}
                 </Badge>
               </div>
-              
+
               <div className="space-y-3 min-h-[400px] p-2 bg-blue-50 rounded-lg">
                 {kanbanColumns.doing.map((task) => (
                   <Card
@@ -401,8 +497,8 @@ export default function OperationalPanelFixed() {
                           </Badge>
                         </div>
                         <div className="flex gap-1">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -411,8 +507,8 @@ export default function OperationalPanelFixed() {
                           >
                             ←
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -423,11 +519,11 @@ export default function OperationalPanelFixed() {
                           </Button>
                         </div>
                       </div>
-                      
+
                       <h4 className="font-medium mb-1 text-sm">
                         {task.title}
                       </h4>
-                      
+
                       {task.progress > 0 && (
                         <div className="mb-2">
                           <Progress value={task.progress} className="h-2" />
@@ -449,7 +545,7 @@ export default function OperationalPanelFixed() {
                   {kanbanColumns.done.length}
                 </Badge>
               </div>
-              
+
               <div className="space-y-3 min-h-[400px] p-2 bg-green-50 rounded-lg">
                 {kanbanColumns.done.map((task) => (
                   <Card
@@ -466,7 +562,7 @@ export default function OperationalPanelFixed() {
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <h4 className="font-medium mb-1 text-sm line-through">
                         {task.title}
                       </h4>
@@ -548,7 +644,7 @@ export default function OperationalPanelFixed() {
                       {request.status}
                     </Badge>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium mb-2">Itens solicitados:</p>
@@ -561,9 +657,9 @@ export default function OperationalPanelFixed() {
                         )}
                       </ul>
                     </div>
-                    
+
                     <div>
-                      <p className="text-sm font-medium mb-1">Urgência: 
+                      <p className="text-sm font-medium mb-1">Urgência:
                         <Badge variant="outline" className="ml-2 text-xs">
                           {request.urgency}
                         </Badge>
@@ -590,18 +686,18 @@ export default function OperationalPanelFixed() {
             <p className="text-sm text-gray-600">Metas Concluídas</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {productionOrders?.filter((p: ProductionOrder) => 
+              {productionOrders?.filter((p: ProductionOrder) =>
                 p.status === 'in-production' || p.status === 'quality-check'
               ).length || 0}
             </div>
             <p className="text-sm text-gray-600">Em Produção</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
@@ -610,7 +706,7 @@ export default function OperationalPanelFixed() {
             <p className="text-sm text-gray-600">Insumos Pendentes</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">
@@ -630,7 +726,7 @@ export default function OperationalPanelFixed() {
               Criar uma nova tarefa no painel operacional
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <Label htmlFor="title">Título da Tarefa</Label>
@@ -641,7 +737,7 @@ export default function OperationalPanelFixed() {
                 placeholder="Ex: Cortar tecido modelo A1"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="description">Descrição</Label>
               <Textarea
@@ -652,7 +748,7 @@ export default function OperationalPanelFixed() {
                 rows={3}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="priority">Prioridade</Label>
@@ -668,7 +764,7 @@ export default function OperationalPanelFixed() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="type">Tipo</Label>
                 <Select value={newTask.type} onValueChange={(value: any) => setNewTask(prev => ({ ...prev, type: value }))}>
@@ -685,7 +781,7 @@ export default function OperationalPanelFixed() {
                 </Select>
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="dueDate">Data de Vencimento</Label>
               <Input
@@ -696,12 +792,12 @@ export default function OperationalPanelFixed() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTaskModal(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={() => createTaskMutation.mutate(newTask)}
               disabled={!newTask.title.trim() || createTaskMutation.isPending}
             >
@@ -723,7 +819,7 @@ export default function OperationalPanelFixed() {
               Detalhes e status da tarefa
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedTask && (
             <div className="space-y-4">
               <div className="flex gap-2">
@@ -737,11 +833,11 @@ export default function OperationalPanelFixed() {
                   {selectedTask.type}
                 </Badge>
               </div>
-              
+
               <p className="text-sm text-gray-600">
                 {selectedTask.description}
               </p>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <strong>Responsável:</strong> {selectedTask.assignedTo}
@@ -760,14 +856,14 @@ export default function OperationalPanelFixed() {
                   </div>
                 )}
               </div>
-              
+
               {selectedTask.progress > 0 && (
                 <div>
                   <Label>Progresso: {selectedTask.progress}%</Label>
                   <Progress value={selectedTask.progress} className="mt-2" />
                 </div>
               )}
-              
+
               {selectedTask.tags.length > 0 && (
                 <div>
                   <Label>Tags:</Label>
@@ -782,7 +878,7 @@ export default function OperationalPanelFixed() {
               )}
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedTask(null)}>
               Fechar
@@ -790,7 +886,7 @@ export default function OperationalPanelFixed() {
             {selectedTask && isManager && (
               <div className="flex gap-2">
                 {selectedTask.status !== 'done' && (
-                  <Button 
+                  <Button
                     size="sm"
                     onClick={() => {
                       moveTask(selectedTask.id, 'done');

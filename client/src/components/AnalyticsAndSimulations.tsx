@@ -1,647 +1,887 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Calculator, 
-  Target,
-  AlertTriangle,
-  CheckCircle,
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import {
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
   DollarSign,
   Package,
   Users,
-  Calendar,
+  Factory,
+  Clock,
+  Filter,
+  Download,
+  Eye,
+  Settings,
+  RefreshCw,
+  Target,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
   PieChart,
   LineChart,
-  Download,
-  RefreshCw,
-  Filter,
-  Search,
-  Eye,
-  ArrowUpDown
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import type { Fabric, Model } from '@shared/schema';
+  Activity,
+  Calendar,
+  Zap,
+  BarChart,
+  Scatter,
+  HeatMap,
+  Radar,
+  Gauge,
+  ArrowUp,
+  ArrowDown,
+  Minus
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-interface SimulationResult {
-  fabric: string;
-  cost: number;
-  margin: number;
-  finalPrice: number;
-  savings: number;
+interface ChartData {
+  id: string;
+  type: 'bar' | 'line' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar' | 'gauge';
+  title: string;
+  description: string;
+  data: any[];
+  config: any;
+  filters: ChartFilter[];
+  drillDownEnabled: boolean;
+  lastUpdated: string;
 }
 
-interface KPIData {
-  title: string;
-  value: string;
+interface ChartFilter {
+  id: string;
+  name: string;
+  type: 'date' | 'select' | 'number' | 'boolean';
+  value: any;
+  options?: string[];
+  min?: number;
+  max?: number;
+}
+
+interface AnalyticsMetric {
+  id: string;
+  name: string;
+  value: number;
   change: number;
-  trend: 'up' | 'down';
+  trend: 'up' | 'down' | 'stable';
+  unit: string;
+  color: string;
+  icon: any;
+}
+
+interface SimulationConfig {
+  id: string;
+  name: string;
   description: string;
-  target?: string;
-  progress?: number;
+  parameters: SimulationParameter[];
+  results: SimulationResult[];
+  status: 'idle' | 'running' | 'completed' | 'failed';
+}
+
+interface SimulationParameter {
+  id: string;
+  name: string;
+  type: 'number' | 'percentage' | 'boolean';
+  value: any;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+interface SimulationResult {
+  id: string;
+  name: string;
+  value: number;
+  target: number;
+  variance: number;
+  status: 'success' | 'warning' | 'error';
 }
 
 export default function AnalyticsAndSimulations() {
-  const [activeTab, setActiveTab] = useState('simulations');
-  const [selectedModel, setSelectedModel] = useState('');
-  const [targetPrice, setTargetPrice] = useState('');
-  const [markupPercentage, setMarkupPercentage] = useState('');
-  const [simulationResults, setSimulationResults] = useState<SimulationResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedChart, setSelectedChart] = useState<ChartData | null>(null);
+  const [showChartDialog, setShowChartDialog] = useState(false);
+  const [showSimulationDialog, setShowSimulationDialog] = useState(false);
+  const [globalFilters, setGlobalFilters] = useState({
+    dateRange: '30d',
+    category: 'all',
+    factory: 'all'
+  });
+  const [charts, setCharts] = useState<ChartData[]>([]);
+  const [simulations, setSimulations] = useState<SimulationConfig[]>([]);
+  const [metrics, setMetrics] = useState<AnalyticsMetric[]>([]);
+
   const { toast } = useToast();
 
-  // Buscar dados do sistema
-  const { data: fabrics = [] } = useQuery<Fabric[]>({
-    queryKey: ['/api/fabrics'],
-  });
+  // Simular dados de métricas
+  useEffect(() => {
+    setMetrics([
+      {
+        id: '1',
+        name: 'Receita Total',
+        value: 152000,
+        change: 12.5,
+        trend: 'up',
+        unit: 'R$',
+        color: 'text-green-600',
+        icon: DollarSign
+      },
+      {
+        id: '2',
+        name: 'Pedidos Ativos',
+        value: 23,
+        change: -5.2,
+        trend: 'down',
+        unit: '',
+        color: 'text-red-600',
+        icon: Package
+      },
+      {
+        id: '3',
+        name: 'Eficiência',
+        value: 87,
+        change: 3.8,
+        trend: 'up',
+        unit: '%',
+        color: 'text-green-600',
+        icon: Target
+      },
+      {
+        id: '4',
+        name: 'Clientes Ativos',
+        value: 156,
+        change: 8.3,
+        trend: 'up',
+        unit: '',
+        color: 'text-green-600',
+        icon: Users
+      }
+    ]);
 
-  const { data: models = [] } = useQuery<Model[]>({
-    queryKey: ['/api/models'],
-  });
+    // Simular dados de gráficos
+    setCharts([
+      {
+        id: '1',
+        type: 'bar',
+        title: 'Vendas por Mês',
+        description: 'Comparativo de vendas nos últimos 12 meses',
+        data: [
+          { month: 'Jan', sales: 120000, orders: 18 },
+          { month: 'Fev', sales: 135000, orders: 22 },
+          { month: 'Mar', sales: 142000, orders: 25 },
+          { month: 'Abr', sales: 152000, orders: 23 },
+          { month: 'Mai', sales: 148000, orders: 21 },
+          { month: 'Jun', sales: 165000, orders: 28 }
+        ],
+        config: {
+          xAxis: 'month',
+          yAxis: 'sales',
+          color: 'blue',
+          stacked: false
+        },
+        filters: [
+          { id: '1', name: 'Período', type: 'select', value: '6m', options: ['3m', '6m', '12m'] },
+          { id: '2', name: 'Tipo', type: 'select', value: 'sales', options: ['sales', 'orders'] }
+        ],
+        drillDownEnabled: true,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        id: '2',
+        type: 'line',
+        title: 'Eficiência de Produção',
+        description: 'Evolução da eficiência por facção',
+        data: [
+          { date: '2025-01-01', faccaoA: 85, faccaoB: 78, faccaoC: 92 },
+          { date: '2025-01-08', faccaoA: 87, faccaoB: 82, faccaoC: 89 },
+          { date: '2025-01-15', faccaoA: 89, faccaoB: 85, faccaoC: 91 },
+          { date: '2025-01-22', faccaoA: 91, faccaoB: 88, faccaoC: 93 }
+        ],
+        config: {
+          xAxis: 'date',
+          yAxis: 'percentage',
+          color: 'multi',
+          smooth: true
+        },
+        filters: [
+          { id: '1', name: 'Facção', type: 'select', value: 'all', options: ['all', 'faccaoA', 'faccaoB', 'faccaoC'] }
+        ],
+        drillDownEnabled: true,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        id: '3',
+        type: 'pie',
+        title: 'Distribuição de Produtos',
+        description: 'Participação de cada produto nas vendas',
+        data: [
+          { product: 'Camisetas', sales: 45, percentage: 35 },
+          { product: 'Calças', sales: 32, percentage: 25 },
+          { product: 'Vestidos', sales: 28, percentage: 22 },
+          { product: 'Outros', sales: 23, percentage: 18 }
+        ],
+        config: {
+          value: 'sales',
+          label: 'product',
+          color: 'palette'
+        },
+        filters: [
+          { id: '1', name: 'Período', type: 'select', value: '30d', options: ['7d', '30d', '90d'] }
+        ],
+        drillDownEnabled: false,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        id: '4',
+        type: 'area',
+        title: 'Fluxo de Caixa',
+        description: 'Entradas e saídas de caixa ao longo do tempo',
+        data: [
+          { date: '2025-01-01', receitas: 45000, despesas: 32000, saldo: 13000 },
+          { date: '2025-01-08', receitas: 52000, despesas: 38000, saldo: 14000 },
+          { date: '2025-01-15', receitas: 48000, despesas: 35000, saldo: 13000 },
+          { date: '2025-01-22', receitas: 55000, despesas: 42000, saldo: 13000 }
+        ],
+        config: {
+          xAxis: 'date',
+          yAxis: 'value',
+          color: 'gradient',
+          stacked: true
+        },
+        filters: [
+          { id: '1', name: 'Tipo', type: 'select', value: 'all', options: ['all', 'receitas', 'despesas'] }
+        ],
+        drillDownEnabled: true,
+        lastUpdated: new Date().toISOString()
+      }
+    ]);
 
-  // Mock data para KPIs e relatórios
-  const kpiData: KPIData[] = [
-    {
-      title: 'Receita Total',
-      value: 'R$ 85.420',
-      change: 12.5,
-      trend: 'up',
-      description: 'vs mês anterior',
-      target: 'R$ 100.000',
-      progress: 85
-    },
-    {
-      title: 'Margem Média',
-      value: '68%',
-      change: -2.1,
-      trend: 'down',
-      description: 'vs mês anterior',
-      target: '70%',
-      progress: 68
-    },
-    {
-      title: 'Pedidos Ativos',
-      value: '24',
-      change: 15.8,
-      trend: 'up',
-      description: 'novos pedidos',
-      target: '30',
-      progress: 80
-    },
-    {
-      title: 'Satisfação Cliente',
-      value: '4.8/5',
-      change: 5.2,
-      trend: 'up',
-      description: 'média de avaliações',
-      target: '5.0',
-      progress: 96
+    // Simular dados de simulações
+    setSimulations([
+      {
+        id: '1',
+        name: 'Simulação de Preços',
+        description: 'Análise de impacto de mudanças de preço',
+        parameters: [
+          { id: '1', name: 'Aumento de Preço (%)', type: 'percentage', value: 10, min: 0, max: 50, step: 5 },
+          { id: '2', name: 'Redução de Demanda (%)', type: 'percentage', value: 5, min: 0, max: 30, step: 2 },
+          { id: '3', name: 'Custos Fixos', type: 'number', value: 15000, min: 10000, max: 25000, step: 1000 }
+        ],
+        results: [
+          { id: '1', name: 'Receita Projetada', value: 167200, target: 160000, variance: 4.5, status: 'success' },
+          { id: '2', name: 'Margem de Lucro', value: 28.5, target: 25, variance: 14, status: 'success' },
+          { id: '3', name: 'Volume de Vendas', value: 21.8, target: 23, variance: -5.2, status: 'warning' }
+        ],
+        status: 'completed'
+      },
+      {
+        id: '2',
+        name: 'Otimização de Produção',
+        description: 'Análise de eficiência com diferentes cenários',
+        parameters: [
+          { id: '1', name: 'Horas Extras (%)', type: 'percentage', value: 20, min: 0, max: 50, step: 5 },
+          { id: '2', name: 'Nova Máquina', type: 'boolean', value: true },
+          { id: '3', name: 'Treinamento Equipe', type: 'boolean', value: false }
+        ],
+        results: [
+          { id: '1', name: 'Capacidade de Produção', value: 125, target: 120, variance: 4.2, status: 'success' },
+          { id: '2', name: 'Custos Operacionais', value: 18500, target: 18000, variance: 2.8, status: 'warning' },
+          { id: '3', name: 'Eficiência Geral', value: 92, target: 90, variance: 2.2, status: 'success' }
+        ],
+        status: 'completed'
+      }
+    ]);
+  }, []);
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'up': return ArrowUp;
+      case 'down': return ArrowDown;
+      default: return Minus;
     }
-  ];
-
-  const topPerformingModels = [
-    { name: 'Camisa Social Premium', sales: 45, revenue: 'R$ 12.650', margin: '72%' },
-    { name: 'Vestido Casual Verão', sales: 38, revenue: 'R$ 9.880', margin: '65%' },
-    { name: 'Calça Alfaiataria', sales: 32, revenue: 'R$ 8.960', margin: '58%' },
-    { name: 'Blazer Executivo', sales: 28, revenue: 'R$ 11.200', margin: '68%' },
-    { name: 'Saia Midi Elegante', sales: 25, revenue: 'R$ 6.250', margin: '62%' }
-  ];
-
-  const fabricAnalysis = [
-    { name: 'Algodão Premium', usage: 35, cost: 'R$ 45/m', efficiency: 'Alta', trend: 'up' },
-    { name: 'Linho Importado', usage: 22, cost: 'R$ 68/m', efficiency: 'Média', trend: 'down' },
-    { name: 'Poliéster Técnico', usage: 28, cost: 'R$ 32/m', efficiency: 'Alta', trend: 'up' },
-    { name: 'Seda Natural', usage: 15, cost: 'R$ 95/m', efficiency: 'Baixa', trend: 'down' }
-  ];
-
-  const monthlyTrends = [
-    { month: 'Jan', revenue: 45000, orders: 18, margin: 65 },
-    { month: 'Fev', revenue: 52000, orders: 22, margin: 68 },
-    { month: 'Mar', revenue: 48000, orders: 19, margin: 66 },
-    { month: 'Abr', revenue: 58000, orders: 26, margin: 70 },
-    { month: 'Mai', revenue: 62000, orders: 28, margin: 69 },
-    { month: 'Jun', revenue: 71000, orders: 32, margin: 72 }
-  ];
-
-  const runFabricComparison = async () => {
-    if (!selectedModel) {
-      toast({
-        title: "Selecione um modelo",
-        description: "Escolha um modelo para executar a simulação.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    
-    // Simular análise com delay
-    setTimeout(() => {
-      const mockResults: SimulationResult[] = fabrics.slice(0, 4).map((fabric, index) => {
-        const baseCost = 25 + (index * 8);
-        const margin = 60 + (index * 5);
-        const finalPrice = baseCost * (1 + margin / 100);
-        const savings = index === 0 ? 0 : (finalPrice - 45) * -1;
-        
-        return {
-          fabric: fabric.name,
-          cost: baseCost,
-          margin: margin,
-          finalPrice: finalPrice,
-          savings: savings
-        };
-      });
-      
-      setSimulationResults(mockResults);
-      setIsLoading(false);
-      
-      toast({
-        title: "Simulação concluída!",
-        description: "Comparação de tecidos gerada com sucesso.",
-      });
-    }, 2000);
   };
 
-  const runReverseMarkup = () => {
-    if (!targetPrice || !markupPercentage) {
-      toast({
-        title: "Preencha todos os campos",
-        description: "Informe o preço final e a margem desejada.",
-        variant: "destructive",
-      });
-      return;
+  const getTrendColor = (trend: string) => {
+    switch (trend) {
+      case 'up': return 'text-green-600';
+      case 'down': return 'text-red-600';
+      default: return 'text-gray-600';
     }
+  };
 
-    const finalPrice = parseFloat(targetPrice);
-    const markup = parseFloat(markupPercentage);
-    const maxCost = finalPrice / (1 + markup / 100);
-    
+  const getChartIcon = (type: string) => {
+    switch (type) {
+      case 'bar': return BarChart;
+      case 'line': return LineChart;
+      case 'pie': return PieChart;
+      case 'area': return Activity;
+      case 'scatter': return Scatter;
+      case 'heatmap': return HeatMap;
+      case 'radar': return Radar;
+      case 'gauge': return Gauge;
+      default: return BarChart3;
+    }
+  };
+
+  const handleChartClick = (chart: ChartData) => {
+    setSelectedChart(chart);
+    setShowChartDialog(true);
+  };
+
+  const handleSimulationRun = (simulationId: string) => {
+    setSimulations(prev =>
+      prev.map(s =>
+        s.id === simulationId
+          ? { ...s, status: 'running' as const }
+          : s
+      )
+    );
+
+    // Simular execução da simulação
+    setTimeout(() => {
+      setSimulations(prev =>
+        prev.map(s =>
+          s.id === simulationId
+            ? { ...s, status: 'completed' as const }
+            : s
+        )
+      );
+
+      toast({
+        title: "Simulação concluída",
+        description: "Os resultados foram atualizados com sucesso.",
+      });
+    }, 3000);
+  };
+
+  const handleChartFilterChange = (chartId: string, filterId: string, value: any) => {
+    setCharts(prev =>
+      prev.map(chart =>
+        chart.id === chartId
+          ? {
+            ...chart,
+            filters: chart.filters.map(filter =>
+              filter.id === filterId
+                ? { ...filter, value }
+                : filter
+            )
+          }
+          : chart
+      )
+    );
+  };
+
+  const handleGlobalFilterChange = (filter: string, value: any) => {
+    setGlobalFilters(prev => ({ ...prev, [filter]: value }));
+  };
+
+  const exportChart = (chart: ChartData) => {
     toast({
-      title: "Cálculo realizado!",
-      description: `Custo máximo: R$ ${maxCost.toFixed(2)}`,
+      title: "Exportando gráfico",
+      description: `Gráfico "${chart.title}" exportado com sucesso.`,
     });
   };
 
-  const exportReport = (type: string) => {
+  const refreshData = () => {
     toast({
-      title: "Relatório exportado!",
-      description: `${type} foi baixado com sucesso.`,
+      title: "Atualizando dados",
+      description: "Dados dos gráficos atualizados.",
     });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Analytics & Simulações</h2>
-          <p className="text-gray-600">Análises avançadas e simulações para otimização do negócio</p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <BarChart3 className="h-8 w-8 text-indigo-600" />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Analytics & Simulações</h1>
+            <p className="text-gray-600">Gráficos interativos e simulações avançadas</p>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline">
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" onClick={refreshData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Atualizar
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="simulations">Simulações</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Relatórios</TabsTrigger>
-          <TabsTrigger value="insights">Insights IA</TabsTrigger>
-        </TabsList>
-
-        {/* Aba Simulações */}
-        <TabsContent value="simulations" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Comparação de Tecidos */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <ArrowUpDown className="h-5 w-5 mr-2 text-blue-600" />
-                  Comparação de Tecidos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <Dialog open={showSimulationDialog} onOpenChange={setShowSimulationDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Zap className="h-4 w-4 mr-2" />
+                Nova Simulação
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Criar Nova Simulação</DialogTitle>
+                <DialogDescription>
+                  Configure parâmetros para análise de cenários
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="model-select">Modelo para Análise</Label>
-                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <Label>Nome da Simulação</Label>
+                  <Input placeholder="Ex: Análise de Preços 2025" />
+                </div>
+                <div>
+                  <Label>Descrição</Label>
+                  <Input placeholder="Descreva o objetivo da simulação" />
+                </div>
+                <div>
+                  <Label>Tipo de Análise</Label>
+                  <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um modelo" />
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {models.map(model => (
-                        <SelectItem key={model.id} value={model.id.toString()}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="pricing">Análise de Preços</SelectItem>
+                      <SelectItem value="production">Otimização de Produção</SelectItem>
+                      <SelectItem value="inventory">Gestão de Estoque</SelectItem>
+                      <SelectItem value="financial">Projeções Financeiras</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <Button 
-                  onClick={runFabricComparison} 
-                  disabled={isLoading || !selectedModel}
-                  className="w-full"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Analisando...
-                    </>
-                  ) : (
-                    <>
-                      <Calculator className="h-4 w-4 mr-2" />
-                      Executar Simulação
-                    </>
-                  )}
-                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
 
-                {simulationResults.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Resultados da Comparação:</h4>
-                    {simulationResults.map((result, index) => (
-                      <div key={index} className="p-3 bg-gray-50 rounded flex justify-between items-center">
-                        <div>
-                          <span className="font-medium">{result.fabric}</span>
-                          <div className="text-sm text-gray-600">
-                            Custo: R$ {result.cost.toFixed(2)} | Margem: {result.margin}%
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-green-600">
-                            R$ {result.finalPrice.toFixed(2)}
-                          </div>
-                          {result.savings !== 0 && (
-                            <div className={`text-sm ${result.savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {result.savings > 0 ? '+' : ''}R$ {result.savings.toFixed(2)}
-                            </div>
-                          )}
+      {/* Filtros Globais */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Filter className="h-5 w-5" />
+            <span>Filtros Globais</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-4">
+            <div>
+              <Label>Período</Label>
+              <Select
+                value={globalFilters.dateRange}
+                onValueChange={(value) => handleGlobalFilterChange('dateRange', value)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">7 dias</SelectItem>
+                  <SelectItem value="30d">30 dias</SelectItem>
+                  <SelectItem value="90d">90 dias</SelectItem>
+                  <SelectItem value="1y">1 ano</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select
+                value={globalFilters.category}
+                onValueChange={(value) => handleGlobalFilterChange('category', value)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="financial">Financeiro</SelectItem>
+                  <SelectItem value="operational">Operacional</SelectItem>
+                  <SelectItem value="commercial">Comercial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Facção</Label>
+              <Select
+                value={globalFilters.factory}
+                onValueChange={(value) => handleGlobalFilterChange('factory', value)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="faccaoA">Facção A</SelectItem>
+                  <SelectItem value="faccaoB">Facção B</SelectItem>
+                  <SelectItem value="faccaoC">Facção C</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Métricas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {metrics.map((metric) => {
+          const TrendIcon = getTrendIcon(metric.trend);
+          const MetricIcon = metric.icon;
+
+          return (
+            <Card key={metric.id}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{metric.name}</CardTitle>
+                <MetricIcon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {metric.unit}{metric.value.toLocaleString()}
+                </div>
+                <div className={`flex items-center space-x-1 text-sm ${getTrendColor(metric.trend)}`}>
+                  <TrendIcon className="h-3 w-3" />
+                  <span>{metric.change > 0 ? '+' : ''}{metric.change}%</span>
+                  <span>vs mês anterior</span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="flex items-center space-x-1">
+            <BarChart3 className="h-4 w-4" />
+            <span>Visão Geral</span>
+          </TabsTrigger>
+          <TabsTrigger value="charts" className="flex items-center space-x-1">
+            <LineChart className="h-4 w-4" />
+            <span>Gráficos</span>
+          </TabsTrigger>
+          <TabsTrigger value="simulations" className="flex items-center space-x-1">
+            <Zap className="h-4 w-4" />
+            <span>Simulações</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {charts.slice(0, 4).map((chart) => {
+              const ChartIcon = getChartIcon(chart.type);
+
+              return (
+                <Card key={chart.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <ChartIcon className="h-5 w-5 text-gray-600" />
+                        <CardTitle className="text-lg">{chart.title}</CardTitle>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {chart.drillDownEnabled && (
+                          <Button size="sm" variant="ghost">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => exportChart(chart)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription>{chart.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <ChartIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Gráfico {chart.type}</p>
+                        <p className="text-xs text-gray-500">
+                          {chart.data.length} pontos de dados
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Filtros do Gráfico */}
+                    {chart.filters.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <Label className="text-sm font-medium">Filtros:</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {chart.filters.map(filter => (
+                            <Select
+                              key={filter.id}
+                              value={filter.value}
+                              onValueChange={(value) => handleChartFilterChange(chart.id, filter.id, value)}
+                            >
+                              <SelectTrigger className="w-auto">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {filter.options?.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Markup Reverso */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Target className="h-5 w-5 mr-2 text-green-600" />
-                  Markup Reverso
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="target-price">Preço Final Desejado (R$)</Label>
-                  <Input
-                    id="target-price"
-                    type="number"
-                    step="0.01"
-                    value={targetPrice}
-                    onChange={(e) => setTargetPrice(e.target.value)}
-                    placeholder="100.00"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="markup">Margem Desejada (%)</Label>
-                  <Input
-                    id="markup"
-                    type="number"
-                    value={markupPercentage}
-                    onChange={(e) => setMarkupPercentage(e.target.value)}
-                    placeholder="70"
-                  />
-                </div>
-                
-                <Button onClick={runReverseMarkup} className="w-full">
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Calcular Custo Máximo
-                </Button>
-
-                <div className="p-3 bg-blue-50 rounded">
-                  <h4 className="font-medium text-blue-800 mb-2">Como funciona:</h4>
-                  <p className="text-sm text-blue-700">
-                    Informe o preço que deseja cobrar e a margem desejada. 
-                    O sistema calculará qual deve ser o custo máximo para atingir essa meta.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-
-          {/* Projeções de Preços */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
-                Projeções de Mercado
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-green-50 rounded">
-                  <h4 className="font-medium text-green-800">Tendência de Alta</h4>
-                  <p className="text-2xl font-bold text-green-600">+15%</p>
-                  <p className="text-sm text-green-700">Algodão premium nos próximos 3 meses</p>
-                </div>
-                <div className="p-4 bg-yellow-50 rounded">
-                  <h4 className="font-medium text-yellow-800">Estável</h4>
-                  <p className="text-2xl font-bold text-yellow-600">±2%</p>
-                  <p className="text-sm text-yellow-700">Sintéticos mantêm preços estáveis</p>
-                </div>
-                <div className="p-4 bg-red-50 rounded">
-                  <h4 className="font-medium text-red-800">Tendência de Queda</h4>
-                  <p className="text-2xl font-bold text-red-600">-8%</p>
-                  <p className="text-sm text-red-700">Linho importado em declínio</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
-        {/* Aba Analytics */}
-        <TabsContent value="analytics" className="space-y-6">
-          {/* KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {kpiData.map((kpi, index) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-600">{kpi.title}</h3>
-                    {kpi.trend === 'up' ? (
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                  <div className="text-2xl font-bold">{kpi.value}</div>
-                  <div className={`text-sm ${kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                    {kpi.trend === 'up' ? '+' : ''}{kpi.change}% {kpi.description}
-                  </div>
-                  {kpi.progress && (
-                    <div className="mt-3">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Meta: {kpi.target}</span>
-                        <span>{kpi.progress}%</span>
+        <TabsContent value="charts" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Gráficos Interativos</h2>
+            <div className="flex items-center space-x-2">
+              <Select defaultValue="all">
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Tipo de gráfico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="bar">Barras</SelectItem>
+                  <SelectItem value="line">Linhas</SelectItem>
+                  <SelectItem value="pie">Pizza</SelectItem>
+                  <SelectItem value="area">Área</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {charts.map((chart) => {
+              const ChartIcon = getChartIcon(chart.type);
+
+              return (
+                <Card key={chart.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleChartClick(chart)}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <ChartIcon className="h-5 w-5 text-gray-600" />
+                        <CardTitle className="text-lg">{chart.title}</CardTitle>
                       </div>
-                      <Progress value={kpi.progress} className="h-2" />
+                      <Badge variant="outline">{chart.type}</Badge>
                     </div>
-                  )}
+                    <CardDescription>{chart.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-80 bg-gray-50 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <ChartIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-lg font-medium text-gray-600">Clique para expandir</p>
+                        <p className="text-sm text-gray-500">
+                          Visualização interativa com drill-down
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                      <span>Atualizado: {new Date(chart.lastUpdated).toLocaleDateString()}</span>
+                      <span>{chart.data.length} pontos</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="simulations" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Simulações de Cenários</h2>
+            <Button onClick={() => setShowSimulationDialog(true)}>
+              <Zap className="h-4 w-4 mr-2" />
+              Nova Simulação
+            </Button>
+          </div>
+
+          <div className="grid gap-6">
+            {simulations.map((simulation) => (
+              <Card key={simulation.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl">{simulation.name}</CardTitle>
+                      <CardDescription>{simulation.description}</CardDescription>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={simulation.status === 'completed' ? 'default' :
+                          simulation.status === 'running' ? 'secondary' : 'outline'}
+                      >
+                        {simulation.status === 'completed' ? 'Concluída' :
+                          simulation.status === 'running' ? 'Executando' : 'Pendente'}
+                      </Badge>
+                      {simulation.status === 'idle' && (
+                        <Button size="sm" onClick={() => handleSimulationRun(simulation.id)}>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Executar
+                        </Button>
+                      )}
+                      {simulation.status === 'running' && (
+                        <div className="flex items-center space-x-2">
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span className="text-sm">Processando...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Parâmetros */}
+                    <div>
+                      <h4 className="font-medium mb-3">Parâmetros de Entrada</h4>
+                      <div className="space-y-3">
+                        {simulation.parameters.map(param => (
+                          <div key={param.id} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <p className="font-medium">{param.name}</p>
+                              <p className="text-sm text-gray-600">
+                                {param.type === 'percentage' ? `${param.value}%` :
+                                  param.type === 'boolean' ? (param.value ? 'Sim' : 'Não') :
+                                    param.value}
+                              </p>
+                            </div>
+                            {param.type === 'number' && (
+                              <Input
+                                type="number"
+                                value={param.value}
+                                className="w-24"
+                                min={param.min}
+                                max={param.max}
+                                step={param.step}
+                              />
+                            )}
+                            {param.type === 'percentage' && (
+                              <Input
+                                type="number"
+                                value={param.value}
+                                className="w-24"
+                                min={param.min}
+                                max={param.max}
+                                step={param.step}
+                              />
+                            )}
+                            {param.type === 'boolean' && (
+                              <Switch checked={param.value} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Resultados */}
+                    <div>
+                      <h4 className="font-medium mb-3">Resultados da Simulação</h4>
+                      <div className="space-y-3">
+                        {simulation.results.map(result => (
+                          <div key={result.id} className="p-3 border rounded">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-medium">{result.name}</p>
+                              <Badge
+                                variant={result.status === 'success' ? 'default' :
+                                  result.status === 'warning' ? 'secondary' : 'destructive'}
+                              >
+                                {result.status === 'success' ? '✓' :
+                                  result.status === 'warning' ? '⚠' : '✗'}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <p className="text-gray-600">Atual</p>
+                                <p className="font-medium">{result.value}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Meta</p>
+                                <p className="font-medium">{result.target}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Variação</p>
+                                <p className={`font-medium ${result.variance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {result.variance > 0 ? '+' : ''}{result.variance}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-
-          {/* Modelos com Melhor Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-                Top 5 Modelos - Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {topPerformingModels.map((model, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-blue-600">#{index + 1}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">{model.name}</span>
-                        <div className="text-sm text-gray-600">{model.sales} vendas</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-green-600">{model.revenue}</div>
-                      <div className="text-sm text-gray-600">Margem: {model.margin}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Análise de Tecidos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Package className="h-5 w-5 mr-2 text-purple-600" />
-                Análise de Uso de Tecidos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {fabricAnalysis.map((fabric, index) => (
-                  <div key={index} className="p-4 border rounded">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium">{fabric.name}</h4>
-                      {fabric.trend === 'up' ? (
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Uso:</span>
-                        <span>{fabric.usage}%</span>
-                      </div>
-                      <Progress value={fabric.usage} className="h-2" />
-                      <div className="flex justify-between text-sm">
-                        <span>Custo:</span>
-                        <span className="font-medium">{fabric.cost}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Eficiência:</span>
-                        <Badge variant={fabric.efficiency === 'Alta' ? 'default' : fabric.efficiency === 'Média' ? 'secondary' : 'destructive'}>
-                          {fabric.efficiency}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Aba Relatórios */}
-        <TabsContent value="reports" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Relatórios Rápidos */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Relatórios Executivos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportReport('Relatório de Vendas Mensal')}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Vendas Mensal
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportReport('Análise de Margem')}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Análise de Margem
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportReport('Performance de Modelos')}
-                >
-                  <Target className="h-4 w-4 mr-2" />
-                  Performance Modelos
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportReport('Análise de Custos')}
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Análise de Custos
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Gráficos de Tendência */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendências (6 meses)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {monthlyTrends.map((trend, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-sm font-medium">{trend.month}</span>
-                      <div className="flex space-x-4 text-sm">
-                        <span>R$ {(trend.revenue / 1000).toFixed(0)}k</span>
-                        <span>{trend.orders} pedidos</span>
-                        <span>{trend.margin}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full mt-4">
-                  <LineChart className="h-4 w-4 mr-2" />
-                  Ver Gráfico Completo
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Alertas e Insights */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Alertas e Insights</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                    <span className="text-sm font-medium text-green-800">Meta Atingida</span>
-                  </div>
-                  <p className="text-sm text-green-700 mt-1">
-                    Vendas de junho superaram meta em 12%
-                  </p>
-                </div>
-                
-                <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                  <div className="flex items-center">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mr-2" />
-                    <span className="text-sm font-medium text-yellow-800">Atenção</span>
-                  </div>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Margem do modelo "Vestido Casual" em queda
-                  </p>
-                </div>
-                
-                <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-                  <div className="flex items-center">
-                    <TrendingUp className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm font-medium text-blue-800">Oportunidade</span>
-                  </div>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Demanda por "Blazer Executivo" cresceu 25%
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Aba Insights IA */}
-        <TabsContent value="insights" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-purple-600" />
-                Insights Inteligentes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-purple-50 rounded">
-                <h4 className="font-medium text-purple-800 mb-2">📈 Análise de Tendências</h4>
-                <p className="text-sm text-purple-700">
-                  Com base nos dados dos últimos 6 meses, recomendamos aumentar a produção de 
-                  "Camisas Sociais" em 20% e reduzir "Vestidos Casuais" em 10%.
-                </p>
-              </div>
-              
-              <div className="p-4 bg-green-50 rounded">
-                <h4 className="font-medium text-green-800 mb-2">💰 Otimização de Custos</h4>
-                <p className="text-sm text-green-700">
-                  Substituindo 30% do uso de "Linho Importado" por "Algodão Premium", 
-                  você pode economizar R$ 2.450 por mês mantendo a qualidade.
-                </p>
-              </div>
-              
-              <div className="p-4 bg-blue-50 rounded">
-                <h4 className="font-medium text-blue-800 mb-2">🎯 Precificação Inteligente</h4>
-                <p className="text-sm text-blue-700">
-                  O modelo "Blazer Executivo" pode ter o preço aumentado em 8% sem impacto significativo 
-                  na demanda, gerando R$ 1.200 adicionais mensais.
-                </p>
-              </div>
-              
-              <div className="p-4 bg-orange-50 rounded">
-                <h4 className="font-medium text-orange-800 mb-2">⚠️ Alertas Preditivos</h4>
-                <p className="text-sm text-orange-700">
-                  Atenção: Estoque de "Algodão Premium" deve ser reabastecido em 15 dias 
-                  para evitar parada na produção de 3 modelos principais.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de Detalhes do Gráfico */}
+      <Dialog open={showChartDialog} onOpenChange={setShowChartDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{selectedChart?.title}</DialogTitle>
+            <DialogDescription>{selectedChart?.description}</DialogDescription>
+          </DialogHeader>
+          {selectedChart && (
+            <div className="space-y-4">
+              <div className="h-96 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  {(() => {
+                    const ChartIcon = getChartIcon(selectedChart.type);
+                    return <ChartIcon className="h-24 w-24 text-gray-400 mx-auto mb-4" />;
+                  })()}
+                  <p className="text-xl font-medium text-gray-600">Gráfico Interativo</p>
+                  <p className="text-sm text-gray-500">
+                    Visualização completa com filtros avançados e drill-down
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Filtros Avançados</Label>
+                  <div className="space-y-2 mt-2">
+                    {selectedChart.filters.map(filter => (
+                      <div key={filter.id} className="flex items-center space-x-2">
+                        <Label className="w-24 text-sm">{filter.name}:</Label>
+                        <Select value={filter.value}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filter.options?.map(option => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Configurações</Label>
+                  <div className="space-y-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked />
+                      <Label className="text-sm">Drill-down habilitado</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked />
+                      <Label className="text-sm">Animações</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch />
+                      <Label className="text-sm">Modo escuro</Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

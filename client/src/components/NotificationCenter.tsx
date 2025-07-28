@@ -1,120 +1,75 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Bell, 
-  BellRing,
-  Check,
-  Trash2,
-  Settings,
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Package,
-  DollarSign,
-  Users,
-  ShoppingCart,
-  TrendingUp
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Bell, CheckCircle, AlertTriangle, XCircle, Info, Settings, Trash2, Eye, EyeOff, Zap, TrendingUp, TrendingDown, Package, DollarSign, Users, Factory, Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  module: string;
+  type: 'success' | 'warning' | 'error' | 'info';
+  module: 'inventory' | 'orders' | 'clients' | 'production' | 'financial' | 'system';
   read: boolean;
   important: boolean;
   createdAt: string;
   actionUrl?: string;
   data?: any;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  category: 'alert' | 'metric' | 'system' | 'business';
+}
+
+interface AlertRule {
+  id: string;
+  name: string;
+  description: string;
+  module: string;
+  condition: 'above' | 'below' | 'equals' | 'changes';
+  threshold: number;
+  metric: string;
+  enabled: boolean;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  checkInterval: number; // em minutos
+  lastChecked?: string;
 }
 
 interface NotificationPreferences {
   emailNotifications: boolean;
   browserNotifications: boolean;
+  soundEnabled: boolean;
   modules: {
-    [key: string]: boolean;
+    inventory: boolean;
+    orders: boolean;
+    clients: boolean;
+    production: boolean;
+    financial: boolean;
+    system: boolean;
+  };
+  alertRules: AlertRule[];
+  quietHours: {
+    enabled: boolean;
+    start: string;
+    end: string;
   };
 }
 
 export default function NotificationCenter() {
   const [activeTab, setActiveTab] = useState('all');
   const [showSettings, setShowSettings] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: 'Estoque Baixo',
-      message: 'O tecido "Algodão Premium" está com estoque baixo (5 unidades restantes)',
-      type: 'warning',
-      module: 'inventory',
-      read: false,
-      important: true,
-      createdAt: '2025-01-02T10:30:00Z',
-      actionUrl: '/inventory',
-      data: { fabricId: 1, currentStock: 5 }
-    },
-    {
-      id: '2',
-      title: 'Pedido Finalizado',
-      message: 'Pedido #1234 foi concluído e está pronto para entrega',
-      type: 'success',
-      module: 'orders',
-      read: false,
-      important: false,
-      createdAt: '2025-01-02T09:15:00Z',
-      actionUrl: '/orders',
-      data: { orderId: 1234 }
-    },
-    {
-      id: '3',
-      title: 'Novo Cliente Cadastrado',
-      message: 'Cliente "Moda & Estilo Ltda" foi adicionado ao sistema',
-      type: 'info',
-      module: 'clients',
-      read: true,
-      important: false,
-      createdAt: '2025-01-02T08:45:00Z',
-      actionUrl: '/clients',
-      data: { clientId: 15 }
-    },
-    {
-      id: '4',
-      title: 'Meta de Produção Atingida',
-      message: 'A facção "Confecções Rápidas" atingiu 105% da meta semanal',
-      type: 'success',
-      module: 'production',
-      read: true,
-      important: false,
-      createdAt: '2025-01-01T16:20:00Z',
-      actionUrl: '/production',
-      data: { factoryId: 3, achievement: 105 }
-    },
-    {
-      id: '5',
-      title: 'Backup Realizado',
-      message: 'Backup automático dos dados realizado com sucesso',
-      type: 'info',
-      module: 'system',
-      read: true,
-      important: false,
-      createdAt: '2025-01-01T12:00:00Z',
-      data: { backupSize: '45.2MB' }
-    }
-  ]);
-
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     emailNotifications: true,
     browserNotifications: true,
+    soundEnabled: true,
     modules: {
       inventory: true,
       orders: true,
@@ -122,10 +77,170 @@ export default function NotificationCenter() {
       production: true,
       financial: true,
       system: false
+    },
+    alertRules: [
+      {
+        id: '1',
+        name: 'Estoque Baixo',
+        description: 'Alerta quando tecido está com estoque baixo',
+        module: 'inventory',
+        condition: 'below',
+        threshold: 10,
+        metric: 'stock_level',
+        enabled: true,
+        priority: 'high',
+        message: 'O tecido "{fabric_name}" está com estoque baixo ({current_stock} unidades restantes)',
+        checkInterval: 30
+      },
+      {
+        id: '2',
+        name: 'Inadimplência Alta',
+        description: 'Alerta quando inadimplência supera 10%',
+        module: 'financial',
+        condition: 'above',
+        threshold: 10,
+        metric: 'overdue_percentage',
+        enabled: true,
+        priority: 'critical',
+        message: 'Inadimplência em {percentage}% - Ação necessária',
+        checkInterval: 60
+      },
+      {
+        id: '3',
+        name: 'Eficiência Baixa',
+        description: 'Alerta quando eficiência de produção cai',
+        module: 'production',
+        condition: 'below',
+        threshold: 80,
+        metric: 'efficiency_rate',
+        enabled: true,
+        priority: 'medium',
+        message: 'Eficiência de produção em {efficiency}% - Abaixo da meta',
+        checkInterval: 120
+      },
+      {
+        id: '4',
+        name: 'Pedidos Pendentes',
+        description: 'Alerta quando há muitos pedidos pendentes',
+        module: 'orders',
+        condition: 'above',
+        threshold: 20,
+        metric: 'pending_orders',
+        enabled: true,
+        priority: 'medium',
+        message: '{count} pedidos pendentes - Revisão necessária',
+        checkInterval: 60
+      }
+    ],
+    quietHours: {
+      enabled: false,
+      start: '22:00',
+      end: '08:00'
     }
   });
 
   const { toast } = useToast();
+
+  // Simular métricas em tempo real
+  const [metrics, setMetrics] = useState({
+    stockLevel: 15,
+    overduePercentage: 8.5,
+    efficiencyRate: 85,
+    pendingOrders: 18,
+    revenue: 152000,
+    activeProductions: 12
+  });
+
+  // Verificar alertas inteligentes
+  useEffect(() => {
+    const checkAlerts = () => {
+      const newAlerts: Notification[] = [];
+
+      preferences.alertRules.forEach(rule => {
+        if (!rule.enabled) return;
+
+        let shouldAlert = false;
+        let currentValue = 0;
+
+        switch (rule.metric) {
+          case 'stock_level':
+            currentValue = metrics.stockLevel;
+            shouldAlert = rule.condition === 'below' ? currentValue < rule.threshold : currentValue > rule.threshold;
+            break;
+          case 'overdue_percentage':
+            currentValue = metrics.overduePercentage;
+            shouldAlert = rule.condition === 'above' ? currentValue > rule.threshold : currentValue < rule.threshold;
+            break;
+          case 'efficiency_rate':
+            currentValue = metrics.efficiencyRate;
+            shouldAlert = rule.condition === 'below' ? currentValue < rule.threshold : currentValue > rule.threshold;
+            break;
+          case 'pending_orders':
+            currentValue = metrics.pendingOrders;
+            shouldAlert = rule.condition === 'above' ? currentValue > rule.threshold : currentValue < rule.threshold;
+            break;
+        }
+
+        if (shouldAlert) {
+          const message = rule.message
+            .replace('{fabric_name}', 'Algodão Premium')
+            .replace('{current_stock}', currentValue.toString())
+            .replace('{percentage}', currentValue.toString())
+            .replace('{efficiency}', currentValue.toString())
+            .replace('{count}', currentValue.toString());
+
+          newAlerts.push({
+            id: `alert_${rule.id}_${Date.now()}`,
+            title: rule.name,
+            message,
+            type: rule.priority === 'critical' ? 'error' : rule.priority === 'high' ? 'warning' : 'info',
+            module: rule.module as any,
+            read: false,
+            important: rule.priority === 'critical' || rule.priority === 'high',
+            createdAt: new Date().toISOString(),
+            priority: rule.priority,
+            category: 'alert',
+            data: { ruleId: rule.id, currentValue, threshold: rule.threshold }
+          });
+        }
+      });
+
+      if (newAlerts.length > 0) {
+        setNotifications(prev => [...newAlerts, ...prev]);
+
+        // Mostrar toast para alertas críticos
+        newAlerts.filter(alert => alert.priority === 'critical').forEach(alert => {
+          toast({
+            title: alert.title,
+            description: alert.message,
+            variant: "destructive"
+          });
+        });
+      }
+    };
+
+    // Verificar alertas a cada 30 segundos
+    const interval = setInterval(checkAlerts, 30000);
+    checkAlerts(); // Verificação inicial
+
+    return () => clearInterval(interval);
+  }, [preferences.alertRules, metrics, toast]);
+
+  // Simular mudanças nas métricas
+  useEffect(() => {
+    const updateMetrics = () => {
+      setMetrics(prev => ({
+        ...prev,
+        stockLevel: Math.max(0, prev.stockLevel + (Math.random() > 0.5 ? -1 : 1)),
+        overduePercentage: Math.max(0, Math.min(20, prev.overduePercentage + (Math.random() - 0.5) * 2)),
+        efficiencyRate: Math.max(60, Math.min(95, prev.efficiencyRate + (Math.random() - 0.5) * 5)),
+        pendingOrders: Math.max(0, prev.pendingOrders + (Math.random() > 0.5 ? -1 : 1))
+      }));
+    };
+
+    const interval = setInterval(updateMetrics, 60000); // Atualizar a cada minuto
+    return () => clearInterval(interval);
+  }, []);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -145,12 +260,21 @@ export default function NotificationCenter() {
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'text-red-600 bg-red-100 border-red-200';
+      case 'high': return 'text-orange-600 bg-orange-100 border-orange-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+      default: return 'text-blue-600 bg-blue-100 border-blue-200';
+    }
+  };
+
   const getModuleIcon = (module: string) => {
     switch (module) {
       case 'inventory': return Package;
-      case 'orders': return ShoppingCart;
+      case 'orders': return Bell;
       case 'clients': return Users;
-      case 'production': return Settings;
+      case 'production': return Factory;
       case 'financial': return DollarSign;
       case 'system': return Settings;
       default: return Info;
@@ -158,15 +282,15 @@ export default function NotificationCenter() {
   };
 
   const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => 
+    setNotifications(prev =>
+      prev.map(n =>
         n.id === notificationId ? { ...n, read: true } : n
       )
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => ({ ...n, read: true }))
     );
     toast({
@@ -176,7 +300,7 @@ export default function NotificationCenter() {
   };
 
   const deleteNotification = (notificationId: string) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.filter(n => n.id !== notificationId)
     );
     toast({
@@ -185,56 +309,41 @@ export default function NotificationCenter() {
     });
   };
 
-  const clearAllRead = () => {
-    setNotifications(prev => 
-      prev.filter(n => !n.read)
-    );
-    toast({
-      title: "Notificações lidas foram removidas",
-      description: "Apenas notificações não lidas permaneceram."
-    });
+  const toggleAlertRule = (ruleId: string) => {
+    setPreferences(prev => ({
+      ...prev,
+      alertRules: prev.alertRules.map(rule =>
+        rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule
+      )
+    }));
   };
 
-  const getFilteredNotifications = () => {
-    switch (activeTab) {
-      case 'unread':
-        return notifications.filter(n => !n.read);
-      case 'important':
-        return notifications.filter(n => n.important);
-      case 'read':
-        return notifications.filter(n => n.read);
-      default:
-        return notifications;
-    }
-  };
+  const filteredNotifications = notifications.filter(notification => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'unread') return !notification.read;
+    if (activeTab === 'alerts') return notification.category === 'alert';
+    if (activeTab === 'metrics') return notification.category === 'metric';
+    return notification.module === activeTab;
+  });
 
   const unreadCount = notifications.filter(n => !n.read).length;
-  const importantCount = notifications.filter(n => n.important && !n.read).length;
+  const alertCount = notifications.filter(n => n.category === 'alert' && !n.read).length;
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Bell className="h-8 w-8 text-blue-600" />
-            {unreadCount > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                {unreadCount}
-              </Badge>
-            )}
-          </div>
+        <div className="flex items-center space-x-3">
+          <Bell className="h-8 w-8 text-indigo-600" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Central de Notificações</h1>
-            <p className="text-gray-600">Acompanhe todas as atualizações e alertas do sistema</p>
+            <p className="text-gray-600">Alertas inteligentes e notificações em tempo real</p>
           </div>
         </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={markAllAsRead} disabled={unreadCount === 0}>
-            <Check className="h-4 w-4 mr-2" />
-            Marcar Todas como Lidas
-          </Button>
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="flex items-center space-x-1">
+            <Zap className="h-3 w-3" />
+            <span>{alertCount} alertas ativos</span>
+          </Badge>
           <Dialog open={showSettings} onOpenChange={setShowSettings}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -242,64 +351,68 @@ export default function NotificationCenter() {
                 Configurações
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Configurações de Notificações</DialogTitle>
+                <DialogDescription>
+                  Configure alertas inteligentes e preferências de notificação
+                </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <h3 className="font-medium">Preferências Gerais</h3>
-                  <div className="flex items-center justify-between">
-                    <span>Notificações por E-mail</span>
-                    <input 
-                      type="checkbox" 
-                      checked={preferences.emailNotifications}
-                      onChange={(e) => setPreferences(prev => ({
-                        ...prev, 
-                        emailNotifications: e.target.checked
-                      }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Notificações do Navegador</span>
-                    <input 
-                      type="checkbox" 
-                      checked={preferences.browserNotifications}
-                      onChange={(e) => setPreferences(prev => ({
-                        ...prev, 
-                        browserNotifications: e.target.checked
-                      }))}
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-3">
-                  <h3 className="font-medium">Notificações por Módulo</h3>
-                  {Object.entries(preferences.modules).map(([module, enabled]) => (
-                    <div key={module} className="flex items-center justify-between">
-                      <span className="capitalize">{module}</span>
-                      <input 
-                        type="checkbox" 
-                        checked={enabled}
-                        onChange={(e) => setPreferences(prev => ({
-                          ...prev,
-                          modules: {
-                            ...prev.modules,
-                            [module]: e.target.checked
-                          }
-                        }))}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Preferências Gerais</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Notificações por Email</Label>
+                      <Switch
+                        checked={preferences.emailNotifications}
+                        onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, emailNotifications: checked }))}
                       />
                     </div>
-                  ))}
+                    <div className="flex items-center justify-between">
+                      <Label>Notificações do Navegador</Label>
+                      <Switch
+                        checked={preferences.browserNotifications}
+                        onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, browserNotifications: checked }))}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Sons de Notificação</Label>
+                      <Switch
+                        checked={preferences.soundEnabled}
+                        onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, soundEnabled: checked }))}
+                      />
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex gap-2 pt-4">
-                  <Button>Salvar Configurações</Button>
-                  <Button variant="outline" onClick={() => setShowSettings(false)}>
-                    Cancelar
-                  </Button>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Alertas Inteligentes</h3>
+                  <div className="space-y-3">
+                    {preferences.alertRules.map(rule => (
+                      <Card key={rule.id} className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={rule.enabled}
+                                onCheckedChange={() => toggleAlertRule(rule.id)}
+                              />
+                              <div>
+                                <p className="font-medium">{rule.name}</p>
+                                <p className="text-sm text-gray-600">{rule.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <Badge className={getPriorityColor(rule.priority)}>
+                            {rule.priority}
+                          </Badge>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </div>
             </DialogContent>
@@ -307,197 +420,159 @@ export default function NotificationCenter() {
         </div>
       </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <BellRing className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">{notifications.length}</p>
-                <p className="text-sm text-gray-600">Total de Notificações</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
-              <div>
-                <p className="text-2xl font-bold">{unreadCount}</p>
-                <p className="text-sm text-gray-600">Não Lidas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{notifications.filter(n => n.read).length}</p>
-                <p className="text-sm text-gray-600">Lidas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-8 w-8 text-purple-600" />
-              <div>
-                <p className="text-2xl font-bold">{importantCount}</p>
-                <p className="text-sm text-gray-600">Importantes</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Notifications List */}
+      {/* Métricas em Tempo Real */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Notificações</CardTitle>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={clearAllRead}
-              disabled={notifications.filter(n => n.read).length === 0}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Limpar Lidas
-            </Button>
-          </div>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingUp className="h-5 w-5" />
+            <span>Métricas em Tempo Real</span>
+          </CardTitle>
+          <CardDescription>Monitoramento contínuo para alertas inteligentes</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">
-                Todas ({notifications.length})
-              </TabsTrigger>
-              <TabsTrigger value="unread">
-                Não Lidas ({unreadCount})
-              </TabsTrigger>
-              <TabsTrigger value="important">
-                Importantes ({notifications.filter(n => n.important).length})
-              </TabsTrigger>
-              <TabsTrigger value="read">
-                Lidas ({notifications.filter(n => n.read).length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value={activeTab} className="mt-6">
-              <ScrollArea className="h-96">
-                <div className="space-y-3">
-                  {getFilteredNotifications().map((notification) => {
-                    const NotificationIcon = getNotificationIcon(notification.type);
-                    const ModuleIcon = getModuleIcon(notification.module);
-                    
-                    return (
-                      <div 
-                        key={notification.id}
-                        className={`p-4 border rounded-lg transition-all cursor-pointer ${
-                          notification.read 
-                            ? 'bg-gray-50 border-gray-200' 
-                            : 'bg-white border-blue-200 shadow-sm'
-                        }`}
-                        onClick={() => !notification.read && markAsRead(notification.id)}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
-                            <NotificationIcon className="h-4 w-4" />
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className={`font-medium ${!notification.read ? 'font-semibold' : ''}`}>
-                                {notification.title}
-                              </h3>
-                              {notification.important && (
-                                <Badge variant="destructive" className="text-xs">
-                                  Importante
-                                </Badge>
-                              )}
-                              {!notification.read && (
-                                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                              )}
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 mb-2">
-                              {notification.message}
-                            </p>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <ModuleIcon className="h-3 w-3" />
-                                <span className="capitalize">{notification.module}</span>
-                                <span>•</span>
-                                <Clock className="h-3 w-3" />
-                                <span>
-                                  {new Date(notification.createdAt).toLocaleDateString('pt-BR')} às{' '}
-                                  {new Date(notification.createdAt).toLocaleTimeString('pt-BR', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                </span>
-                              </div>
-                              
-                              <div className="flex gap-1">
-                                {notification.actionUrl && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Navigate to actionUrl
-                                    }}
-                                  >
-                                    Ver Detalhes
-                                  </Button>
-                                )}
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteNotification(notification.id);
-                                  }}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {getFilteredNotifications().length === 0 && (
-                    <div className="text-center py-8">
-                      <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        Nenhuma notificação encontrada
-                      </h3>
-                      <p className="text-gray-600">
-                        {activeTab === 'unread' && 'Você está em dia! Não há notificações não lidas.'}
-                        {activeTab === 'important' && 'Nenhuma notificação importante no momento.'}
-                        {activeTab === 'read' && 'Nenhuma notificação foi lida ainda.'}
-                        {activeTab === 'all' && 'Não há notificações para exibir.'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Estoque Baixo</p>
+              <p className={`text-lg font-bold ${metrics.stockLevel < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                {metrics.stockLevel} unidades
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Inadimplência</p>
+              <p className={`text-lg font-bold ${metrics.overduePercentage > 10 ? 'text-red-600' : 'text-green-600'}`}>
+                {metrics.overduePercentage}%
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Eficiência</p>
+              <p className={`text-lg font-bold ${metrics.efficiencyRate < 80 ? 'text-red-600' : 'text-green-600'}`}>
+                {metrics.efficiencyRate}%
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Pedidos Pendentes</p>
+              <p className={`text-lg font-bold ${metrics.pendingOrders > 20 ? 'text-red-600' : 'text-green-600'}`}>
+                {metrics.pendingOrders}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="all" className="flex items-center space-x-1">
+            <Bell className="h-4 w-4" />
+            <span>Todas</span>
+            {unreadCount > 0 && <Badge variant="secondary" className="ml-1">{unreadCount}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center space-x-1">
+            <AlertTriangle className="h-4 w-4" />
+            <span>Alertas</span>
+            {alertCount > 0 && <Badge variant="destructive" className="ml-1">{alertCount}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="unread" className="flex items-center space-x-1">
+            <Eye className="h-4 w-4" />
+            <span>Não Lidas</span>
+          </TabsTrigger>
+          <TabsTrigger value="metrics" className="flex items-center space-x-1">
+            <TrendingUp className="h-4 w-4" />
+            <span>Métricas</span>
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center space-x-1">
+            <Settings className="h-4 w-4" />
+            <span>Sistema</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              {filteredNotifications.length} notificação{filteredNotifications.length !== 1 ? 's' : ''}
+            </p>
+            {activeTab === 'all' && unreadCount > 0 && (
+              <Button variant="outline" size="sm" onClick={markAllAsRead}>
+                Marcar todas como lidas
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {filteredNotifications.map((notification) => (
+              <Card key={notification.id} className={`transition-all ${notification.read ? 'opacity-60' : 'border-l-4 border-l-blue-500'}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                        {React.createElement(getNotificationIcon(notification.type), { className: "h-4 w-4" })}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-medium">{notification.title}</h4>
+                          <Badge className={getPriorityColor(notification.priority)}>
+                            {notification.priority}
+                          </Badge>
+                          {notification.important && (
+                            <Badge variant="destructive" className="text-xs">
+                              Importante
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>{new Date(notification.createdAt).toLocaleString()}</span>
+                          <span className="flex items-center space-x-1">
+                            {React.createElement(getModuleIcon(notification.module), { className: "h-3 w-3" })}
+                            <span>{notification.module}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      {!notification.read && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteNotification(notification.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredNotifications.length === 0 && (
+            <Card className="text-center py-12">
+              <CardContent>
+                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {activeTab === 'all' ? 'Nenhuma notificação' :
+                    activeTab === 'unread' ? 'Todas as notificações foram lidas' :
+                      activeTab === 'alerts' ? 'Nenhum alerta ativo' :
+                        'Nenhuma notificação encontrada'}
+                </h3>
+                <p className="text-gray-600">
+                  {activeTab === 'all' ? 'Você está em dia com todas as atualizações.' :
+                    activeTab === 'unread' ? 'Parabéns! Você está atualizado.' :
+                      activeTab === 'alerts' ? 'Todos os sistemas estão funcionando normalmente.' :
+                        'Não há notificações neste filtro.'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
