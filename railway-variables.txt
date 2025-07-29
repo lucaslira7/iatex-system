@@ -1,0 +1,20 @@
+# ========================================
+# VARIÁVEIS DE AMBIENTE PARA RAILWAY
+# ========================================
+# Copie estas variáveis para o Railway em:
+# https://railway.app/project/[SEU-PROJETO]/variables
+
+SUPABASE_DATABASE_URL=postgresql://postgres:FKbNlucc7ae3q6ah@db.xrzmickalnkhadphtxbr.supabase.co:5432/postgres
+SUPABASE_URL=https://xrzmickalnkhadphtxbr.supabase.co
+PORT=3000
+SESSION_SECRET=iatex-session-secret-2024-prod
+NODE_ENV=production
+
+# ========================================
+# INSTRUÇÕES PARA CONFIGURAR NO RAILWAY:
+# ========================================
+# 1. Vá para https://railway.app/project/[SEU-PROJETO]
+# 2. Clique na aba "Variables"
+# 3. Adicione cada variável acima
+# 4. Clique em "Deploy" para fazer o deploy
+# ======================================== 
