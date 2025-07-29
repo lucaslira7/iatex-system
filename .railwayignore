@@ -1,0 +1,12 @@
+# Arquivos desnecessários para deploy
+dev.db
+*.log
+.env
+.env.local
+.env.example
+node_modules/
+.git/
+.gitignore
+README.md
+*.md
+attached_assets/ 

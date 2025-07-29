@@ -1,7 +1,5 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { drizzle as drizzleSQLite } from 'drizzle-orm/better-sqlite3';
-import BetterSqlite3 from 'better-sqlite3';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
@@ -22,10 +20,20 @@ if (process.env.SUPABASE_DATABASE_URL) {
   pool = new Pool({ connectionString: process.env.DATABASE_URL });
   db = drizzle({ client: pool, schema });
 } else {
-  // Fallback para SQLite local
-  console.log("⚠️  Nenhum banco configurado. Usando SQLite local para desenvolvimento.");
-  const sqlite = new BetterSqlite3('dev.db');
-  db = drizzleSQLite(sqlite, { schema });
+  // Em produção, exigir banco configurado
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error("DATABASE_URL ou SUPABASE_DATABASE_URL deve ser configurado em produção");
+  }
+
+  // Em desenvolvimento, usar mock database
+  console.log("⚠️  Nenhum banco configurado. Usando mock database para desenvolvimento.");
+  db = {
+    // Mock database para desenvolvimento local
+    query: async () => ({ rows: [] }),
+    execute: async () => ({ rows: [] }),
+    transaction: async (fn: any) => fn(db),
+  };
+  pool = null;
 }
 
 export { db, pool };
