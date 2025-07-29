@@ -35,7 +35,6 @@ import {
     Edit,
     Save,
     FileSpreadsheet,
-    FilePdf,
     FileImage,
     Mail,
     Smartphone
@@ -279,7 +278,7 @@ export default function ReportsAnalytics() {
 
     const getFormatIcon = (format: string) => {
         switch (format.toLowerCase()) {
-            case 'pdf': return FilePdf;
+            case 'pdf': return FileText;
             case 'excel': return FileSpreadsheet;
             case 'csv': return FileText;
             case 'image': return FileImage;
@@ -340,8 +339,8 @@ export default function ReportsAnalytics() {
                                             <Card
                                                 key={template.id}
                                                 className={`cursor-pointer transition-all ${exportConfig.template === template.id
-                                                        ? 'ring-2 ring-blue-500 bg-blue-50'
-                                                        : 'hover:shadow-md'
+                                                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                                                    : 'hover:shadow-md'
                                                     }`}
                                                 onClick={() => setExportConfig(prev => ({ ...prev, template: template.id }))}
                                             >
