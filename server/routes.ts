@@ -10,6 +10,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // Health check endpoint
+  app.get('/api/health', async (req, res) => {
+    try {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        message: 'IA.TEX API is running'
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -65,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: req.user.claims.sub,
       });
       const fabric = await storage.createFabric(fabricData);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -73,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'create',
         `Created fabric: ${fabric.name}`
       );
-      
+
       res.json(fabric);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -89,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const fabricData = insertFabricSchema.partial().parse(req.body);
       const fabric = await storage.updateFabric(id, fabricData);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -97,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'update',
         `Updated fabric: ${fabric.name}`
       );
-      
+
       res.json(fabric);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -112,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteFabric(id);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -120,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'delete',
         `Deleted fabric with ID: ${id}`
       );
-      
+
       res.json({ message: "Fabric deleted successfully" });
     } catch (error) {
       console.error("Error deleting fabric:", error);
@@ -146,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: req.user.claims.sub,
       });
       const model = await storage.createModel(modelData);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -154,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'create',
         `Created model: ${model.name}`
       );
-      
+
       res.json(model);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -183,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: req.user.claims.sub,
       });
       const order = await storage.createOrder(orderData);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -191,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'create',
         `Created order: ${order.orderNumber}`
       );
-      
+
       res.json(order);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -217,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const clientData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(clientData);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -225,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'create',
         `Created client: ${client.name}`
       );
-      
+
       res.json(client);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -251,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const supplierData = insertSupplierSchema.parse(req.body);
       const supplier = await storage.createSupplier(supplierData);
-      
+
       // Log activity
       await storage.logActivity(
         req.user.claims.sub,
@@ -259,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'create',
         `Created supplier: ${supplier.name}`
       );
-      
+
       res.json(supplier);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -316,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/pricing-templates', isAuthenticated, async (req: any, res) => {
     try {
       const formData = req.body;
-      
+
       // Converter os dados do formulário para o formato do template
       const template = {
         name: formData.modelName,
@@ -344,14 +361,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Converter custos de todas as categorias
       const costs: any[] = [];
-      
+
       ['creationCosts', 'supplies', 'labor', 'fixedCosts'].forEach(category => {
         if (formData[category]) {
           formData[category].forEach((cost: any) => {
             costs.push({
-              category: category === 'creationCosts' ? 'creation' : 
-                       category === 'supplies' ? 'supplies' :
-                       category === 'labor' ? 'labor' : 'fixed',
+              category: category === 'creationCosts' ? 'creation' :
+                category === 'supplies' ? 'supplies' :
+                  category === 'labor' ? 'labor' : 'fixed',
               description: cost.description,
               unitValue: cost.unitValue.toString(),
               quantity: cost.quantity.toString(),
@@ -364,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Salvar o template
       const savedTemplate = await storage.createPricingTemplate(template, sizes, costs);
-      
+
       // Log da atividade
       await storage.logActivity(
         req.user.claims.sub,
@@ -372,9 +389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'create_template',
         `Criou template de precificação: ${formData.modelName} (${formData.reference})`
       );
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'Template de precificação salvo com sucesso!',
         id: savedTemplate.id,
         template: savedTemplate
@@ -401,11 +418,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const templateWithDetails = await storage.getPricingTemplateWithDetails(id);
-      
+
       if (!templateWithDetails) {
         return res.status(404).json({ message: "Template not found" });
       }
-      
+
       res.json(templateWithDetails);
     } catch (error) {
       console.error("Error fetching pricing template details:", error);
@@ -417,15 +434,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/pricing-templates/:id', isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       // Get template for logging before deletion
       const template = await storage.getPricingTemplate(id);
       if (!template) {
         return res.status(404).json({ message: "Template not found" });
       }
-      
+
       await storage.deletePricingTemplate(id);
-      
+
       // Log da atividade
       await storage.logActivity(
         req.user.claims.sub,
@@ -433,9 +450,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'delete_template',
         `Deletou template de precificação: ${template.modelName} (${template.reference})`
       );
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'Template excluído com sucesso!'
       });
     } catch (error) {
@@ -449,9 +466,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const updatedTemplate = await storage.updatePricingTemplate(id, updates);
-      
+
       // Log da atividade
       await storage.logActivity(
         req.user.claims.sub,
@@ -459,9 +476,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'update_template',
         `Atualizou template de precificação: ${updatedTemplate.modelName} (${updatedTemplate.reference})`
       );
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'Template atualizado com sucesso!',
         template: updatedTemplate
       });
@@ -475,24 +492,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/:period?', isAuthenticated, async (req: any, res) => {
     try {
       const period = req.params.period || '30d';
-      
+
       // Get basic metrics
       const templates = await storage.getPricingTemplates();
       const metrics = await storage.getDashboardMetrics();
-      
+
       // Calculate analytics based on templates
       const totalTemplates = templates.length;
-      const avgMargin = templates.length > 0 
+      const avgMargin = templates.length > 0
         ? templates.reduce((sum, t) => {
-            const margin = ((parseFloat(t.finalPrice) - parseFloat(t.totalCost)) / parseFloat(t.totalCost)) * 100;
-            return sum + margin;
-          }, 0) / templates.length 
+          const margin = ((parseFloat(t.finalPrice) - parseFloat(t.totalCost)) / parseFloat(t.totalCost)) * 100;
+          return sum + margin;
+        }, 0) / templates.length
         : 0;
-      
+
       const totalRevenue = templates.reduce((sum, t) => sum + parseFloat(t.finalPrice), 0);
       const totalCost = templates.reduce((sum, t) => sum + parseFloat(t.totalCost), 0);
       const costSavings = totalRevenue * 0.12; // 12% savings estimate
-      
+
       // Group by garment type for performance analysis
       const typeGroups = templates.reduce((acc, template) => {
         const type = template.garmentType;
@@ -502,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         acc[type].push(template);
         return acc;
       }, {} as Record<string, any[]>);
-      
+
       const topPerformingTypes = Object.entries(typeGroups).map(([type, temps]) => ({
         type,
         count: temps.length,
@@ -512,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return sum + margin;
         }, 0) / temps.length
       })).sort((a, b) => b.count - a.count).slice(0, 4);
-      
+
       // Recent activity (last 10 templates)
       const recentActivity = templates
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -524,7 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: index === 0 ? '2h atrás' : index === 1 ? '4h atrás' : '6h atrás',
           value: parseFloat(template.finalPrice)
         }));
-      
+
       res.json({
         totalTemplates,
         avgMargin,
@@ -551,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
-      
+
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="ia-tex-backup-${new Date().toISOString().split('T')[0]}.json"`);
       res.json(data);
@@ -564,16 +581,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quotations', isAuthenticated, async (req: any, res) => {
     try {
       const formData = req.body;
-      
+
       await storage.logActivity(
         req.user.claims.sub,
         'quotations',
         'create',
         `Created quotation: ${formData.modelName}`
       );
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'Precificação salva com sucesso!',
         id: Math.floor(Math.random() * 10000)
       });
@@ -588,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { message, context } = req.body;
       const response = await chatWithAI(message, context);
-      
+
       // Log the interaction
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
@@ -596,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'chat',
         `Pergunta: "${message.substring(0, 50)}..."`
       );
-      
+
       res.json({ response });
     } catch (error) {
       console.error('Error in AI chat:', error);
@@ -610,10 +627,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fabrics = await storage.getFabrics();
       const models = await storage.getModels();
       const pricingTemplates = await storage.getPricingTemplates();
-      
+
       // Analyze fabric usage
       const fabricAnalysis = await analyzeFabricUsage(fabrics);
-      
+
       // Generate AI insights
       const businessData = {
         fabricCount: fabrics.length,
@@ -621,21 +638,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         templateCount: pricingTemplates.length,
         fabricAnalysis
       };
-      
+
       const insights = await generateInsights(businessData);
-      
+
       // Transform insights into suggestions format
       const suggestions = insights.insights?.map((insight: any, index: number) => ({
         id: `suggestion-${Date.now()}-${index}`,
-        type: insight.type === 'opportunity' ? 'optimization' : 
-              insight.type === 'warning' ? 'margin' : 'fabric',
+        type: insight.type === 'opportunity' ? 'optimization' :
+          insight.type === 'warning' ? 'margin' : 'fabric',
         title: insight.title,
         description: insight.description,
         confidence: Math.floor(Math.random() * 20) + 80, // 80-100%
         data: insight,
         createdAt: new Date()
       })) || [];
-      
+
       res.json(suggestions);
     } catch (error) {
       console.error('Error fetching AI suggestions:', error);
@@ -647,22 +664,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const models = await storage.getModels();
       const fabrics = await storage.getFabrics();
-      
+
       const modelData = {
         models: models.slice(0, 5), // Use recent models
         availableFabrics: fabrics,
         ...req.body
       };
-      
+
       const suggestions = await generateFabricSuggestions(modelData);
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'ai-assistant',
         'fabric-suggestions',
         `Geradas sugestões para ${models.length} modelos`
       );
-      
+
       res.json(suggestions);
     } catch (error) {
       console.error('Error generating fabric suggestions:', error);
@@ -673,21 +690,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/optimize-margins", isAuthenticated, async (req: any, res) => {
     try {
       const templates = await storage.getPricingTemplates();
-      
+
       const pricingData = {
         templates: templates.slice(0, 10), // Recent templates
         ...req.body
       };
-      
+
       const optimization = await optimizeMargins(pricingData);
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'ai-assistant',
         'margin-optimization',
         `Análise de ${templates.length} templates de precificação`
       );
-      
+
       res.json(optimization);
     } catch (error) {
       console.error('Error optimizing margins:', error);
@@ -727,11 +744,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: new Date()
         },
         {
-          id: "task-2", 
+          id: "task-2",
           title: "Controle de qualidade - Lote 234",
           description: "Verificar 100 camisas do lote 234 quanto a acabamento e medidas",
           priority: "medium",
-          status: "in-progress", 
+          status: "in-progress",
           assignedTo: "current-user",
           assignedBy: "Supervisor",
           dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
@@ -740,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               id: "att-1",
               filename: "foto-progresso.jpg",
-              url: "/uploads/foto-progresso.jpg", 
+              url: "/uploads/foto-progresso.jpg",
               type: "photo",
               uploadedAt: new Date(),
               uploadedBy: "current-user"
@@ -751,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000)
         }
       ];
-      
+
       res.json(mockTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -762,15 +779,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/user-panels/tasks", isAuthenticated, async (req: any, res) => {
     try {
       const taskData = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'user-panels',
         'create-task',
         `Criou tarefa: ${taskData.title}`
       );
-      
-      res.json({ 
+
+      res.json({
         success: true,
         id: `task-${Date.now()}`,
         message: 'Tarefa criada com sucesso!'
@@ -785,14 +802,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { taskId } = req.params;
       const updates = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'user-panels',
         'update-task',
         `Atualizou tarefa ${taskId}: ${JSON.stringify(updates)}`
       );
-      
+
       res.json({ success: true, message: 'Tarefa atualizada!' });
     } catch (error) {
       console.error('Error updating task:', error);
@@ -821,7 +838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           id: "batch-2",
           modelName: "Vestido Estampado",
-          factoryName: "Facção João", 
+          factoryName: "Facção João",
           quantity: 50,
           status: "ready-pickup",
           startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -833,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lossPercentage: 1
         }
       ];
-      
+
       res.json(mockProduction);
     } catch (error) {
       console.error('Error fetching production:', error);
@@ -845,14 +862,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { batchId } = req.params;
       const updates = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'user-panels',
         'update-production',
         `Atualizou produção ${batchId}: ${JSON.stringify(updates)}`
       );
-      
+
       res.json({ success: true, message: 'Produção atualizada!' });
     } catch (error) {
       console.error('Error updating production:', error);
@@ -878,7 +895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: "supply-2",
           items: ["Elástico 2cm", "Etiquetas de composição"],
           requestedBy: "Facção João",
-          factoryName: "Facção João", 
+          factoryName: "Facção João",
           urgency: "low",
           status: "approved",
           requestDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
@@ -886,7 +903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notes: "Para próximo lote de calças"
         }
       ];
-      
+
       res.json(mockSupplies);
     } catch (error) {
       console.error('Error fetching supplies:', error);
@@ -898,15 +915,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Mock file upload - in production you'd handle actual file upload
       const { taskId, type } = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'user-panels',
         'upload',
         `Upload de ${type} para tarefa ${taskId}`
       );
-      
-      res.json({ 
+
+      res.json({
         success: true,
         attachment: {
           id: `att-${Date.now()}`,
@@ -953,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: "Buscar insumos na Facção Maria",
           description: "Retirar linha preta e botões dourados solicitados",
           priority: "medium",
-          status: "doing", 
+          status: "doing",
           type: "supply",
           assignedTo: "current-user",
           assignedBy: "Gerente",
@@ -998,7 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: 150
         }
       ];
-      
+
       res.json(mockKanbanTasks);
     } catch (error) {
       console.error('Error fetching operational tasks:', error);
@@ -1031,7 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         {
           id: "prod-2",
-          modelCode: "V001", 
+          modelCode: "V001",
           modelName: "Vestido Estampado",
           fabricUsed: "Crepe Estampado",
           totalWeight: 24,
@@ -1067,7 +1084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           qrCode: "QR-CJ001-240108"
         }
       ];
-      
+
       res.json(mockProductionOrders);
     } catch (error) {
       console.error('Error fetching production orders:', error);
@@ -1092,7 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         {
           id: "goal-2",
-          employeeId: "current-user", 
+          employeeId: "current-user",
           title: "Controle de Qualidade",
           target: 150,
           current: 150,
@@ -1124,7 +1141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           completed: false
         }
       ];
-      
+
       res.json(mockDailyGoals);
     } catch (error) {
       console.error('Error fetching daily goals:', error);
@@ -1176,7 +1193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           attachments: []
         }
       ];
-      
+
       res.json(mockSupplyRequests);
     } catch (error) {
       console.error('Error fetching supply requests:', error);
@@ -1187,15 +1204,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/operational/tasks", isAuthenticated, async (req: any, res) => {
     try {
       const taskData = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'operational',
         'create-kanban-task',
         `Criou tarefa Kanban: ${taskData.title}`
       );
-      
-      res.json({ 
+
+      res.json({
         success: true,
         id: `kanban-${Date.now()}`,
         message: 'Tarefa criada no quadro Kanban!'
@@ -1210,14 +1227,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { taskId } = req.params;
       const updates = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'operational',
         'update-kanban-task',
         `Atualizou tarefa Kanban ${taskId}: moveu para ${updates.status || 'atualizada'}`
       );
-      
+
       res.json({ success: true, message: 'Tarefa atualizada no Kanban!' });
     } catch (error) {
       console.error('Error updating kanban task:', error);
@@ -1228,18 +1245,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/operational/production", isAuthenticated, async (req: any, res) => {
     try {
       const productionData = req.body;
-      
+
       await storage.logActivity(
         req.user?.claims?.sub || 'unknown',
         'operational',
         'create-production-order',
         `Criou ordem de produção: ${productionData.modelCode || 'nova ordem'}`
       );
-      
-      res.json({ 
+
+      res.json({
         success: true,
         id: `prod-${Date.now()}`,
-        qrCode: `QR-${productionData.modelCode || 'MODEL'}-${new Date().toISOString().slice(2,10).replace(/-/g, '')}`,
+        qrCode: `QR-${productionData.modelCode || 'MODEL'}-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`,
         message: 'Ordem de produção criada e enviada para a facção!'
       });
     } catch (error) {
