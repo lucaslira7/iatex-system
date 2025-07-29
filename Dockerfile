@@ -23,7 +23,7 @@ RUN npm ci
 COPY . .
 
 # Build da aplicação
-RUN npm run build
+RUN npm run build:all
 
 # Limpar devDependencies após o build
 RUN npm prune --production
