@@ -52,7 +52,10 @@ function useTemplateLoader() {
             wastePercentage: parseFloat(cost.wastePercentage || 0),
             total: parseFloat(cost.total)
           };
-          costCategories[cost.category as keyof typeof costCategories]?.push(costItem);
+          const category = cost.category as keyof typeof costCategories;
+          if (costCategories[category]) {
+            (costCategories[category] as any[]).push(costItem);
+          }
         });
 
         // Aplicar dados em lote para evitar múltiplos re-renders
@@ -216,7 +219,7 @@ function PricingModalContent({ onClose, initialTemplate }: {
       </DialogHeader>
 
       <div className="space-y-6">
-        <PricingOptimized />
+        <PricingOptimized currentStep={currentStep} />
         
         <div className="flex justify-between pt-4 border-t">
           <Button 

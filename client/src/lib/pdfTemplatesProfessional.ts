@@ -1,3 +1,5 @@
+import jsPDF from 'jspdf';
+
 // Este arquivo foi substituído por pdfProfessional.ts - versão simplificada e funcional
 
 // Cores profissionais do sistema

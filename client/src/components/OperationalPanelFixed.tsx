@@ -40,7 +40,8 @@ import {
   CheckSquare,
   Eye,
   Send,
-  ArrowRight
+  ArrowRight,
+  DollarSign
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -320,6 +321,9 @@ export default function OperationalPanelFixed() {
     }
   };
 
+  const [currentDate] = useState(new Date());
+  const [events] = useState<CalendarEvent[]>([]);
+
   const getWeekDays = () => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const days = [];
@@ -330,14 +334,14 @@ export default function OperationalPanelFixed() {
   };
 
   const getTodayEvents = () => {
-    return events.filter(e => isSameDay(e.date, new Date()));
+    return events.filter((e: CalendarEvent) => isSameDay(e.date, new Date()));
   };
 
   const getUpcomingEvents = () => {
     const today = new Date();
     return events
-      .filter(e => e.date > today)
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .filter((e: CalendarEvent) => e.date > today)
+      .sort((a: CalendarEvent, b: CalendarEvent) => a.date.getTime() - b.date.getTime())
       .slice(0, 5);
   };
 
@@ -349,9 +353,9 @@ export default function OperationalPanelFixed() {
   };
 
   const getProductionSummary = () => {
-    const productionEvents = events.filter(e => e.type === 'production');
-    const totalPieces = productionEvents.reduce((sum, e) => sum + (e.pieces || 0), 0);
-    const activeProductions = productionEvents.filter(e => e.status === 'in_progress').length;
+    const productionEvents = events.filter((e: CalendarEvent) => e.type === 'production');
+    const totalPieces = productionEvents.reduce((sum: number, e: CalendarEvent) => sum + (e.pieces || 0), 0);
+    const activeProductions = productionEvents.filter((e: CalendarEvent) => e.status === 'in_progress').length;
 
     return {
       totalPieces,

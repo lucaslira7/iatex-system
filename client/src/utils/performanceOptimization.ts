@@ -48,12 +48,12 @@ export function clearPerformanceCache() {
 }
 
 export function clearCacheForUrl(url: string) {
-  for (const key of responseCache.keys()) {
+  for (const key of Array.from(responseCache.keys())) {
     if (key.includes(url)) {
       responseCache.delete(key);
     }
   }
-  for (const key of requestsInProgress) {
+  for (const key of Array.from(requestsInProgress)) {
     if (key.includes(url)) {
       requestsInProgress.delete(key);
     }

@@ -8,9 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { 
-  Scissors, ShoppingCart, TrendingUp, Factory, Plus, Calculator, 
-  Shirt, ChevronRight, Settings, GripVertical, Package, Users, 
+import {
+  Scissors, ShoppingCart, TrendingUp, Factory, Plus, Calculator,
+  Shirt, ChevronRight, Settings, GripVertical, Package, Users,
   DollarSign, Clock, Target, Award, BarChart3, PieChart, Activity
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -223,9 +223,9 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
         case 'active-orders':
           return { ...card, value: (metrics as any)?.activeOrders || 0 };
         case 'stock-value':
-          return { 
-            ...card, 
-            value: `R$ ${(((metrics as any)?.totalStockValue || 1063200) / 1000).toFixed(1)}K` 
+          return {
+            ...card,
+            value: `R$ ${(((metrics as any)?.totalStockValue || 1063200) / 1000).toFixed(1)}K`
           };
         default:
           return card;
@@ -280,11 +280,11 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
   const toggleCardVisibility = (cardId: string) => {
     // Check if card exists
     const existingCard = cards.find(c => c.id === cardId);
-    
+
     if (existingCard) {
       // Toggle existing card
-      setCards(cards.map(card => 
-        card.id === cardId 
+      setCards(cards.map(card =>
+        card.id === cardId
           ? { ...card, visible: !card.visible }
           : card
       ));
@@ -426,7 +426,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                     Escolha quais cards exibir e reorganize-os conforme sua preferência
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-6">
                   {/* Card Visibility Settings */}
                   <div>
@@ -435,7 +435,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                       {availableCards.map((availableCard) => {
                         const currentCard = cards.find(c => c.id === availableCard.id);
                         const IconComponent = availableCard.icon;
-                        
+
                         return (
                           <div key={availableCard.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex items-center space-x-3">
@@ -444,7 +444,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                               </div>
                               <span className="text-sm font-medium">{availableCard.title}</span>
                             </div>
-                            <Switch 
+                            <Switch
                               checked={currentCard?.visible || false}
                               onCheckedChange={() => toggleCardVisibility(availableCard.id)}
                             />
@@ -468,7 +468,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                 </div>
               </DialogContent>
             </Dialog>
-            
+
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Novo Item
@@ -481,18 +481,18 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="cards" direction="horizontal">
           {(provided) => (
-            <div 
+            <div
               {...provided.droppableProps}
               ref={provided.innerRef}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
             >
               {visibleCards.map((card, index) => {
                 const IconComponent = card.icon;
-                
+
                 return (
                   <Draggable key={card.id} draggableId={String(card.id)} index={index}>
                     {(provided, snapshot) => (
-                      <Card 
+                      <Card
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         className={`relative kpi-card ${snapshot.isDragging ? 'shadow-lg scale-105' : ''} transition-all cursor-pointer`}
@@ -507,7 +507,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                               <IconComponent className="h-6 w-6" />
                             </div>
                           </div>
-                          
+
                           {card.type === 'progress' && card.progressValue && (
                             <div className="mt-4">
                               <Progress value={card.progressValue} className="h-2" />
@@ -517,7 +517,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                               </div>
                             </div>
                           )}
-                          
+
                           {card.changePercent && (
                             <div className="mt-4 flex items-center">
                               <span className={`text-sm font-medium ${card.changePercent > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -526,15 +526,15 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                               <span className="text-sm text-gray-500 ml-2">{card.subtitle}</span>
                             </div>
                           )}
-                          
+
                           {card.subtitle && !card.changePercent && (
                             <div className="mt-4">
                               <span className="text-sm text-gray-500">{card.subtitle}</span>
                             </div>
                           )}
-                          
+
                           {/* Drag Handle */}
-                          <div 
+                          <div
                             {...provided.dragHandleProps}
                             className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity cursor-grab"
                           >
@@ -584,7 +584,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('reports')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSectionChange('reports-analytics')}>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-purple-100 rounded-lg">
@@ -616,7 +616,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                 <p className="text-xs text-gray-500">Há 5 minutos</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg">
               <div className="p-2 bg-green-100 rounded-full">
                 <Scissors className="h-4 w-4 text-green-600" />
@@ -626,7 +626,7 @@ export default function CustomizableDashboard({ onSectionChange }: DashboardProp
                 <p className="text-xs text-gray-500">Há 15 minutos</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg">
               <div className="p-2 bg-amber-100 rounded-full">
                 <ShoppingCart className="h-4 w-4 text-amber-600" />

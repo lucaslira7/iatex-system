@@ -12,7 +12,7 @@ export async function cachedRequest(url: string): Promise<any> {
   }
   
   // Se já há uma requisição ativa, retornar a mesma promise
-  if (activeRequests[url]) {
+  if (activeRequests[url] !== undefined) {
     return activeRequests[url];
   }
   

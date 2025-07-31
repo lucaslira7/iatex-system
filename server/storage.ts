@@ -204,7 +204,7 @@ export class DatabaseStorage implements IStorage {
         fabric: true,
         garmentType: true,
       },
-      orderBy: (models, { desc }) => [desc(models.createdAt)],
+      orderBy: (models: any, { desc }: any) => [desc(models.createdAt)],
     });
     
     CacheManager.setStaticData(cacheKey, result);
@@ -393,7 +393,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createQuotation(quotation: InsertQuotation, item: InsertQuotationItem, sizes: InsertQuotationItemSize[], costs: InsertQuotationItemCost[]): Promise<Quotation> {
-    return await db.transaction(async (tx) => {
+    return await db.transaction(async (tx: any) => {
       // Generate unique quotation number
       const timestamp = Date.now().toString().slice(-6);
       const quotationNumber = `ORC-${timestamp}`;

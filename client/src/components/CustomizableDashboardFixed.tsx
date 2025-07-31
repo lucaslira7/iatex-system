@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Gauge, TrendingUp, TrendingDown, Package, DollarSign, Users, Factory, Settings, RefreshCw, Clock, Database, Zap, BarChart3, Target, AlertTriangle } from "lucide-react";
+import { Gauge, TrendingUp, TrendingDown, Package, DollarSign, Users, Factory, Settings, RefreshCw, Clock, Database, Zap, BarChart3, Target, AlertTriangle, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import type { ActiveSection } from "@/pages/Home";
 
 // Cache de performance para métricas
 interface DashboardCache {
@@ -108,7 +109,7 @@ interface DashboardConfig {
   performanceMode: boolean;
 }
 
-export default function CustomizableDashboardFixed({ onSectionChange }: { onSectionChange: (section: string) => void }) {
+export default function CustomizableDashboardFixed({ onSectionChange }: { onSectionChange: (section: 'dashboard' | 'fabrics' | 'models' | 'orders' | 'production' | 'clients' | 'financial' | 'inventory' | 'reports-analytics' | 'operations-schedule' | 'team-users' | 'admin-backup') => void }) {
   const [config, setConfig] = useState<DashboardConfig>({
     cards: [
       {

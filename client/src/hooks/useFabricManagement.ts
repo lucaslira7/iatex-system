@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/utils';
+import { apiRequest } from '@/lib/queryClient';
 import type { Fabric, FabricFormData, FabricFilters } from '@/types/fabric';
 
 export const useFabricManagement = () => {

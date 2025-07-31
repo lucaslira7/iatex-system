@@ -20,8 +20,6 @@ class RateLimiter {
 
     constructor(config: RateLimitConfig) {
         this.config = {
-            windowMs: 15 * 60 * 1000, // 15 minutos padrão
-            maxRequests: 100, // 100 requisições padrão
             message: 'Muitas requisições. Tente novamente mais tarde.',
             statusCode: 429,
             ...config,

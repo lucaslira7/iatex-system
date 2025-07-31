@@ -33,10 +33,6 @@ import {
   Calendar,
   Zap,
   BarChart,
-  Scatter,
-  HeatMap,
-  Radar,
-  Gauge,
   ArrowUp,
   ArrowDown,
   Minus
@@ -322,10 +318,10 @@ export default function AnalyticsAndSimulations() {
       case 'line': return LineChart;
       case 'pie': return PieChart;
       case 'area': return Activity;
-      case 'scatter': return Scatter;
-      case 'heatmap': return HeatMap;
-      case 'radar': return Radar;
-      case 'gauge': return Gauge;
+      case 'scatter': return BarChart;
+      case 'heatmap': return BarChart;
+      case 'radar': return BarChart;
+      case 'gauge': return BarChart;
       default: return BarChart3;
     }
   };

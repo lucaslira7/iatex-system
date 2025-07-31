@@ -50,21 +50,21 @@ export default function OrderManagement() {
 
   const displayOrders = orders.length > 0 ? orders : mockOrders;
 
-  const filteredOrders = displayOrders.filter(order => 
-    order.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOrders = displayOrders.filter((order: any) =>
+    (order as any).modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order as any).clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order as any).reference?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
-    const statusMap = {
+    const statusMap: Record<string, { label: string; color: string }> = {
       pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
       in_production: { label: 'Em Produção', color: 'bg-blue-100 text-blue-800' },
       completed: { label: 'Concluído', color: 'bg-green-100 text-green-800' },
       cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800' }
     };
     const statusInfo = statusMap[status] || { label: status, color: 'bg-gray-100 text-gray-800' };
-    
+
     return (
       <Badge className={statusInfo.color}>
         {statusInfo.label}
@@ -99,12 +99,12 @@ export default function OrderManagement() {
       const pdf = generatePurchaseOrder(documentData);
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = `Pedido_${order.reference}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}.pdf`;
       link.click();
-      
+
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
@@ -146,12 +146,12 @@ export default function OrderManagement() {
       const pdf = generateReceipt(documentData);
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = `Recibo_${order.reference}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}.pdf`;
       link.click();
-      
+
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
@@ -242,7 +242,7 @@ export default function OrderManagement() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Valor Total</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  R$ {displayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toFixed(2)}
+                  R$ {displayOrders.reduce((sum: number, o: any) => sum + ((o as any).totalAmount || 0), 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function OrderManagement() {
               {displayOrders.length === 0 ? 'Nenhum pedido encontrado' : 'Nenhum resultado encontrado'}
             </h3>
             <p className="text-gray-600 mb-6">
-              {displayOrders.length === 0 
+              {displayOrders.length === 0
                 ? 'Crie seu primeiro pedido clicando no botão "Novo Pedido".'
                 : 'Tente ajustar os filtros de busca para encontrar o que procura.'
               }
@@ -279,28 +279,28 @@ export default function OrderManagement() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg">{order.modelName}</CardTitle>
+                    <CardTitle className="text-lg">{(order as any).modelName || 'Modelo não especificado'}</CardTitle>
                     <p className="text-sm text-gray-600">
-                      {order.orderNumber} - Ref: {order.reference}
+                      {order.orderNumber} - Ref: {(order as any).reference || 'N/A'}
                     </p>
                   </div>
-                  {getStatusBadge(order.status)}
+                  {getStatusBadge(order.status || 'pending')}
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
                     <Package className="h-4 w-4 mr-2" />
-                    Cliente: {order.clientName}
+                    Cliente: {(order as any).clientName || 'Cliente não especificado'}
                   </div>
-                  
+
                   <div className="flex items-center text-sm text-gray-600">
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    Quantidade: {order.quantity} unidades
+                    Quantidade: {(order as any).quantity || 0} unidades
                   </div>
 
                   <div className="text-lg font-semibold text-green-600">
-                    R$ {order.totalAmount?.toFixed(2) || '0,00'}
+                    R$ {(order as any).totalAmount?.toFixed(2) || '0,00'}
                   </div>
 
                   <div className="space-y-2 pt-3">
